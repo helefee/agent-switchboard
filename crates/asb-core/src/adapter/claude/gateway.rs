@@ -2,6 +2,26 @@
 
 use crate::contracts::{ClaudeModelSettings, ConfigValue, SwitchPlan};
 
+/// Resolves only internal wire roles, using the profile's configured models.
+/// Projection and request dispatch must use the same model identity.
+pub fn gateway_model_source<'a>(
+    role: &str,
+    primary: Option<&'a str>,
+    settings: Option<&'a ClaudeModelSettings>,
+) -> Result<Option<&'a str>, String> {
+    let selected = match role {
+        "asb-claude-primary" => primary,
+        "asb-claude-haiku" => settings.and_then(|s| s.haiku_model.as_deref()).or(primary),
+        "asb-claude-sonnet" => settings.and_then(|s| s.sonnet_model.as_deref()).or(primary),
+        "asb-claude-opus" => settings.and_then(|s| s.opus_model.as_deref()).or(primary),
+        "asb-claude-fable" => settings.and_then(|s| s.fable_model.as_deref().or(s.opus_model.as_deref())).or(primary),
+        "asb-claude-subagent" => settings.and_then(|s| s.subagent_model.as_deref()).or(primary),
+        _ if role.starts_with("asb-claude-") => return Err(format!("未知 Claude 网关模型角色 {role}")),
+        _ => return Ok(None),
+    };
+    selected.map(Some).ok_or_else(|| format!("Claude 网关模型角色 {role} 没有配置对应模型"))
+}
+
 pub(super) fn model_value(
     plan: &SwitchPlan,
     key: &str,

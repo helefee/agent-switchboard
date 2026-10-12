@@ -2,7 +2,7 @@ use crate::adapter::{claude, codex, scrub_message, AdapterError};
 use crate::contracts::{AppKind, ConfigValue, SettingValue, SettingsValues};
 use crate::ownership::default_provider_parameters;
 
-/// Captures only provider-owned scalar parameters. Missing keys retain their
+/// Captures only provider-owned parameters. Missing keys retain their
 /// actual automatic meaning; present values must be representable exactly.
 pub fn read_provider_parameters(app: AppKind, text: &str) -> Result<SettingsValues, AdapterError> {
     match app {
@@ -50,12 +50,7 @@ fn toml_value(
         };
         current = value;
     }
-    let value = match current.as_value() {
-        Some(toml_edit::Value::Boolean(value)) => ConfigValue::Bool(*value.value()),
-        Some(toml_edit::Value::String(value)) => ConfigValue::Str(value.value().clone()),
-        _ => return Err(invalid_parameter(key)),
-    };
-    Ok(Some(value))
+    codex::toml_value(current.as_value().ok_or_else(|| invalid_parameter(key))?, key).map(Some)
 }
 
 fn json_value(
@@ -70,12 +65,7 @@ fn json_value(
         };
         current = value;
     }
-    let value = match current {
-        serde_json::Value::Bool(value) => ConfigValue::Bool(*value),
-        serde_json::Value::String(value) => ConfigValue::Str(value.clone()),
-        _ => return Err(invalid_parameter(key)),
-    };
-    Ok(Some(value))
+    claude::json_value(current, key).map(Some)
 }
 
 fn invalid_parameter(key: &str) -> AdapterError {

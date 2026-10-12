@@ -595,7 +595,7 @@ mod apply_tests {
         assert!(plan
             .warnings
             .iter()
-            .any(|warning| warning.contains("mcp-gone")));
+            .any(|warning| warning.text.contains("mcp-gone")));
 
         let missing = compute_apply_plan(
             &slot,
@@ -611,11 +611,11 @@ mod apply_tests {
         assert!(missing
             .warnings
             .iter()
-            .any(|warning| warning.contains("供应商 provider-1 已不存在")));
+            .any(|warning| warning.text.contains("供应商 provider-1 已不存在")));
         assert!(missing
             .warnings
             .iter()
-            .any(|warning| warning.contains("prompt-1 已不存在")));
+            .any(|warning| warning.text.contains("prompt-1 已不存在")));
     }
 
     #[test]
@@ -628,7 +628,7 @@ mod apply_tests {
         assert!(plan
             .warnings
             .iter()
-            .any(|warning| warning.contains("尚未拍过")));
+            .any(|warning| warning.text.contains("尚未拍过")));
     }
 
     #[test]

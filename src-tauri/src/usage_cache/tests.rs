@@ -188,20 +188,6 @@ fn late_success_cannot_undo_a_more_recent_failure() {
 }
 
 #[test]
-fn clearing_the_profile_store_cache_removes_the_snapshot_file() {
-    let directory = tempfile::tempdir().expect("temporary directory");
-    let root = directory.path().join("state");
-    let state = LocalState::from_root(root.clone());
-    let profile = profile();
-    record_success(&state, &profile, summary(), attempt_time()).expect("record success");
-
-    clear(&state).expect("clear cache");
-
-    assert!(!root.join("usage-cache.json").exists());
-    assert_eq!(get(&state, &profile), Ok(None));
-}
-
-#[test]
 fn an_attempt_becomes_due_after_its_interval_elapses() {
     let now = DateTime::parse_from_rfc3339("2026-09-07T10:00:00Z")
         .expect("now")

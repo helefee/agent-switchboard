@@ -43,8 +43,6 @@ function clientConfigStatus(
   switch (configStatus?.matchStatus.kind) {
     case "matchesProfile":
       return t("clientConfig.status.matchesProfile", { name: configStatus.matchStatus.profileName });
-    case "externallyModified":
-      return null;
     case "profileChanged":
       return t("clientConfig.status.profileChanged", { name: configStatus.matchStatus.profileName });
     case "restoredBackup":
@@ -62,7 +60,7 @@ function actionStatus(t: TFunction, props: ClientSettingsPanelProps) {
   }
   if (props.editorState.phase === "dirty") return { message: t("clientConfig.status.dirty"), error: false };
   const message = clientConfigStatus(t, props.configStatus);
-  return message ? { message, error: props.configStatus?.matchStatus.kind === "externallyModified" } : null;
+  return message ? { message, error: false } : null;
 }
 
 interface ConfigurationReviewProps extends ClientSettingsPanelProps {

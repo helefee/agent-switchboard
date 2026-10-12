@@ -2,7 +2,7 @@ import { createElement, useState } from "react";
 import type { ExtensionListItem, SkillUpdateReport } from "../../api/client";
 import type { useExtensions } from "../../app/useExtensions";
 import { CommandErrorLines } from "../../app/notifications";
-import { ToastMessageList } from "../../components/Toaster";
+import { ToastMessageList } from "../../components/ToastContent";
 import { toast, toastMessage } from "../../components/use-toast";
 import type { ExtensionApplies } from "./useExtensionApplies";
 

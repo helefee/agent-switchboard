@@ -1,9 +1,9 @@
-//! Lossless repair of the current configuration layout. Only absent setting
-//! intents can be inferred: `automatic` means the client receives no value.
+//! Lossless repair of the current configuration layout. Absent intents and
+//! the retired Claude automatic effort intent never write a client value.
 
 use super::snapshot::activation::{activate_staged, Activation};
 use super::{history, write_json_atomic, ConfigStore, PROFILE_PREIMAGE_FILE, SWITCH_INTENT_FILE};
-use asb_core::contracts::{AppKind, CodexProviderFile, ProviderFile, SettingsValues};
+use asb_core::contracts::{AppKind, CodexProviderFile, ProviderFile, SettingValue, SettingsValues};
 use asb_core::ownership::{default_client_settings, default_provider_parameters};
 use serde::Serialize;
 use serde_json::Value;
@@ -164,16 +164,25 @@ fn fill_automatic(node: &mut Value, app: AppKind, provider: bool) -> Result<bool
     let defaults = if provider { default_provider_parameters(app) } else { default_client_settings(app) };
     let missing: Vec<_> = defaults.settings.keys()
         .filter(|key| !values.settings.contains_key(*key)).cloned().collect();
-    if missing.is_empty() {
+    let retired_effort = app == AppKind::Claude && provider
+        && values.settings.get("effortLevel") == Some(&SettingValue::Automatic);
+    if missing.is_empty() && !retired_effort {
         return Ok(false);
     }
     let map = node.get_mut("settings").and_then(Value::as_object_mut)
         .ok_or("设置键集合不是对象")?;
+    if retired_effort {
+        map.remove("effortLevel");
+    }
     for key in missing {
         map.insert(key, serde_json::json!({ "mode": "automatic" }));
     }
     Ok(true)
 }
+
+#[cfg(test)]
+#[path = "repair/upgrade_tests.rs"]
+mod upgrade_tests;
 
 fn inspect_provider(label: &str, kind: FileKind, value: &Value) -> Result<(), String> {
     let invalid = |error: String| format!("{label}：{error}");

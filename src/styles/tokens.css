@@ -28,6 +28,9 @@
   --asb-content: #ffffff;
   --asb-content-muted: #f1f3f8;
   --asb-surface-rail: #eef0f7;
+  --asb-sidebar-bg: #eceef1;
+  --asb-sidebar-hover: color-mix(in srgb, var(--asb-text) 5%, var(--asb-sidebar-bg));
+  --asb-sidebar-selected: color-mix(in srgb, var(--asb-text) 10%, var(--asb-sidebar-bg));
   --asb-surface-menu: #f5f6fa;
   --asb-surface-sheet: #f2f3f8;
   --asb-row-selected: color-mix(in srgb, var(--asb-action) 8%, white);
@@ -181,6 +184,7 @@
   --asb-control-height-compact: calc(var(--asb-control-height) - var(--asb-space-1));
   --asb-control-height-micro: calc(var(--asb-control-height) - var(--asb-space-2));
   --asb-touch-target: var(--asb-control-height);
+  --asb-sidebar-width: 64px;
   --asb-button-min-width: 72px;
   --asb-tooltip-max-width: 16rem;
   --asb-tooltip-padding-inline: 10px;
@@ -235,6 +239,7 @@
      --asb-content: #0d2133;
      --asb-content-muted: #10293f;
      --asb-surface-rail: #0b2236;
+    --asb-sidebar-bg: #111e2b;
      --asb-surface-menu: #10283d;
      --asb-surface-sheet: #0e273b;
     --asb-row-selected: color-mix(
@@ -276,6 +281,7 @@
     --asb-content: #0d2133;
     --asb-content-muted: #10293f;
     --asb-surface-rail: #0b2236;
+    --asb-sidebar-bg: #111e2b;
     --asb-surface-menu: #10283d;
     --asb-surface-sheet: #0e273b;
     --asb-row-selected: color-mix(

@@ -21,10 +21,13 @@ function Find-WindowsSdkTool {
     [string]$Name
   )
 
-  $programFilesX86 = [Environment]::GetEnvironmentVariable('ProgramFiles(x86)')
-  $sdkRoot = Join-Path $programFilesX86 'Windows Kits\10\bin'
+  $sdkRoot = $env:WindowsSdkVerBinPath
+  if ([string]::IsNullOrWhiteSpace($sdkRoot)) {
+    $programFilesX86 = [Environment]::GetEnvironmentVariable('ProgramFiles(x86)')
+    $sdkRoot = Join-Path $programFilesX86 'Windows Kits\10\bin'
+  }
   if (-not (Test-Path -LiteralPath $sdkRoot -PathType Container)) {
-    throw "Windows 10 SDK is required to create MSIX packages. Could not find $sdkRoot."
+    throw "Windows SDK is required to create MSIX packages. Could not find $sdkRoot. Set WindowsSdkVerBinPath for a standalone SDK."
   }
 
   $tool = Get-ChildItem -LiteralPath $sdkRoot -Recurse -Filter $Name -File |

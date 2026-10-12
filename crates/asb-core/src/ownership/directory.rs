@@ -83,10 +83,8 @@ pub(super) const CODEX_DIRECTORY_FAMILIES: &[OfficialSettingEntry] = &[
     },
     OfficialSettingEntry {
         title: "ownership.directory.modelAutoCompactTokenLimit.title",
-        path: "model_auto_compact_token_limit",
+        path: "history.max_bytes",
         related_paths: &[
-            "model_auto_compact_token_limit_scope",
-            "history.max_bytes",
             "tool_output_token_limit",
             "background_terminal_max_timeout",
             "memories.*_limit",
@@ -97,7 +95,7 @@ pub(super) const CODEX_DIRECTORY_FAMILIES: &[OfficialSettingEntry] = &[
     OfficialSettingEntry {
         title: "ownership.directory.tuiNotificationMethod.title",
         path: "tui.notification_method",
-        related_paths: &["tui.notification_conditions", "tui.status_line"],
+        related_paths: &["tui.notification_condition", "tui.status_line"],
         disposition: OfficialSettingDisposition::PreserveOnly,
         detail: "ownership.directory.tuiNotificationMethod.detail",
     },
@@ -156,8 +154,8 @@ pub(super) const CLAUDE_DIRECTORY_FAMILIES: &[OfficialSettingEntry] = &[
     OfficialSettingEntry {
         title: "ownership.directory.modelSettingsEffortLevel.title",
         path: "modelSettings.<model>.effortLevel",
-        related_paths: &["modelSettings.<model>.fastMode"],
-        disposition: OfficialSettingDisposition::PreserveOnly,
+        related_paths: &["modelSettings.<model>.autoCompactWindow", "modelSettings.<model>.maxEffortLevel"],
+        disposition: OfficialSettingDisposition::SeparateModule,
         detail: "ownership.directory.modelSettingsEffortLevel.detail",
     },
     OfficialSettingEntry {

@@ -1,12 +1,13 @@
 import type { GatewayMetricsStatus, GatewaySample, UpstreamProtocol } from "../api/client";
 import { useI18n, type TFunction } from "../i18n";
-import { PROTOCOL_LABELS, isProtocolTranslation } from "../lib/protocol";
+import { isProtocolTranslation, protocolLabel } from "../lib/protocol";
+import { clientFullName } from "../lib/client-name";
 import { Table, type TableColumn } from "./Table";
+import type { ClientFilterValue } from "./ClientFilter";
 
 const RECENT_ROW_COUNT = 20;
 const TREND_MINUTES = 60;
 const MINUTE_MS = 60_000;
-const APP_LABELS = { codex: "Codex", claude: "Claude Code" } as const;
 const PROTOCOL_TONES: Record<UpstreamProtocol, string> = {
   responses: "var(--asb-action)",
   chatCompletions: "var(--asb-claude)",
@@ -22,16 +23,17 @@ function formatClock(timestamp: number): string {
 interface TelemetryProps {
   metrics: GatewayMetricsStatus;
   profileNames: Map<string, string>;
+  focus: ClientFilterValue;
 }
 
 /** 图表带是网关页的遥测面：累计请求带 60 分钟柱状趋势、失败请求、
  * p50/p95 耗时条与上游协议分布；「最近请求」明细常驻展示，不做折叠。
  * 全部读数只来自内存遥测样本。 */
-export function GatewayTelemetry({ metrics, profileNames }: TelemetryProps) {
+export function GatewayTelemetry({ metrics, profileNames, focus }: TelemetryProps) {
   return (
     <>
       <GatewayStrip metrics={metrics} />
-      <GatewayRecentRequests samples={metrics.samples} profileNames={profileNames} />
+      <GatewayRecentRequests samples={metrics.samples} profileNames={profileNames} focus={focus} />
     </>
   );
 }
@@ -69,13 +71,13 @@ function GatewayStrip({ metrics }: { metrics: GatewayMetricsStatus }) {
       <div className={`asb-gateway-gauge${failedRequests > 0 ? " is-warning" : ""}`}>
         <p className="asb-gateway-gauge-label">{t("gateway.failedRequests")}</p>
         <p className="asb-gateway-gauge-value">{failedRequests}</p>
-        <p className="asb-gateway-gauge-detail">{t("gateway.completedRequests")}</p>
+        <p className="asb-gateway-gauge-detail">{t("gateway.failedDetail")}</p>
       </div>
       <div className="asb-gateway-gauge">
         <p className="asb-gateway-gauge-label">{t("gateway.latencyTitle")}</p>
         <div className="asb-gateway-latency">
-          <LatencyRow label="p50" ms={p50} scaleMax={p95} />
-          <LatencyRow label="p95" ms={p95} scaleMax={p95} />
+          <LatencyRow label={t("gateway.latencyMedian")} ms={p50} scaleMax={p95} />
+          <LatencyRow label={t("gateway.latencyP95")} ms={p95} scaleMax={p95} />
         </div>
         <p className="asb-gateway-gauge-detail">{hasLatency ? t("gateway.latencyOnlyCompleted") : t("gateway.latencyNoCompleted")}</p>
       </div>
@@ -98,7 +100,7 @@ function GatewayStrip({ metrics }: { metrics: GatewayMetricsStatus }) {
             </div>
             <p className="asb-gateway-protocol-legend">
               {usage
-                .map((entry) => `${PROTOCOL_LABELS[entry.protocol]} ${entry.count}`)
+                .map((entry) => `${protocolLabel(t, entry.protocol)} ${entry.count}`)
                 .join(" · ")}
             </p>
           </>
@@ -158,22 +160,25 @@ function formatDuration(durationMs: number): string {
   return durationMs < 1000 ? `${durationMs} ms` : `${(durationMs / 1000).toFixed(1)} s`;
 }
 
-function GatewayRecentRequests({ samples, profileNames }: {
+function GatewayRecentRequests({ samples, profileNames, focus }: {
   samples: GatewaySample[];
   profileNames: Map<string, string>;
+  focus: ClientFilterValue;
 }) {
   const { t } = useI18n();
-  const recent = [...samples].slice(-RECENT_ROW_COUNT).reverse();
+  const scoped = focus === "all" ? samples : samples.filter((sample) => sample.app === focus);
+  const recent = scoped.slice(-RECENT_ROW_COUNT).reverse();
   return (
     <section className="asb-gateway-recent" aria-label={t("gateway.recentTitle")}>
       <header className="asb-gateway-recent-heading">
         <h3 className="asb-section-title">{t("gateway.recentTitle")}</h3>
-        <span className="asb-gateway-recent-count">
-          {samples.length > 0 ? t("gateway.recentCount", { count: recent.length }) : t("gateway.noRecords")}
+        <span className="asb-gateway-recent-count" role="status">
+          {focus !== "all" && <>{clientFullName(focus)} · </>}
+          {recent.length > 0 ? t("gateway.recentCount", { count: recent.length }) : t("gateway.noRecords")}
         </span>
       </header>
       {recent.length === 0 ? (
-        <p className="asb-gateway-empty" role="status">{t("gateway.noRequests")}</p>
+        <p className="asb-gateway-empty" role="status">{focus === "all" ? t("gateway.noRequests") : t("gateway.noClientRequests", { app: clientFullName(focus) })}</p>
       ) : (
         <div className="asb-gateway-recent-table">
           <Table
@@ -200,7 +205,7 @@ function recentColumns(t: TFunction, profileNames: Map<string, string>): Array<T
       header: t("gateway.colTime"),
       render: (sample) => <span className="asb-gateway-row-value asb-code">{formatClock(sample.atMs)}</span>,
     },
-    { key: "app", header: t("gateway.client"), render: (sample) => APP_LABELS[sample.app] },
+    { key: "app", header: t("gateway.client"), cellClassName: "asb-gateway-request-app", render: (sample) => clientFullName(sample.app) },
     {
       key: "profile",
       header: t("gateway.colProvider"),
@@ -227,10 +232,12 @@ function recentColumns(t: TFunction, profileNames: Map<string, string>): Array<T
     {
       key: "status",
       header: t("gateway.colStatus"),
+      cellClassName: "asb-gateway-request-result",
       render: (sample) => {
         if (sample.status === null) return <span className="asb-fail-text">{t("gateway.interrupted")}</span>;
-        if (sample.status >= 400) return <span className="asb-fail-text">HTTP {sample.status}</span>;
-        return <span className="asb-gateway-row-value">{sample.status}</span>;
+        const status = `HTTP ${sample.status}`;
+        if (sample.status >= 400) return <span className="asb-fail-text">{t("gateway.requestFailed", { status })}</span>;
+        return <span className="asb-gateway-row-value">{t("gateway.requestSucceeded", { status })}</span>;
       },
     },
     {
@@ -249,9 +256,9 @@ function GatewayRequestPath({ sample }: { sample: GatewaySample }) {
   const translated = isProtocolTranslation(sample.clientProtocol, sample.upstreamProtocol);
   return (
     <span className="asb-gateway-request-path">
-      <span>{PROTOCOL_LABELS[sample.clientProtocol]}</span>
+      <span>{protocolLabel(t, sample.clientProtocol)}</span>
       <span aria-hidden="true">→</span>
-      <span>{PROTOCOL_LABELS[sample.upstreamProtocol]}</span>
+      <span>{protocolLabel(t, sample.upstreamProtocol)}</span>
       <span className={`asb-gateway-request-mode is-${translated ? "translation" : "relay"}`}>
         {translated ? t("gateway.modeTranslation") : t("gateway.modeRelay")}
       </span>

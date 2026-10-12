@@ -9,8 +9,8 @@ interface Props extends Omit<InputHTMLAttributes<HTMLInputElement>, "size" | "cl
  * Text-field control: native attributes
  * pass straight through while the field look (hairline border, control radius,
  * canvas fill, placeholder, hover, disabled) is owned by
- * .asb-input in styles/base.css; every value comes from styles/tokens.css.
- * 字段外观类由本组件独占；不接受 className，尺寸与布局属于父级容器。
+ * .asb-input in styles/base/field-controls.css; every value comes from styles/tokens.css.
+ * 字段外观类由本组件独占；不接受 className。宽度与排布属于父级容器，标准高度来自共享控件样式。
  */
 export function Input({ code = false, ...props }: Props) {
   return <input className={code ? "asb-input asb-code" : "asb-input"} {...props} />;

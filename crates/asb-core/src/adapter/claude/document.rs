@@ -32,10 +32,7 @@ pub(super) fn scalar_repr(value: &Json) -> Option<String> {
         Json::String(s) => Some(s.clone()),
         Json::Bool(b) => Some(b.to_string()),
         Json::Number(n) => Some(n.to_string()),
-        Json::Array(items) => {
-            let parts: Vec<String> = items.iter().filter_map(scalar_repr).collect();
-            Some(format!("[{}]", parts.join(", ")))
-        }
+        Json::Array(_) => serde_json::to_string(value).ok(),
         Json::Null => None,
         _ => None,
     }

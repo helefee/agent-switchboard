@@ -358,11 +358,8 @@ pub enum MatchStatus {
     /// not a provider match and must not activate a profile row.
     #[serde(rename_all = "camelCase")]
     RestoredBackup { at: String },
-    /// The app switched this file before, but the content now matches neither
-    /// the last switch record nor any profile.
-    #[serde(rename_all = "camelCase")]
-    ExternallyModified { at: String },
-    /// The app never switched this file and no profile matches its content.
+    /// No current profile matches the content, whether or not the app
+    /// switched this file before.
     Unmanaged,
     /// The file is missing or unparseable; matching is not decidable.
     Unknown,

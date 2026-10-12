@@ -7,6 +7,7 @@
 
 mod choices;
 mod directory;
+mod inputs;
 mod lookup;
 mod provider;
 mod resources;

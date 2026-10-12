@@ -53,6 +53,7 @@ fn claude_store_errors_do_not_block_manual_only_official_profile() {
     let state = LocalState::from_root(directory.path().join("state"));
     let (official, _) = state.configuration().ensure_codex_official_record().unwrap();
     let claude = state.configuration().providers_dir(AppKind::Claude);
+    std::fs::create_dir_all(&claude).unwrap();
     std::fs::write(claude.join("invalid.json"), "invalid").unwrap();
     let scheduled = profiles(&state);
     assert_eq!(scheduled.len(), 1);

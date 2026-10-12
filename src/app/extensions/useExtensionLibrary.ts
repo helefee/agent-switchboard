@@ -14,7 +14,7 @@ import {
   type ProjectRegistration,
 } from "../../api/client";
 import { toast, toastMessage } from "../../components/use-toast";
-import { ToastMessageList } from "../../components/Toaster";
+import { ToastMessageList } from "../../components/ToastContent";
 import type {
   EditPreparation,
   ExclusiveRunner,

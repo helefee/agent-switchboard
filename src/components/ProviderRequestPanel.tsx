@@ -1,7 +1,7 @@
 import type { ProviderDiagnostic, ProviderDiagnosticKind, ProviderRequestTarget, ProviderRequestOutcome } from "../api/client";
 import type { MessageKey } from "../i18n";
 import { useI18n } from "../i18n";
-import { PROTOCOL_LABELS } from "../lib/protocol";
+import { protocolLabel } from "../lib/protocol";
 import { Button } from "./Button";
 import { Input } from "./Input";
 import { ModelPicker } from "./ModelPicker";
@@ -110,7 +110,7 @@ export function ProviderRequestPanel({ target, name }: { target: ProviderRequest
     <section className="asb-request-panel" aria-label={t("providers.request.aria", { name })}>
       {preparation && <dl className="asb-request-target">
         <div><dt>{t("providers.request.field.endpoint")}</dt><dd>{preparation.endpoint}</dd></div>
-        <div><dt>{t("providers.label.apiFormat")}</dt><dd>{PROTOCOL_LABELS[preparation.upstreamProtocol]}</dd></div>
+        <div><dt>{t("providers.label.apiFormat")}</dt><dd>{protocolLabel(t, preparation.upstreamProtocol)}</dd></div>
       </dl>}
       <div className="asb-request-body">
         <div className="asb-request-composer">

@@ -12,14 +12,13 @@ pub(crate) fn render(current: &str, plan: &SwitchPlan) -> Result<String, Adapter
         message,
         line: None,
     };
-    crate::claude_common::validate_scopes(
-        &plan.client_settings.claude_extra,
-        &plan.profile.claude_fragment,
-    )
-    .map_err(fragment_error)?;
-    let rendered = crate::claude_common::apply(&rendered, &plan.client_settings.claude_extra)
+    let (shared, profile) = super::model_preferences::projected(plan)?;
+    // Remove the old profile before the shared overlay can claim its leaves.
+    let rendered = crate::claude_common::apply_profile(&rendered, &Default::default())
         .map_err(fragment_error)?;
-    crate::claude_common::apply_profile(&rendered, &plan.profile.claude_fragment)
+    let rendered = crate::claude_common::apply(&rendered, &shared)
+        .map_err(fragment_error)?;
+    crate::claude_common::apply_profile(&rendered, &profile)
         .map_err(fragment_error)
 }
 
@@ -40,7 +39,11 @@ pub(crate) fn render_client_settings_into_file(
     current: &str,
     client_settings: &SettingsValues,
 ) -> Result<String, AdapterError> {
-    let rendered = render_entries(current, client_settings_overlay(client_settings))?;
+    crate::claude_common::validate_shared_write(current, &client_settings.claude_extra)
+        .map_err(|message| AdapterError { message, line: None })?;
+    let mut entries = client_settings_overlay(client_settings);
+    entries.push(("effortLevel".into(), OverlayEntry::RemoveIfPresent));
+    let rendered = render_entries(current, entries)?;
     crate::claude_common::apply(&rendered, &client_settings.claude_extra).map_err(|message| {
         AdapterError {
             message,
@@ -51,7 +54,9 @@ pub(crate) fn render_client_settings_into_file(
 
 pub(crate) fn reset_client_settings(current: &str) -> Result<String, AdapterError> {
     let defaults = crate::ownership::default_client_settings(crate::AppKind::Claude);
-    render_entries(current, client_settings_overlay(&defaults))
+    let mut entries = client_settings_overlay(&defaults);
+    entries.push(("effortLevel".into(), OverlayEntry::RemoveIfPresent));
+    render_entries(current, entries)
 }
 
 pub(crate) fn render_entries(

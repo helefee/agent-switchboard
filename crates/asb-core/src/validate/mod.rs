@@ -13,6 +13,7 @@ mod usage;
 pub(crate) use codex::validate_connection as validate_codex_connection;
 pub use error::{ValidationError, MAX_AUTO_REFRESH_INTERVAL_MINUTES};
 pub use usage::validate_usage_query;
+pub use settings::validate_setting_value;
 
 use crate::contracts::{ProviderProfile, SettingsValues};
 /// Validates the only current planning contract. Client selection comes from

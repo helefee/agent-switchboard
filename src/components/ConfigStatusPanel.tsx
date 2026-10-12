@@ -26,8 +26,6 @@ function matchLabel(t: TFunction, status: MatchStatus): ReactNode {
       return t("clientConfig.match.profileChanged", { name: status.profileName });
     case "restoredBackup":
       return <>{t("clientConfig.match.restoredBefore")}<Time iso={status.at} />{t("clientConfig.match.restoredAfter")}</>;
-    case "externallyModified":
-      return <>{t("clientConfig.match.externalBefore")}<Time iso={status.at} />{t("clientConfig.match.externalAfter")}</>;
     case "unmanaged":
       return t("clientConfig.match.unmanaged");
     case "unknown":

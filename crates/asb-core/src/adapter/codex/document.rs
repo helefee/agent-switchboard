@@ -25,6 +25,7 @@ pub(super) fn scalar_repr(value: &TomlValue) -> Option<String> {
         TomlValue::Integer(i) => Some(i.value().to_string()),
         TomlValue::Float(f) => Some(f.value().to_string()),
         TomlValue::Boolean(b) => Some(b.value().to_string()),
+        TomlValue::Array(_) => super::common::toml_value(value, "array").ok().map(|value| value.display()),
         _ => None,
     }
 }

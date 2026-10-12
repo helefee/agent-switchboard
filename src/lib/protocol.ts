@@ -1,4 +1,5 @@
 import type { AppKind, ProviderDraft, UpstreamProtocol } from "../api/client";
+import type { MessageKey, TFunction } from "../i18n";
 
 /** TS mirror of the routing contract owned by asb-core
  * `UpstreamProtocol::native_for`: the wire protocol each client speaks
@@ -16,13 +17,19 @@ export function isProtocolTranslation(
   return clientProtocol !== upstreamProtocol;
 }
 
-/** Single owner of the UpstreamProtocol display name across pages and forms. */
-export const PROTOCOL_LABELS: Record<UpstreamProtocol, string> = {
-  responses: "OpenAI Responses",
-  chatCompletions: "Chat Completions",
-  anthropicMessages: "Anthropic Messages",
-  geminiGenerateContent: "Gemini Native",
+/** Single owner of the UpstreamProtocol display label across pages and
+ * forms. The wording lives in the i18n "protocol." domain so it follows the
+ * interface language instead of staying English-only. */
+const PROTOCOL_LABEL_KEYS: Record<UpstreamProtocol, MessageKey> = {
+  responses: "protocol.responses",
+  chatCompletions: "protocol.chatCompletions",
+  anthropicMessages: "protocol.anthropicMessages",
+  geminiGenerateContent: "protocol.geminiGenerateContent",
 };
+
+export function protocolLabel(t: TFunction, protocol: UpstreamProtocol): string {
+  return t(PROTOCOL_LABEL_KEYS[protocol]);
+}
 
 /** Mirrors asb-core `ProviderConnectionOptions::normalize_endpoint_url`. */
 function normalizeEndpointUrl(url: string): string {

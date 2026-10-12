@@ -8,6 +8,7 @@ mod common;
 mod common_fragment;
 mod document;
 pub use common::extract_client_settings;
+pub use common::toml_value;
 pub use common_fragment::{declared_mcp_server_keys, fragment_is_applied, validate_fragment};
 mod overlay;
 mod preview;

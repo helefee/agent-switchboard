@@ -195,9 +195,7 @@ mod tests {
             recovery_issue: None,
             client_settings: None,
             client_settings_error: None,
-            match_status: asb_core::contracts::MatchStatus::ExternallyModified {
-                at: "test-time".into(),
-            },
+            match_status: asb_core::contracts::MatchStatus::Unmanaged,
             active_profile_id: Some(profile.id.clone()),
             last_switch: None,
         };

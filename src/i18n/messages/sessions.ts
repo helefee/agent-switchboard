@@ -81,7 +81,7 @@ export const messages = {
   ],
 
   "sessions.search.aria": ["搜索会话", "Search sessions"],
-  "sessions.search.placeholder": ["搜索消息全文、报错、代码或会话信息", "Search messages, errors, code, or session details"],
+  "sessions.search.placeholder": ["搜索会话与消息", "Search messages"],
   "sessions.search.submit": ["搜索", "Search"],
   "sessions.search.results": ["搜索结果", "Search results"],
   "sessions.search.messageHit": ["消息命中 · 点击定位", "Message match · open in conversation"],

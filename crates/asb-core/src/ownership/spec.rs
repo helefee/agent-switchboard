@@ -50,6 +50,7 @@ pub enum SettingValueType {
     Secret,
     PositiveInteger,
     StringArray,
+    BoolOrStringArray,
 }
 
 /// What a provider projection does when the current provider has no value for
@@ -66,6 +67,11 @@ pub enum ProviderAbsentAction {
 pub enum SettingControl {
     None,
     Toggle,
+    Text,
+    Directory,
+    Integer { min: u64, max: u64 },
+    StringInteger { min: u64, max: u64 },
+    Notifications,
     Choice {
         presentation: ChoiceControl,
     },

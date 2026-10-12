@@ -124,6 +124,8 @@ function ProviderEditorSession(props: Props) {
     </div>
     {parametersOpen && <ProviderParametersPage value={editor.draft.parameters} parameters={editor.parameters}
       onChange={(parameters) => editor.setDraft((current) => ({ ...current, parameters }))} busy={props.busy}
+      claudeFragment={editor.draft.claudeFragment}
+      onFragmentChange={(claudeFragment) => editor.setDraft((current) => ({ ...current, claudeFragment }))}
       baselineValues={props.profile?.parameters.settings} />}
   </ProviderEditorFrame>;
 }

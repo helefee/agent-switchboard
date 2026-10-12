@@ -34,7 +34,13 @@ pub fn extract_client_settings(text: &str) -> Result<SettingsValues, AdapterErro
     Ok(settings)
 }
 
-fn toml_value(value: &TomlValue, key: &str) -> Result<ConfigValue, AdapterError> {
+/// Decodes a TOML configuration value without losing integer precision.
+pub fn toml_value(value: &TomlValue, key: &str) -> Result<ConfigValue, AdapterError> {
+    let integer = ownership::setting_spec(AppKind::Codex, key)
+        .is_some_and(|spec| matches!(spec.control, ownership::SettingControl::Integer { .. }));
+    if integer && !matches!(value, TomlValue::Integer(_)) {
+        return Err(AdapterError { message: format!("配置 {key} 必须是 TOML 整数"), line: None });
+    }
     match value {
         TomlValue::Boolean(value) => Ok(ConfigValue::Bool(*value.value())),
         TomlValue::String(value) => Ok(ConfigValue::Str(value.value().clone())),
@@ -46,8 +52,10 @@ fn toml_value(value: &TomlValue, key: &str) -> Result<ConfigValue, AdapterError>
         TomlValue::Float(value) if value.value().is_finite() => {
             Ok(ConfigValue::Number(*value.value()))
         }
+        TomlValue::Array(items) => items.iter().map(|item| toml_value(item, key))
+            .collect::<Result<Vec<_>, _>>().map(ConfigValue::Array),
         _ => Err(AdapterError {
-            message: format!("通用配置 {key} 必须是受支持的标量值"),
+            message: format!("配置 {key} 必须是受支持的标量或数组值"),
             line: None,
         }),
     }

@@ -87,7 +87,7 @@ fn validate_scope(
                 key: key.clone(),
             })?;
         if let SettingValue::Explicit { value } = value {
-            validate_value(&spec, value)?;
+            validate_setting_value(&spec, value)?;
         }
     }
     for spec in setting_specs(app)
@@ -103,7 +103,7 @@ fn validate_scope(
     Ok(())
 }
 
-fn validate_value(spec: &SettingSpec, value: &ConfigValue) -> Result<(), ValidationError> {
+pub fn validate_setting_value(spec: &SettingSpec, value: &ConfigValue) -> Result<(), ValidationError> {
     if let ConfigValue::Number(number) = value {
         if !number.is_finite() {
             return Err(ValidationError::NonFiniteNumber {
@@ -129,6 +129,32 @@ fn validate_value(spec: &SettingSpec, value: &ConfigValue) -> Result<(), Validat
             }
             allowed.join("、")
         }
+        SettingControl::Text | SettingControl::Directory => {
+            if matches!(value, ConfigValue::Str(text) if !text.trim().is_empty()
+                && !text.chars().any(char::is_control)
+                && (spec.control != SettingControl::Directory || absolute_directory(text))) {
+                return Ok(());
+            }
+            if spec.control == SettingControl::Directory { "绝对目录路径或 ~/ 开头的目录".into() } else { "非空文本".into() }
+        }
+        SettingControl::Integer { min, max } => {
+            if matches!(value, ConfigValue::Number(number) if number.fract() == 0.0 && *number >= min as f64 && *number <= max as f64) {
+                return Ok(());
+            }
+            format!("{min} 到 {max} 的整数")
+        }
+        SettingControl::StringInteger { min, max } => {
+            if matches!(value, ConfigValue::Str(text) if !text.is_empty() && text.bytes().all(|byte| byte.is_ascii_digit()) && text.parse::<u64>().is_ok_and(|number| (min..=max).contains(&number))) {
+                return Ok(());
+            }
+            format!("{min} 到 {max} 的整数字符串")
+        }
+        SettingControl::Notifications => {
+            if matches!(value, ConfigValue::Bool(_)) || matches!(value, ConfigValue::Array(items) if items.iter().all(|item| matches!(item, ConfigValue::Str(text) if !text.trim().is_empty() && !text.chars().any(char::is_control)))) {
+                return Ok(());
+            }
+            "布尔值或事件名数组".to_string()
+        }
         SettingControl::None => unreachable!("scope validation requires an editor control"),
     };
     Err(ValidationError::BadSettingValue {
@@ -136,6 +162,13 @@ fn validate_value(spec: &SettingSpec, value: &ConfigValue) -> Result<(), Validat
         value: value.display(),
         allowed,
     })
+}
+
+fn absolute_directory(text: &str) -> bool {
+    let bytes = text.as_bytes();
+    text.starts_with('/') || text.starts_with("~/") || text.starts_with("\\\\")
+        || (bytes.len() >= 3 && bytes[0].is_ascii_alphabetic() && bytes[1] == b':'
+            && matches!(bytes[2], b'/' | b'\\'))
 }
 
 #[cfg(test)]

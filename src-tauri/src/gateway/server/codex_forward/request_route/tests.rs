@@ -11,7 +11,7 @@ fn compact_uses_target_capabilities_and_only_target_endpoints() {
     let mut source = crate::codex_common::test_draft();
     source.capabilities.compact = false;
     source.catalog[0].compact = false;
-    let source = source.into_file(uuid::Uuid::new_v4().to_string(), 0);
+    let source = source.into_file(uuid::Uuid::new_v4().to_string(), 1);
     let primary = gateway.route_for_codex_file(&source, None).unwrap();
     let mut target = crate::codex_common::test_draft();
     target.api_key = "target-secret".into();
@@ -45,7 +45,7 @@ fn unresolved_targets_and_other_auxiliary_operations_never_fall_back() {
     let directory = tempfile::tempdir().unwrap();
     let state = LocalState::from_root(directory.path().join("state"));
     let gateway = GatewayController::start(&state);
-    let source = crate::codex_common::test_draft().into_file(uuid::Uuid::new_v4().to_string(), 0);
+    let source = crate::codex_common::test_draft().into_file(uuid::Uuid::new_v4().to_string(), 1);
     let primary = gateway.route_for_codex_file(&source, None).unwrap();
     let body = serde_json::to_vec(&json!({
         "model":format!("asb:{}/relay-model", uuid::Uuid::new_v4()), "input":[],

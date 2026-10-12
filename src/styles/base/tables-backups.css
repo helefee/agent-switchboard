@@ -68,7 +68,12 @@
 .asb-pagination {
   display: flex;
   align-items: center;
+  flex-wrap: wrap;
   gap: var(--asb-space-2);
+}
+
+.asb-table + .asb-pagination,
+.asb-runtime-log-table-wrap + .asb-pagination {
   margin-top: var(--asb-space-3);
 }
 
@@ -105,22 +110,23 @@
   overflow: hidden;
 }
 
-.asb-page-stack:has(> .asb-settings-workspace .asb-backup-local:not([hidden])),
-.asb-settings-workspace:has(.asb-backup-local:not([hidden])),
-.asb-settings-workspace:has(.asb-backup-local:not([hidden])) .asb-settings-content {
+/* The settings page-stack wrapper and its content column (the settings
+   workspace root) stretch to the workspace only while the backups panel with
+   its own internal scroll is visible. */
+.asb-page-stack:has(> .asb-settings-content .asb-backup-local:not([hidden])),
+.asb-settings-content:has(.asb-backup-local:not([hidden])) {
   flex: 1;
   min-height: 0;
 }
 
-.asb-settings-workspace:has(.asb-backup-local:not([hidden])) {
-  align-items: stretch;
-}
-
-.asb-settings-workspace:has(.asb-backup-local:not([hidden])) .asb-settings-content {
+.asb-settings-content:has(.asb-backup-local:not([hidden])) {
   display: flex;
   flex-direction: column;
 }
 
+/* Keep the settings tabpanel in the flex height chain so the history receives
+   a bounded height instead of growing behind the workspace's clipped edge. */
+.asb-settings-content > [role="tabpanel"]:has(.asb-backup-local:not([hidden])),
 .asb-panel:has(.asb-backup-local:not([hidden])) {
   display: flex;
   flex: 1;

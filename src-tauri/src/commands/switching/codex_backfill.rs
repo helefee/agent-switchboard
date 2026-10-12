@@ -10,7 +10,7 @@ use asb_core::contracts::{CodexProviderFile, ConfigValue, SettingValue, Settings
 use asb_core::ownership::{setting_specs, SettingControl, SettingOwner};
 use asb_core::AppKind;
 use std::fs;
-use toml_edit::{DocumentMut, Item, Value};
+use toml_edit::{DocumentMut, Item};
 
 pub(super) struct PreparedCodexBackfill {
     pub(super) profile_id: String,
@@ -243,34 +243,16 @@ fn live_setting(
     spec: &asb_core::ownership::SettingSpec,
 ) -> Option<SettingValue> {
     let item = item_at(document, key)?;
-    let value = config_value(item)?;
+    let value = config_value(item, key)?;
     accepts(spec, &value).then_some(SettingValue::Explicit { value })
 }
 
 fn accepts(spec: &asb_core::ownership::SettingSpec, value: &ConfigValue) -> bool {
-    match spec.control {
-        SettingControl::Toggle => matches!(value, ConfigValue::Bool(_)),
-        SettingControl::Choice { .. } => {
-            let ConfigValue::Str(value) = value else {
-                return false;
-            };
-            spec.allowed_values
-                .iter()
-                .any(|option| option.value == value)
-        }
-        SettingControl::None => false,
-    }
+    spec.control != SettingControl::None && asb_core::validate::validate_setting_value(spec, value).is_ok()
 }
 
-fn config_value(item: &Item) -> Option<ConfigValue> {
-    let value = item.as_value()?;
-    match value {
-        Value::Boolean(value) => Some(ConfigValue::Bool(*value.value())),
-        Value::Integer(value) => Some(ConfigValue::Number(*value.value() as f64)),
-        Value::Float(value) => Some(ConfigValue::Number(*value.value())),
-        Value::String(value) => Some(ConfigValue::Str(value.value().clone())),
-        _ => None,
-    }
+fn config_value(item: &Item, key: &str) -> Option<ConfigValue> {
+    asb_core::adapter::codex::toml_value(item.as_value()?, key).ok()
 }
 
 fn item_at<'a>(document: &'a DocumentMut, path: &str) -> Option<&'a Item> {

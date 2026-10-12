@@ -1,3 +1,4 @@
+import { useId } from "react";
 import { useI18n } from "../../i18n";
 import { Select } from "../Select";
 import { Input } from "../Input";
@@ -14,11 +15,11 @@ function dateBoundary(value: string, nextDay: boolean) {
   return date.toISOString();
 }
 
-function SessionTimeFilter({ search, disabled }: { search: SessionSearch; disabled: boolean }) {
+function SessionTimeFilter({ search, disabled, invalid, errorId }: {
+  search: SessionSearch; disabled: boolean; invalid: boolean; errorId: string | undefined;
+}) {
   const { t } = useI18n();
   const { range, from, to } = search.timeDraft;
-  const invalidDate = dateBoundary(from, false) === false || dateBoundary(to, true) === false;
-  const invalid = Boolean(from && to && from > to);
   const apply = (start: string, end: string) => {
     const activeAfter = dateBoundary(start, false), activeBefore = dateBoundary(end, true);
     if (activeAfter !== false && activeBefore !== false && (!start || !end || start <= end)) {
@@ -42,24 +43,34 @@ function SessionTimeFilter({ search, disabled }: { search: SessionSearch; disabl
       { value: "30", label: t("sessions.time.month") }, { value: "custom", label: t("sessions.time.custom") },
     ]} />
     {range === "custom" && <div className="asb-session-date-range">
-      <label>{t("sessions.time.from")}<Input type="date" value={from} disabled={disabled} aria-invalid={invalidDate || invalid}
+      <label>{t("sessions.time.from")}<Input type="date" value={from} disabled={disabled}
+        aria-invalid={invalid} aria-describedby={errorId}
         onChange={(event) => update(event.target.value, to)} /></label>
-      <label>{t("sessions.time.to")}<Input type="date" value={to} disabled={disabled} aria-invalid={invalidDate || invalid}
+      <label>{t("sessions.time.to")}<Input type="date" value={to} disabled={disabled}
+        aria-invalid={invalid} aria-describedby={errorId}
         onChange={(event) => update(from, event.target.value)} /></label>
-      {(invalidDate || invalid) && <p className="asb-warn-text" role="alert">{t(invalidDate ? "sessions.time.invalidDate" : "sessions.time.invalid")}</p>}
     </div>}
   </>;
 }
 
 export function SessionOrganizationFilters({ search, disabled }: { search: SessionSearch; disabled: boolean }) {
   const { t } = useI18n();
+  const errorId = useId();
+  const { range, from, to } = search.timeDraft;
+  const invalidDate = range === "custom"
+    && (dateBoundary(from, false) === false || dateBoundary(to, true) === false);
+  const invalidRange = range === "custom" && Boolean(from && to && from > to);
+  const invalid = invalidDate || invalidRange;
   return <>
-    <SessionTimeFilter search={search} disabled={disabled} />
+    <SessionTimeFilter search={search} disabled={disabled} invalid={invalid} errorId={invalid ? errorId : undefined} />
     <Select value={search.tag === null ? "all" : `tag:${search.tag}`} ariaLabel={t("sessions.organize.tagFilter")}
       disabled={disabled} onChange={(value) => search.changeTag(value === "all" ? null : value.slice(4))}
       options={[{ value: "all", label: t("sessions.organize.allTags") },
         ...[...new Set([...search.tags, ...(search.tag ? [search.tag] : [])])].map((tag) => ({ value: `tag:${tag}`, label: tag }))]} />
     <label className="asb-session-pin-filter"><input type="checkbox" checked={search.pinnedOnly} disabled={disabled}
       onChange={(event) => search.changePinned(event.target.checked)} />{t("sessions.organize.pinnedOnly")}</label>
+    {invalid && <p id={errorId} className="asb-field-error asb-session-filter-error" role="alert">
+      {t(invalidDate ? "sessions.time.invalidDate" : "sessions.time.invalid")}
+    </p>}
   </>;
 }

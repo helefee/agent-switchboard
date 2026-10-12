@@ -3,11 +3,14 @@ mod import;
 mod pointer;
 mod projection;
 mod shared;
+mod restore;
+pub use restore::restore_profile_models;
 mod validation;
+pub mod model_preferences;
 pub use import::import_fragment;
 pub use projection::{
-    apply, apply_profile, changes, changes_profile, diff_documents, import_filter,
-    owned_key_paths, owned_paths, validate_scopes,
+    apply, apply_profile, diff_documents, import_filter,
+    owned_key_paths, owned_paths, validate_scopes, validate_shared_write,
 };
 use serde_json::{Map, Value};
 pub use shared::{apply_visual, extra_leaf_paths, import_shared, merged_extra, SharedSnippet};

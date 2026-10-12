@@ -3,7 +3,7 @@ import type { MessageKey, MessageParams } from "../i18n/messages";
 
 export type ToastKind = "info" | "success" | "warning" | "error";
 
-/** A not-yet-translated toast string: the Toaster resolves it through the
+/** A not-yet-translated toast string: ToastText resolves it through the
  * catalog at render time, so a visible toast follows a language switch
  * instead of freezing in the language of the moment it was raised. */
 export interface ToastMessage {
@@ -22,7 +22,7 @@ export function isToastMessage(content: unknown): content is ToastMessage {
 }
 
 /** Toast copy is either ready-made React node content or a descriptor that
- * the Toaster translates on every render. */
+ * ToastText translates on every render. */
 export type ToastContent = React.ReactNode | ToastMessage;
 
 export interface Toast {

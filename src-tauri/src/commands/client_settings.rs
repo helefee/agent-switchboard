@@ -40,9 +40,13 @@ pub struct SettingSpec {
     pub key: String,
     pub label: String,
     pub group: String,
-    /// `toggle`, `slider`, `segment`, or `model`.
+    /// Control and bounds come from the core ownership catalog.
     pub control: String,
     pub options: Vec<SettingChoiceOption>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub min: Option<u64>,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub max: Option<u64>,
 }
 
 /// One official configuration family and its actual ownership boundary. This
@@ -79,6 +83,7 @@ pub struct ProviderParametersCatalog {
     pub defaults: SettingsValues,
     pub groups: Vec<String>,
     pub specs: Vec<SettingSpec>,
+    pub claude_effort_options: Vec<SettingChoiceOption>,
 }
 
 fn directory_catalog(target: AppKind) -> Vec<OfficialSettingDirectoryEntry> {
@@ -108,6 +113,10 @@ fn editor_catalog(target: AppKind, owner: SettingOwner) -> Vec<SettingSpec> {
         .map(|spec| {
             let (control, options) = match spec.control {
                 SettingControl::Toggle => ("toggle".to_string(), vec![]),
+                SettingControl::Text | SettingControl::Directory => ("text".to_string(), vec![]),
+                SettingControl::Integer { .. } => ("integer".to_string(), vec![]),
+                SettingControl::StringInteger { .. } => ("stringInteger".to_string(), vec![]),
+                SettingControl::Notifications => ("notifications".to_string(), vec![]),
                 SettingControl::Choice { presentation } => (
                     match presentation {
                         ChoiceControl::Slider => "slider",
@@ -136,6 +145,14 @@ fn editor_catalog(target: AppKind, owner: SettingOwner) -> Vec<SettingSpec> {
                     .to_string(),
                 control,
                 options,
+                min: match spec.control {
+                    SettingControl::Integer { min, .. } | SettingControl::StringInteger { min, .. } => Some(min),
+                    _ => None,
+                },
+                max: match spec.control {
+                    SettingControl::Integer { max, .. } | SettingControl::StringInteger { max, .. } => Some(max),
+                    _ => None,
+                },
             }
         })
         .collect()
@@ -169,6 +186,12 @@ pub fn get_provider_parameters_catalog(target: AppKind) -> ProviderParametersCat
     ProviderParametersCatalog {
         app: target,
         defaults: ownership::default_provider_parameters(target),
+        claude_effort_options: if target == AppKind::Claude {
+            asb_core::claude_common::model_preferences::EFFORT_LEVELS.iter().map(|level| SettingChoiceOption {
+                value: (*level).to_string(),
+                label: format!("ownership.option.effortLevel.{level}"),
+            }).collect()
+        } else { vec![] },
         groups: editor_groups(&specs),
         specs,
     }
@@ -282,12 +305,12 @@ mod tests {
                     assert!(!setting.group.is_empty());
                     assert!(matches!(
                         setting.control.as_str(),
-                        "toggle" | "slider" | "segment" | "model"
+                        "toggle" | "slider" | "segment" | "text" | "integer" | "stringInteger" | "notifications"
                     ));
-                    if matches!(setting.control.as_str(), "toggle" | "model") {
-                        assert!(setting.options.is_empty());
-                    } else {
+                    if matches!(setting.control.as_str(), "slider" | "segment") {
                         assert!(!setting.options.is_empty());
+                    } else {
+                        assert!(setting.options.is_empty());
                     }
                 }
             }

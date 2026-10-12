@@ -1,5 +1,4 @@
-import type { ReactNode } from "react";
-import { ArchiveRestore, Info, SlidersHorizontal, Stethoscope, Wrench } from "lucide-react";
+import { useId, type ReactNode } from "react";
 import type { AppSettings, UpdateChannel, UpdateCheck } from "../api/client";
 import appIcon from "../assets/app-icon.svg";
 import { SETTINGS_SECTIONS, type SettingsSection } from "../app/navigation";
@@ -7,18 +6,9 @@ import type { UpdateDownloadProgress } from "../app/useUpdateCheck";
 import { useI18n } from "../i18n";
 import { AppSettingsForm } from "../components/AppSettingsForm";
 import { Button } from "../components/Button";
-import { ModuleHeader } from "../components/WorkspaceHeader";
+import { ModuleHeader, WorkspaceHeader } from "../components/WorkspaceHeader";
+import { Tabs } from "../components/Tabs";
 import { UpdateSection } from "../components/UpdateSection";
-import { GatewayIcon } from "../components/icons";
-
-const SECTION_ICONS = {
-  application: SlidersHorizontal,
-  "client-management": Wrench,
-  gateway: GatewayIcon,
-  backups: ArchiveRestore,
-  diagnostics: Stethoscope,
-  about: Info,
-};
 
 interface SettingsPageProps {
   section: SettingsSection;
@@ -108,15 +98,17 @@ function AboutSettings(props: SettingsPageProps) {
   );
 }
 
-function SettingsPanel({ section, selected, children }: {
+function SettingsPanel({ section, selected, id, labelledBy, children }: {
   section: SettingsSection;
   selected: SettingsSection;
+  id: string;
+  labelledBy: string;
   children: ReactNode;
 }) {
   const { t } = useI18n();
   const title = t(SETTINGS_SECTIONS.find((item) => item.value === section)!.labelKey);
   return (
-    <section className="asb-panel" hidden={selected !== section} aria-label={title}>
+    <section className="asb-panel" id={id} role="tabpanel" aria-labelledby={labelledBy} hidden={selected !== section}>
       <ModuleHeader title={title} />
       {children}
     </section>
@@ -126,34 +118,41 @@ function SettingsPanel({ section, selected, children }: {
 export function SettingsPage(props: SettingsPageProps) {
   const { section, onSectionChange } = props;
   const { t } = useI18n();
+  const id = useId();
   return (
-    <section className="asb-settings-workspace" aria-label={t("nav.page.settings")}>
-      <aside className="asb-settings-sidebar">
-        <div className="asb-settings-sidebar-heading">
-          <h2 className="asb-settings-sidebar-title">{t("nav.page.settings")}</h2>
-          {props.onReturnToProviders && <Button variant="secondary" onClick={props.onReturnToProviders}>{t("settings.page.backToProviders")}</Button>}
+    <section className="asb-page-stack asb-settings-content" aria-label={t("nav.page.settings")}>
+      <WorkspaceHeader title={t("nav.page.settings")} primary={
+        <Tabs value={section} onChange={onSectionChange} scope={id} label={t("settings.page.categories.aria")}
+          tabs={SETTINGS_SECTIONS.map((tab) => ({
+            value: tab.value, label: t(tab.labelKey), controls: `${id}-${tab.value}-panel`,
+          }))} />
+      } primaryActions={props.onReturnToProviders ? (
+        <Button variant="secondary" onClick={props.onReturnToProviders}>{t("settings.page.backToProviders")}</Button>
+      ) : undefined} />
+      <SettingsPanel section="application" selected={section}
+        id={`${id}-application-panel`} labelledBy={`${id}-application-tab`}>
+        <ApplicationSettings {...props} />
+      </SettingsPanel>
+      {section === "client-management" && (
+        <div id={`${id}-client-management-panel`} role="tabpanel" aria-labelledby={`${id}-client-management-tab`}>
+          {props.clientManagement}
         </div>
-        <nav className="asb-settings-navigation" aria-label={t("settings.page.categories.aria")}>
-          {SETTINGS_SECTIONS.map(({ value, labelKey }) => {
-            const Icon = SECTION_ICONS[value];
-            return (
-              <Button key={value} variant="unstyled" aria-current={section === value ? "page" : undefined}
-                className="asb-settings-category" onClick={() => onSectionChange(value)}>
-                <span className="asb-settings-category-icon" aria-hidden="true"><Icon size={18} /></span>
-                <span>{t(labelKey)}</span>
-              </Button>
-            );
-          })}
-        </nav>
-      </aside>
-      <div className="asb-settings-content">
-        <SettingsPanel section="application" selected={section}><ApplicationSettings {...props} /></SettingsPanel>
-        {section === "client-management" && props.clientManagement}
-        <div hidden={section !== "gateway"}>{props.gateway}</div>
-        {section === "backups" && props.backups}
-        <div hidden={section !== "diagnostics"}>{props.diagnostics}</div>
-        <SettingsPanel section="about" selected={section}><AboutSettings {...props} /></SettingsPanel>
+      )}
+      <div id={`${id}-gateway-panel`} role="tabpanel" aria-labelledby={`${id}-gateway-tab`} hidden={section !== "gateway"}>
+        {props.gateway}
       </div>
+      {section === "backups" && (
+        <div id={`${id}-backups-panel`} role="tabpanel" aria-labelledby={`${id}-backups-tab`}>
+          {props.backups}
+        </div>
+      )}
+      <div id={`${id}-diagnostics-panel`} role="tabpanel" aria-labelledby={`${id}-diagnostics-tab`} hidden={section !== "diagnostics"}>
+        {props.diagnostics}
+      </div>
+      <SettingsPanel section="about" selected={section}
+        id={`${id}-about-panel`} labelledBy={`${id}-about-tab`}>
+        <AboutSettings {...props} />
+      </SettingsPanel>
     </section>
   );
 }

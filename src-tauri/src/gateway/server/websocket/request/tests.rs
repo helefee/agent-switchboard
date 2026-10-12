@@ -8,7 +8,7 @@ fn target_controls_native_fields_and_continuation_revision() {
     let state = LocalState::from_root(directory.path().join("state"));
     let gateway = GatewayController::start(&state);
     let target = state.configuration().create_codex_provider(crate::codex_common::test_draft()).unwrap();
-    let source = crate::codex_common::test_draft().into_file(uuid::Uuid::new_v4().to_string(), 0);
+    let source = crate::codex_common::test_draft().into_file(uuid::Uuid::new_v4().to_string(), 1);
     let mut primary = gateway.route_for_codex_file(&source, None).unwrap();
     primary.upstream_protocol = UpstreamProtocol::ChatCompletions;
     let mut context = ConversationContext::for_route(&primary.fingerprint);
@@ -43,7 +43,7 @@ fn parent_minimal_mode_does_not_strip_target_reasoning() {
     let target = state.configuration().create_codex_provider(target).unwrap();
     let mut source = crate::codex_common::test_draft();
     source.request_mode = ResponsesRequestMode::Minimal;
-    let source = source.into_file(uuid::Uuid::new_v4().to_string(), 0);
+    let source = source.into_file(uuid::Uuid::new_v4().to_string(), 1);
     let primary = gateway.route_for_codex_file(&source, None).unwrap();
     let text = json!({"type":"response.create", "model":format!("asb:{}/relay-model",target.profile.id),
         "input":[],"stream":true,"store":false,"reasoning":{"effort":"high"}}).to_string();

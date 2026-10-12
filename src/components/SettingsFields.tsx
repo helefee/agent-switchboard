@@ -6,6 +6,7 @@ import { Button } from "./Button";
 import { DiffView } from "./DiffView";
 import { RadioOption } from "./RadioOption";
 import { Slider } from "./Slider";
+import { SettingInput } from "./SettingInput";
 
 interface Props {
   specs: SettingSpec[];
@@ -38,16 +39,17 @@ function choiceIndex(spec: SettingSpec, value: SettingValue): number {
 export function choiceLabel(spec: SettingSpec, value: SettingValue, t: TFunction): string {
   return value.mode === "automatic"
     ? t("clientConfig.settings.automatic")
-    : catalogText(spec.options.find((option) => option.value === value.value)?.label ?? "", t) || String(value.value);
+    : catalogText(spec.options.find((option) => option.value === value.value)?.label ?? "", t)
+      || (Array.isArray(value.value) ? JSON.stringify(value.value) : String(value.value));
 }
 
 export function sameSettingValue(left: SettingValue, right: SettingValue): boolean {
   return left.mode === right.mode &&
-    (left.mode === "automatic" || (right.mode === "explicit" && left.value === right.value));
+    (left.mode === "automatic" || (right.mode === "explicit" && JSON.stringify(left.value) === JSON.stringify(right.value)));
 }
 
 function diffValue(value: SettingValue): string | null {
-  return value.mode === "automatic" ? null : String(value.value);
+  return value.mode === "automatic" ? null : Array.isArray(value.value) ? JSON.stringify(value.value) : String(value.value);
 }
 
 function actualValueLabel(spec: SettingSpec, value: SettingValue | undefined, t: TFunction): string {
@@ -86,6 +88,9 @@ type ProviderParameterRowProps = Pick<ControlProps, "spec" | "value" | "baseline
 
 function SettingControl({ spec, value, busy, onChange }: SettingControlProps) {
   const { t } = useI18n();
+  if (spec.control === "text" || spec.control === "integer" || spec.control === "stringInteger" || spec.control === "notifications") {
+    return <SettingInput spec={spec} value={value} busy={busy} onChange={onChange} />;
+  }
   if (spec.control === "slider") {
     return (
       <div className="asb-slider-control">
@@ -113,12 +118,20 @@ function SettingControl({ spec, value, busy, onChange }: SettingControlProps) {
 }
 
 function preferenceDetail(spec: SettingSpec, t: TFunction): string {
+  if (spec.key === "autoMemoryDirectory") return t("clientConfig.settings.memoryDirectoryHelp");
+  if (spec.control === "text" || spec.control === "integer" || spec.control === "stringInteger") return t("clientConfig.settings.preferenceDetailInput");
+  if (spec.control === "notifications") return t("clientConfig.settings.notificationsHelp");
   if (spec.control === "toggle") return t("clientConfig.settings.preferenceDetailToggle");
   if (spec.control === "slider") return t("clientConfig.settings.preferenceDetailSlider");
   return t("clientConfig.settings.preferenceDetailChoice");
 }
 
 function providerParameterDetail(spec: SettingSpec, t: TFunction): string {
+  if (spec.key === "alwaysThinkingEnabled") return t("clientConfig.settings.thinkingHelp");
+  if (spec.key === "service_tier") return t("clientConfig.settings.serviceTierHelp");
+  if (spec.key === "fastMode") return t("clientConfig.settings.fastModeHelp");
+  if (spec.key === "env.CLAUDE_CODE_MAX_OUTPUT_TOKENS") return t("clientConfig.settings.outputLimitHelp");
+  if (spec.control === "text" || spec.control === "integer" || spec.control === "stringInteger") return t("clientConfig.settings.parameterDetailInput");
   if (spec.control === "toggle") return t("clientConfig.settings.parameterDetailToggle");
   if (spec.control === "slider") return t("clientConfig.settings.parameterDetailSlider");
   return t("clientConfig.settings.parameterDetailChoice");
@@ -135,8 +148,8 @@ function pendingSettingMessage(spec: SettingSpec, value: SettingValue, apply: bo
   return apply ? t("clientConfig.settings.pendingApplyWrite", { value: setValue }) : t("clientConfig.settings.pendingSaveWrite", { value: setValue });
 }
 
-function scalarCode(value: boolean | string | number): string {
-  return typeof value === "string" ? JSON.stringify(value) : String(value);
+function scalarCode(value: import("../api/client").ConfigValue): string {
+  return typeof value === "string" || Array.isArray(value) ? JSON.stringify(value) : String(value);
 }
 
 function settingCode(app: AppKind, key: string, value: SettingValue | undefined, t: TFunction): string {

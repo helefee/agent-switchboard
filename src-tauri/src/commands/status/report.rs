@@ -37,10 +37,7 @@ pub(super) fn classify_match_status(
                 .clone()
                 .unwrap_or_else(|| "客户端设置".to_string()),
         },
-        Some(record) => MatchStatus::ExternallyModified {
-            at: record.at.clone(),
-        },
-        None => MatchStatus::Unmanaged,
+        _ => MatchStatus::Unmanaged,
     }
 }
 

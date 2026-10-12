@@ -3,6 +3,7 @@ use std::collections::BTreeMap;
 use crate::contracts::{AppKind, SettingValue, SettingsValues};
 use crate::ownership::directory::{CLAUDE_DIRECTORY_FAMILIES, CODEX_DIRECTORY_FAMILIES};
 use crate::ownership::provider::PROVIDER_SETTINGS;
+use crate::ownership::inputs::INPUTS;
 use crate::ownership::spec::{
     ChoiceSpec, OfficialSettingDisposition, OfficialSettingEntry, ProviderAbsentAction,
     SettingControl, SettingOwner, SettingSpec, SettingValueType, ToggleSpec,
@@ -133,6 +134,21 @@ pub fn setting_specs(app: AppKind) -> Vec<SettingSpec> {
         group: Some(spec.group),
         provider_absent_action:
             (spec.owner == SettingOwner::Provider).then_some(ProviderAbsentAction::Remove),
+    }));
+    specs.extend(INPUTS.iter().filter(|spec| spec.app == app).map(|spec| SettingSpec {
+        app,
+        key: spec.key,
+        owner: spec.owner,
+        value_type: match spec.control {
+            SettingControl::Integer { .. } => SettingValueType::PositiveInteger,
+            SettingControl::Notifications => SettingValueType::BoolOrStringArray,
+            _ => SettingValueType::String,
+        },
+        allowed_values: &[],
+        control: spec.control,
+        label: Some(spec.label),
+        group: Some(spec.group),
+        provider_absent_action: (spec.owner == SettingOwner::Provider).then_some(ProviderAbsentAction::Remove),
     }));
     specs
 }

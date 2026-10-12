@@ -17,7 +17,9 @@
 @import "./base/app-settings.css";
 @import "./base/settings-preview.css";
 @import "./base/settings-workspace.css";
+@import "./base/setting-input.css";
 @import "./base/client-management.css";
+@import "./base/field-controls.css";
 @import "./base/forms.css";
 @import "./base/tooltip-feedback.css";
 @import "./base/usage-workspace.css";
@@ -27,9 +29,11 @@
 @import "./base/session-message.css";
 @import "./base/session-library.css";
 @import "./base/gateway.css";
+@import "./base/gateway-topology.css";
 @import "./base/gateway-telemetry.css";
 @import "./base/gateway-responsive.css";
 @import "./base/overlays.css";
+@import "./base/global-information.css";
 @import "./base/behavior-responsive.css";
 @import "./base/discovery-extensions.css";
 @import "./base/extension-library.css";
@@ -42,67 +46,6 @@
   flex-direction: column;
   gap: var(--asb-space-4);
   min-width: 0;
-}
-
-.asb-nav {
-  display: flex;
-  flex-direction: row;
-  gap: var(--asb-space-unit);
-  padding: 0;
-  margin: 0;
-  list-style: none;
-}
-
-.asb-nav .asb-btn {
-  min-height: var(--asb-touch-target);
-  padding: 0 var(--asb-space-2);
-  border: 0;
-  border-radius: var(--asb-radius);
-  background: transparent;
-  color: var(--asb-text-muted);
-  font: var(--asb-text-body);
-  font-weight: 500;
-  text-align: left;
-  cursor: pointer;
-}
-
-.asb-nav .asb-btn:hover {
-  color: var(--asb-text);
-}
-
-.asb-nav .asb-btn[aria-current="page"] {
-  color: var(--asb-text);
-  font-weight: 700;
-}
-
-
-/* Workspace: banner overlay layer + the scrolling page area. Banners float
-   out of flow so their lifecycle can never reflow the page (DESIGN.md §7). */
-.asb-workspace {
-  position: relative;
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-height: 0;
-}
-
-.asb-banner-stack {
-  position: absolute;
-  top: var(--asb-space-2);
-  left: var(--asb-space-4);
-  right: var(--asb-space-4);
-  z-index: 6;
-  display: flex;
-  flex-direction: column;
-  gap: var(--asb-space-1);
-  /* Informational surfaces: banners never steal pointer events from content.
-     Actionable controls inside a banner (e.g. the store-reset entry) opt back
-     in below; the surrounding banner text stays click-through. */
-  pointer-events: none;
-}
-
-.asb-banner > .asb-btn {
-  pointer-events: auto;
 }
 
 /* Detent segments: shared-base pill row in the client-tab language. */

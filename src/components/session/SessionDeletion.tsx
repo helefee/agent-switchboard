@@ -4,7 +4,7 @@ import { useI18n } from "../../i18n";
 import { useMessageState } from "../../i18n/use-message-state";
 import { ConfirmSheet } from "../ConfirmSheet";
 import { toast, toastMessage } from "../use-toast";
-import { ToastMessageList } from "../Toaster";
+import { ToastMessageList } from "../ToastContent";
 import { sessionKey, sessionTitle } from "./session-content";
 
 export function useSessionDeletion(onRemoved: (keys: Set<string>) => void) {

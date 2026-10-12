@@ -77,6 +77,18 @@ pub fn validate_scopes(global: &Extra, fragment: &Extra) -> Result<(), String> {
     Ok(())
 }
 
+/// A client-only apply cannot overwrite leaves claimed by the active profile.
+pub fn validate_shared_write(text: &str, extra: &Extra) -> Result<(), String> {
+    let root = parse(text)?;
+    let mut fragment = Value::Object(Map::new());
+    for path in declared(&root, PROFILE_MANIFEST)? {
+        if let Some(value) = root.pointer(&path) {
+            pointer::set(&mut fragment, &pointer::decode(&path)?, value.clone())?;
+        }
+    }
+    validate_scopes(extra, fragment.as_object().expect("object root"))
+}
+
 /// Keeps only source entries that may legally live in a fragment; ownership-
 /// or shape-rejected entries are reported by name instead of silently
 /// disappearing. `env` entries filter per name, everything else per top-level
@@ -143,40 +155,6 @@ pub fn owned_key_paths(root: &Value) -> Result<BTreeSet<Vec<String>>, String> {
         .into_iter()
         .map(|path| pointer::decode(&path))
         .collect()
-}
-fn changes_with(before: &str, extra: &Extra, manifest: &str) -> Result<Vec<KeyChange>, String> {
-    let after = parse(&apply_with(before, extra, manifest)?)?;
-    let before = parse(before)?;
-    let mut paths = owned_paths(&before)?;
-    paths.extend(owned_paths(&after)?);
-    Ok(paths
-        .into_iter()
-        .filter_map(|path| {
-            let old = before.pointer(&path);
-            let new = after.pointer(&path);
-            if old == new {
-                return None;
-            }
-            Some(KeyChange {
-                key: path.clone(),
-                kind: if new.is_some() {
-                    ChangeKind::Set
-                } else {
-                    ChangeKind::Remove
-                },
-                before: old.map(|v| display(&path, v)),
-                after: new.map(|v| display(&path, v)),
-            })
-        })
-        .collect())
-}
-pub fn changes(before: &str, extra: &Extra) -> Result<Vec<KeyChange>, String> {
-    changes_with(before, extra, MANIFEST)
-}
-/// Preview-time diff for one provider profile's fragment; only profile-owned
-/// manifest paths can appear.
-pub fn changes_profile(before: &str, fragment: &Extra) -> Result<Vec<KeyChange>, String> {
-    changes_with(before, fragment, PROFILE_MANIFEST)
 }
 pub fn display(path: &str, value: &Value) -> String {
     redacted(path, value).to_string()

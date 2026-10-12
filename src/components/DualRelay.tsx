@@ -24,7 +24,6 @@ function configurationNotes(status: ConfigFileStatus | undefined, t: TFunction):
   if (!status.syntaxOk) return [t("providers.route.notes.syntaxError")];
   const notes: string[] = [];
   switch (status.matchStatus.kind) {
-    case "externallyModified": notes.push(t("providers.route.notes.externallyModified")); break;
     case "profileChanged": notes.push(t("providers.route.notes.profileChanged")); break;
     case "unmanaged": notes.push(t("providers.route.notes.unmanaged")); break;
     case "restoredBackup": notes.push(t("providers.route.notes.restoredBackup")); break;

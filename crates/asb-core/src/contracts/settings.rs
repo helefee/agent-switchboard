@@ -9,9 +9,8 @@ use serde::{Deserialize, Serialize};
 /// `ConfigValue::Number`.
 pub const MAX_EXACT_CONFIG_INTEGER: i64 = 9_007_199_254_740_991;
 
-/// A plain configuration value. The array shape exists for provider-owned
-/// lists such as `availableModels` and can never pass scalar-setting
-/// validation.
+/// A concrete configuration value; catalog validation constrains each key's
+/// shape, including Codex notification event lists.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(untagged)]
 pub enum ConfigValue {
@@ -35,15 +34,12 @@ impl ConfigValue {
                     format!("{n}")
                 }
             }
-            ConfigValue::Array(items) => {
-                let parts: Vec<String> = items.iter().map(ConfigValue::display).collect();
-                format!("[{}]", parts.join(", "))
-            }
+            ConfigValue::Array(items) => serde_json::to_string(items).expect("configuration array"),
         }
     }
 }
 
-/// The stored intent for one officially supported scalar setting.
+/// The stored intent for one officially supported setting.
 ///
 /// `Automatic` deliberately means that Agent Switchboard does not emit the
 /// setting into the client configuration. It is not a synthetic host value:

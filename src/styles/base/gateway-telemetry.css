@@ -51,7 +51,6 @@
   gap: 1px;
   height: 64px;
   margin-top: var(--asb-space-2);
-  border-bottom: 1px solid var(--asb-hairline);
 }
 
 .asb-gateway-trend-bar {
@@ -71,7 +70,7 @@
 
 .asb-gateway-latency-row {
   display: grid;
-  grid-template-columns: 2.25rem minmax(0, 1fr) auto;
+  grid-template-columns: max-content minmax(0, 1fr) auto;
   align-items: center;
   gap: var(--asb-space-2);
 }
@@ -133,8 +132,6 @@
   display: grid;
   gap: var(--asb-space-3);
   min-width: 0;
-  padding-top: var(--asb-space-4);
-  border-top: 1px solid var(--asb-hairline);
 }
 
 .asb-gateway-recent-heading {
@@ -160,6 +157,7 @@
 }
 
 .asb-gateway-recent-table .asb-table {
+  min-width: 56rem;
   border: 0;
   border-radius: 0;
   background: transparent;
@@ -168,10 +166,11 @@
 .asb-gateway-recent-table .asb-table th,
 .asb-gateway-recent-table .asb-table td { border-radius: 0; }
 
+.asb-gateway-request-app,
+.asb-gateway-request-result { white-space: nowrap; }
+
 .asb-gateway-note {
   margin: 0;
-  padding-top: var(--asb-space-2);
-  border-top: 1px solid var(--asb-hairline);
   color: var(--asb-text-muted);
   font: var(--asb-text-label);
 }

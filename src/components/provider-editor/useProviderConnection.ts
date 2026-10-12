@@ -6,7 +6,7 @@ import { fetchProviderModels, getGatewayStatus, resolveProviderEndpoints,
   type ProviderConnectionOptions, type ResponsesOptions, type UpstreamProtocol } from "../../api/client";
 import { useI18n } from "../../i18n";
 import { clientName } from "../../lib/client-name";
-import { NATIVE_PROTOCOL, PROTOCOL_LABELS, requiresGateway } from "../../lib/protocol";
+import { NATIVE_PROTOCOL, protocolLabel, requiresGateway } from "../../lib/protocol";
 
 /** The routing facts every editor needs; both provider contracts project onto it. */
 export interface ProviderConnectionInput {
@@ -40,7 +40,7 @@ function useGatewayWarning(input: ProviderConnectionInput) {
   }, [routed]);
   const minimal = input.upstreamProtocol === "responses" && input.responsesOptions?.requestMode === "minimal";
   const lead = input.app === "codex" ? t("providers.gateway.lead.official") : minimal ? t("providers.gateway.lead.minimal")
-    : t("providers.gateway.lead.protocol", { client: clientName(input.app), protocol: PROTOCOL_LABELS[NATIVE_PROTOCOL[input.app]] });
+    : t("providers.gateway.lead.protocol", { client: clientName(input.app), protocol: protocolLabel(t, NATIVE_PROTOCOL[input.app]) });
   const action = minimal ? t("providers.gateway.actionMinimal")
     : input.upstreamProtocol === NATIVE_PROTOCOL[input.app] ? t("providers.gateway.actionNative") : t("providers.gateway.actionConverted");
   const tail = address

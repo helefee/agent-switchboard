@@ -1,7 +1,5 @@
-/* 网关页：单一拓扑主图（DESIGN.md 本机网关）——客户端、网关与供应商画在
- * 同一张图上，网关节点是唯一视觉锚点，左右母线组织接线。蓝色只表示网关
- * 动作与协议转换，绿、橙、红只保留给状态语义。图表带与最近请求明细由
- * gateway-telemetry.css 拥有。 */
+/* Gateway page shell, listener facts and recovery actions. Spatial topology
+ * belongs to gateway-topology.css; instruments to gateway-telemetry.css. */
 
 .asb-gateway-stack {
   display: flex;
@@ -17,232 +15,6 @@
   font: var(--asb-text-label);
 }
 
-/* —— 拓扑主图 —— */
-
-.asb-gateway-map {
-  display: flex;
-  flex-direction: column;
-  gap: var(--asb-space-4);
-  min-width: 0;
-  padding-top: var(--asb-space-4);
-  border-top: 1px solid var(--asb-hairline);
-}
-
-.asb-gateway-map-heading {
-  display: flex;
-  align-items: baseline;
-  flex-wrap: wrap;
-  justify-content: space-between;
-  gap: var(--asb-space-3);
-}
-
-.asb-gateway-map-heading .asb-section-title {
-  margin: 0;
-}
-
-.asb-gateway-section-count {
-  color: var(--asb-text-muted);
-  font: var(--asb-text-caption);
-  font-variant-numeric: tabular-nums;
-}
-
-/* 画布：客户端列 | 客户端连线 | 左母线 | 网关节点 | 右母线 | 供应商连线 |
- * 供应商列。行数由路由数量决定（inline gridTemplateRows），节点与连线按行
- * 就位，母线与网关节点跨全部行。 */
-.asb-gateway-map-canvas {
-  display: grid;
-  grid-template-columns:
-    minmax(8rem, 1fr)
-    minmax(10rem, 1fr)
-    1px
-    minmax(21rem, 1.8fr)
-    1px
-    minmax(10rem, 1fr)
-    minmax(10rem, 1fr);
-  align-items: center;
-  column-gap: 0;
-  row-gap: var(--asb-space-4);
-  padding: var(--asb-space-3) 0;
-}
-
-.asb-gateway-connection { display: contents; }
-
-.asb-gateway-node.is-client { grid-column: 1; }
-.asb-gateway-run.is-client { grid-column: 2; }
-.asb-gateway-bus.is-left { grid-column: 3; grid-row: 1 / -1; }
-.asb-gateway-hub { grid-column: 4; }
-.asb-gateway-bus.is-right { grid-column: 5; grid-row: 1 / -1; }
-.asb-gateway-run.is-provider { grid-column: 6; }
-.asb-gateway-node.is-provider { grid-column: 7; }
-.asb-gateway-node.is-empty { grid-column: 6 / 8; margin-left: var(--asb-space-4); }
-
-/* 母线：贯穿全部行的接线背板。 */
-.asb-gateway-bus {
-  justify-self: center;
-  width: 1px;
-  height: 100%;
-  border-radius: 2px;
-  background: var(--asb-hairline-strong);
-}
-
-.asb-gateway-map.is-failure .asb-gateway-bus {
-  background: color-mix(in srgb, var(--asb-danger) 30%, var(--asb-hairline));
-}
-
-/* 连线：水平母段从节点引到母线，协议芯片坐在上面，末端箭头指向流向；
- * 协议转换用行动蓝母线，本机转发用中性线。 */
-.asb-gateway-run {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: var(--asb-space-1);
-  min-height: 48px;
-  padding-inline: var(--asb-space-2);
-}
-
-.asb-gateway-run::before {
-  content: "";
-  position: absolute;
-  inset-inline: 0;
-  top: 50%;
-  height: 1px;
-  transform: translateY(-50%);
-  background: color-mix(in srgb, var(--asb-hairline-strong) 85%, transparent);
-}
-
-.asb-gateway-run::after {
-  content: "";
-  position: absolute;
-  inset-inline-end: 0;
-  top: 50%;
-  translate: 0 -50%;
-  border-block: 4px solid transparent;
-  border-inline-start: 6px solid color-mix(in srgb, var(--asb-hairline-strong) 85%, transparent);
-}
-
-.asb-gateway-run.is-translation::before {
-  background: color-mix(in srgb, var(--asb-action) 48%, transparent);
-}
-
-.asb-gateway-run.is-translation::after {
-  border-inline-start-color: color-mix(in srgb, var(--asb-action) 48%, transparent);
-}
-
-.asb-gateway-run > * { position: relative; }
-
-.asb-gateway-chip {
-  display: inline-flex;
-  align-items: center;
-  min-height: 1.6rem;
-  padding-inline: var(--asb-space-2);
-  border: 1px solid var(--asb-hairline);
-  border-radius: var(--asb-radius-pill);
-  background: var(--asb-content);
-  color: var(--asb-text-muted);
-  font: var(--asb-text-caption);
-  white-space: nowrap;
-}
-
-.asb-gateway-run.is-translation .asb-gateway-chip {
-  border-color: color-mix(in srgb, var(--asb-action) 28%, var(--asb-hairline));
-  background: color-mix(in srgb, var(--asb-action) 8%, var(--asb-content));
-  color: var(--asb-action);
-}
-
-.asb-gateway-run-count {
-  position: absolute;
-  top: calc(50% + var(--asb-space-3));
-  display: inline-flex;
-  align-items: center;
-  min-height: 1.4rem;
-  padding-inline: var(--asb-space-1);
-  background: var(--asb-content);
-  color: var(--asb-text-muted);
-  font: var(--asb-text-caption);
-  font-weight: 600;
-  font-variant-numeric: tabular-nums;
-}
-
-/* —— 节点 —— */
-
-.asb-gateway-node { min-width: 0; }
-
-.asb-gateway-node.is-client {
-  display: flex;
-  align-items: center;
-  gap: var(--asb-space-2);
-  padding: var(--asb-space-1) 0;
-}
-
-.asb-gateway-node-logo {
-  flex: none;
-  width: 32px;
-  height: 32px;
-  padding: var(--asb-space-unit);
-  border: 1px solid var(--asb-hairline);
-  border-radius: var(--asb-radius);
-  background: var(--asb-text-on-action);
-  object-fit: contain;
-}
-
-.asb-gateway-node.is-client > div {
-  display: grid;
-  gap: var(--asb-space-hairline);
-  min-width: 0;
-}
-
-.asb-gateway-node-caption {
-  color: var(--asb-text-muted);
-  font: var(--asb-text-caption);
-}
-
-.asb-gateway-node strong {
-  overflow-wrap: anywhere;
-  color: var(--asb-text);
-  font: var(--asb-text-body);
-  font-weight: 600;
-}
-
-.asb-gateway-node.is-provider {
-  display: grid;
-  gap: var(--asb-space-hairline);
-  padding-left: var(--asb-space-2);
-}
-
-.asb-gateway-route-protocol {
-  color: var(--asb-text-muted);
-  font: var(--asb-text-caption);
-  overflow-wrap: anywhere;
-}
-
-.asb-gateway-node.is-empty {
-  display: grid;
-  gap: var(--asb-space-1);
-  align-self: center;
-  padding: var(--asb-space-3);
-  border: 1px dashed var(--asb-hairline-strong);
-  border-radius: var(--asb-radius);
-  color: var(--asb-text-muted);
-  font: var(--asb-text-label);
-}
-
-.asb-gateway-mode {
-  display: inline-flex;
-  align-items: center;
-  justify-self: start;
-  min-height: 1.4rem;
-  margin-top: var(--asb-space-hairline);
-  color: var(--asb-text-muted);
-  font: var(--asb-text-caption);
-  font-weight: 600;
-  white-space: nowrap;
-}
-
-.asb-gateway-mode.is-translation {
-  color: var(--asb-link);
-}
-
 /* —— 网关节点：全图唯一视觉锚点 —— */
 
 .asb-gateway-hub {
@@ -251,41 +23,22 @@
   gap: var(--asb-space-4);
   align-self: center;
   min-width: 0;
-  margin-inline: var(--asb-space-2);
-  padding: var(--asb-space-4);
-  border: 1px solid var(--asb-hairline);
-  border-radius: var(--asb-radius);
-  background: var(--asb-content-muted);
-}
-
-.asb-gateway-hub.is-failure {
-  border-color: color-mix(in srgb, var(--asb-danger) 30%, var(--asb-hairline));
-  background: color-mix(in srgb, var(--asb-danger) 4%, var(--asb-content));
+  padding: var(--asb-space-2);
 }
 
 .asb-gateway-hub-identity {
   display: flex;
+  flex-direction: column;
   align-items: center;
-  gap: var(--asb-space-3);
+  gap: var(--asb-space-2);
   min-width: 0;
-}
-
-.asb-gateway-hub-symbol {
-  display: grid;
-  place-items: center;
-  flex: none;
-  width: var(--asb-space-6);
-  height: var(--asb-space-6);
-  border: 1px solid var(--asb-hairline);
-  border-radius: var(--asb-radius);
-  background: var(--asb-content);
-  color: var(--asb-text-muted);
 }
 
 .asb-gateway-hub-copy {
   display: grid;
   gap: var(--asb-space-hairline);
   min-width: 0;
+  justify-items: center;
 }
 
 .asb-gateway-kicker {
@@ -367,16 +120,20 @@
   color: var(--asb-danger);
   font: var(--asb-text-body);
   font-weight: 600;
+  overflow-wrap: anywhere;
 }
+
+.asb-gateway-hub-failure { display: grid; gap: var(--asb-space-1); }
+.asb-gateway-hub-detail { margin: 0; color: var(--asb-text-muted); font: var(--asb-text-caption); overflow-wrap: anywhere; }
 
 .asb-gateway-hub-actions {
   display: flex;
   flex-wrap: wrap;
   gap: var(--asb-space-2);
   justify-content: flex-end;
-  padding-top: var(--asb-space-3);
-  border-top: 1px solid var(--asb-hairline);
 }
+
+.asb-gateway-hub.is-failure .asb-gateway-device { color: var(--asb-danger); }
 
 /* —— 主图内嵌指引：修复指引与恢复阻塞附着在图内，不另起平级告警卡 —— */
 
@@ -384,16 +141,12 @@
   display: flex;
   flex-direction: column;
   gap: var(--asb-space-2);
-  padding-top: var(--asb-space-3);
-  border-top: 1px solid var(--asb-hairline);
 }
 
 .asb-gateway-guidance-item {
   display: flex;
   flex-direction: column;
   gap: var(--asb-space-2);
-  padding-left: var(--asb-space-3);
-  border-left: 2px solid var(--asb-danger);
 }
 
 /* Repair instructions are prose: capped at the reading measure (S4). */
@@ -420,11 +173,10 @@
 
 .asb-gateway-error {
   margin: 0;
-  color: var(--asb-text-muted);
+  color: var(--asb-danger);
   font: var(--asb-text-body);
+  overflow-wrap: anywhere;
 }
-
-.asb-gateway-error { color: var(--asb-danger); }
 
 .asb-gateway-unavailable {
   display: flex;
@@ -457,6 +209,6 @@
   gap: var(--asb-space-5);
 }
 
-.asb-gateway-loading > .asb-skeleton:nth-child(1) { height: 340px; }
+.asb-gateway-loading > .asb-skeleton:nth-child(1) { height: 420px; }
 .asb-gateway-loading > .asb-skeleton:nth-child(2) { height: 150px; }
 .asb-gateway-loading > .asb-skeleton:nth-child(3) { height: 120px; }

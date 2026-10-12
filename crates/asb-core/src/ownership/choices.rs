@@ -43,6 +43,40 @@ const CODEX_REASONING_EFFORT_OPTIONS: &[ChoiceOption] = &[
 
 pub const CODEX_CHOICES: &[ChoiceSpec] = &[
     ChoiceSpec {
+        key: "tui.alternate_screen",
+        owner: SettingOwner::Client,
+        label: "ownership.label.tuiAlternate_screen",
+        group: "ownership.group.terminalUi",
+        control: ChoiceControl::Segment,
+        options: &[
+            ChoiceOption { value: "auto", label: "ownership.option.tuiAlternate_screen.auto" },
+            ChoiceOption { value: "always", label: "ownership.option.tuiAlternate_screen.always" },
+            ChoiceOption { value: "never", label: "ownership.option.tuiAlternate_screen.never" },
+        ],
+    },
+    ChoiceSpec {
+        key: "tui.resume_cwd",
+        owner: SettingOwner::Client,
+        label: "ownership.label.tuiResume_cwd",
+        group: "ownership.group.terminalUi",
+        control: ChoiceControl::Segment,
+        options: &[
+            ChoiceOption { value: "current", label: "ownership.option.tuiResume_cwd.current" },
+            ChoiceOption { value: "session", label: "ownership.option.tuiResume_cwd.session" },
+        ],
+    },
+    ChoiceSpec {
+        key: "model_auto_compact_token_limit_scope",
+        owner: SettingOwner::Provider,
+        label: "ownership.label.autoCompactScope",
+        group: "ownership.group.modelBehavior",
+        control: ChoiceControl::Segment,
+        options: &[
+            ChoiceOption { value: "total", label: "ownership.option.autoCompactScope.total" },
+            ChoiceOption { value: "body_after_prefix", label: "ownership.option.autoCompactScope.body_after_prefix" },
+        ],
+    },
+    ChoiceSpec {
         key: "model_reasoning_effort",
         owner: SettingOwner::Provider,
         label: "ownership.label.model_reasoning_effort",
@@ -187,10 +221,6 @@ pub const CODEX_CHOICES: &[ChoiceSpec] = &[
         control: ChoiceControl::Segment,
         options: &[
             ChoiceOption {
-                value: "untrusted",
-                label: "ownership.option.approval_policy.untrusted",
-            },
-            ChoiceOption {
                 value: "on-request",
                 label: "ownership.option.approval_policy.on-request",
             },
@@ -224,6 +254,10 @@ pub const CODEX_CHOICES: &[ChoiceSpec] = &[
         group: "ownership.group.safetyAndApprovals",
         control: ChoiceControl::Segment,
         options: &[
+            ChoiceOption {
+                value: "mxc",
+                label: "ownership.option.windowsSandbox.mxc",
+            },
             ChoiceOption {
                 value: "unelevated",
                 label: "ownership.option.windowsSandbox.unelevated",
@@ -282,35 +316,6 @@ pub const CODEX_CHOICES: &[ChoiceSpec] = &[
     },
 ];
 pub const CLAUDE_CHOICES: &[ChoiceSpec] = &[
-    ChoiceSpec {
-        key: "effortLevel",
-        owner: SettingOwner::Provider,
-        label: "ownership.label.effortLevel",
-        group: "ownership.group.modelBehavior",
-        control: ChoiceControl::Slider,
-        options: &[
-            ChoiceOption {
-                value: "low",
-                label: "ownership.option.effortLevel.low",
-            },
-            ChoiceOption {
-                value: "medium",
-                label: "ownership.option.effortLevel.medium",
-            },
-            ChoiceOption {
-                value: "high",
-                label: "ownership.option.effortLevel.high",
-            },
-            ChoiceOption {
-                value: "xhigh",
-                label: "ownership.option.effortLevel.xhigh",
-            },
-            ChoiceOption {
-                value: "max",
-                label: "ownership.option.effortLevel.max",
-            },
-        ],
-    },
     ChoiceSpec {
         key: "outputStyle",
         owner: SettingOwner::Provider,

@@ -38,6 +38,10 @@ Install and configure the Codex or Claude Code client you want to use, and have 
 
 Missing configuration, syntax errors, and external edits surface specific explanations. Errors whose meaning cannot be established are never silently overwritten.
 
+Client configuration follows the current [Codex configuration reference](https://learn.chatgpt.com/docs/config-file/config-reference) and [Claude Code settings reference](https://code.claude.com/docs/en/settings-reference). Codex terminal screen and resume-directory modes use strings; notifications accept a boolean or event-name list. Provider parameters include service tier and compaction thresholds. Claude parameters include compaction window, fast mode, request timeout, and output limit; shared preferences include response language and memory directory.
+
+Claude persistent reasoning effort is edited per model under **Provider → Runtime parameters**, using `modelSettings.<model>.effortLevel` with `low`, `medium`, `high`, or `xhigh`. It uses the existing profile fragment and leaf ownership manifest. Gateway projection maps upstream model identifiers to client roles; stopping takeover restores the previous route's declared model preferences. Shared extra configuration uses literal client model identifiers and cannot overwrite an active profile's claimed paths. The retired user-level top-level `effortLevel`, per-model effort `max`, Codex boolean terminal modes, and `approval_policy="untrusted"` are rejected; no value is guessed or converted. Existing invalid stored values require explicit correction. Writes remain previewed, confirmed, backed up, and recoverable.
+
 ## Interface preview
 
 These screenshots show the **actual 0.2.8 frontend**, rendered with mock data in an isolated headless browser. Providers, models, balances, usage, and probe records are fictional demonstrations, not measurements or claims about real services. Capture does not contact model services or read personal configuration or credentials. The screenshots show the Chinese interface.
@@ -185,7 +189,7 @@ Cloud restoration replaces the application's provider profiles, client settings,
 
 ### Prerequisites
 
-Use Node.js **22.12+ (22.x)**, npm, and Rust. See the [Tauri platform prerequisites](https://v2.tauri.app/start/prerequisites/) for system dependencies, with the following project-specific toolchain and installer requirements.
+Use the Node.js version pinned in [.node-version](.node-version), npm, and Rust. See the [Tauri platform prerequisites](https://v2.tauri.app/start/prerequisites/) for system dependencies, with the following project-specific toolchain and installer requirements.
 
 | Platform | Project requirements |
 | --- | --- |
@@ -226,8 +230,9 @@ npm run dev:desktop
 | `npm run dev:frontend` | Vite only; running it alone does not provide the full local business functionality |
 | `npm run build` | TypeScript checking and a production frontend build in `dist/` |
 | `npm run typecheck` | TypeScript checking only |
+| `npm run ci` | Shared local/remote gate: notes, frontend tests, locked Rust workspace tests, frontend build; logs in `.tmp/ci-*/` |
 
-Development uses the real local backend. Use isolated directories when verifying configuration writes, and follow [AGENTS.md](AGENTS.md) before running checks. There is currently no `test` script in `package.json`.
+Development uses the real local backend. Use isolated directories when verifying configuration writes, and follow [AGENTS.md](AGENTS.md) before running checks. After `npm ci`, explicitly run `npm run ci` to rehearse the same source checks as GitHub and CNB. Tests receive isolated client/application paths; opt-in live-provider tests remain ignored. Installer builds still run on their native operating systems.
 
 ### Build installers
 
@@ -241,6 +246,8 @@ Run on the corresponding target operating system:
 | Linux | `npm run tauri:build:linux` |
 
 The two Windows commands wrap NSIS or MSI engines in a custom `.exe` installer under `target/release/bundle/installer/`. macOS and Linux packages are in format-specific directories under `target/release/bundle/`. Setting `CARGO_TARGET_DIR` changes the output root accordingly.
+
+The Windows workflow also builds MSIX. Running `npm run msix:package` locally requires the Windows SDK; for a standalone SDK, set the standard `WindowsSdkVerBinPath` environment variable to the version directory containing `x64/MakeAppx.exe`.
 
 The workspace version in [Cargo.toml](Cargo.toml) owns the application version. See [package.json](package.json) for all scripts and the [packaging workflow](.github/workflows/package.yml) for the platform matrix and release steps. Local builds do not automatically publish a release.
 

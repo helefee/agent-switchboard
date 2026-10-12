@@ -18,7 +18,7 @@ pub(crate) fn apply_claude_model_mapping(
         return Ok(body.to_vec());
     };
     let normalized = strip_one_m_suffix(original);
-    let mapped = map_model(normalized, primary_model, settings);
+    let mapped = map_model(normalized, primary_model, settings)?;
     let outgoing = strip_one_m_suffix(mapped).to_string();
     if outgoing == original {
         return Ok(body.to_vec());
@@ -32,19 +32,14 @@ fn map_model<'a>(
     original: &'a str,
     primary_model: Option<&'a str>,
     settings: Option<&'a ClaudeModelSettings>,
-) -> &'a str {
-    if original == "asb-claude-subagent" {
-        return settings
-            .and_then(|value| value.subagent_model.as_deref())
-            .or(primary_model)
-            .unwrap_or("claude-sonnet-5");
-    }
-    if original == "asb-claude-primary" {
-        return primary_model.unwrap_or("claude-sonnet-5");
+) -> Result<&'a str, super::TransformError> {
+    if let Some(model) = asb_core::adapter::claude::gateway_model_source(original, primary_model, settings)
+        .map_err(super::TransformError)? {
+        return Ok(model);
     }
     if let Some(subagent) = settings.and_then(|value| value.subagent_model.as_deref()) {
         if strip_one_m_suffix(subagent) == original {
-            return original;
+            return Ok(original);
         }
     }
     let mapped = if original.to_ascii_lowercase().contains("fable") {
@@ -60,13 +55,7 @@ fn map_model<'a>(
     } else {
         None
     };
-    mapped.or(primary_model).unwrap_or_else(|| match original {
-        "asb-claude-haiku" => "claude-haiku-4-5",
-        "asb-claude-sonnet" => "claude-sonnet-5",
-        "asb-claude-opus" => "claude-opus-5",
-        "asb-claude-fable" => "claude-fable-5",
-        _ => original,
-    })
+    Ok(mapped.or(primary_model).unwrap_or(original))
 }
 
 fn strip_one_m_suffix(model: &str) -> &str {
@@ -134,6 +123,16 @@ mod tests {
         let mapped: Value = serde_json::from_slice(&bytes).unwrap();
         assert_eq!(mapped["model"], "vendor-model");
         assert_eq!(mapped["stream"], true);
+    }
+
+    #[test]
+    fn internal_roles_require_configured_models_instead_of_hardcoded_defaults() {
+        for model in ["asb-claude-primary", "asb-claude-haiku", "asb-claude-unknown"] {
+            let body = json!({"model":model});
+            assert!(apply_claude_model_mapping(&serde_json::to_vec(&body).unwrap(), None, None).is_err());
+        }
+        assert_eq!(model(json!({"model":"asb-claude-fable"})), "vendor-opus");
+        assert_eq!(model(json!({"model":"asb-claude-subagent"})), "vendor-agent");
     }
 
     #[test]

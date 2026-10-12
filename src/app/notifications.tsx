@@ -2,7 +2,7 @@ import type { AppKind, LocalizedMessage } from "../api/client";
 import { useI18n } from "../i18n";
 import { errorText, localizedMessageText } from "../i18n/errors";
 import { toast, toastMessage, type ToastContent } from "../components/use-toast";
-import { ToastText } from "../components/Toaster";
+import { ToastText } from "../components/ToastContent";
 import { clientName } from "../lib/client-name";
 
 /** Renders one structured warning row in the current language.

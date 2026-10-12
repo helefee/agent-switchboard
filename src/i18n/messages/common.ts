@@ -1,7 +1,7 @@
 import type { MessageEntry } from "../types";
 
 /**
- * Application frame: navigation, banners, busy overlay, shared controls and
+ * Application frame: navigation, global information, shared controls and
  * generic actions. Page/section keys derive their prefix from stable ids;
  * display text lives only here.
  */
@@ -30,16 +30,13 @@ export const messages = {
   "nav.section.skill": ["Skills", "Skills"],
   "nav.section.mcp": ["MCP", "MCP"],
 
-  "shell.beta.aria": ["Beta 版本", "Beta release"],
   "shell.devBadge": ["浏览器开发 · 本机后端", "Browser dev · local backend"],
   "shell.nav.aria": ["主导航", "Primary navigation"],
   "shell.busy": ["处理中", "Working"],
-  "shell.busy.aria": ["处理中", "Working"],
-
-  "shell.banner.aria": ["操作状态", "Operation status"],
-  "shell.banner.error.aria": ["操作错误", "Operation error"],
+  "shell.information.aria": ["全局信息", "Global information"],
+  "shell.information.show": ["查看全局信息（{count} 条）", "View global information ({count})"],
+  "shell.information.close": ["收起全局信息", "Close global information"],
   "shell.banner.repairStore": ["一键智能修复", "Repair provider data"],
-  "shell.banner.settingsUnavailable.aria": ["应用设置不可用", "App settings unavailable"],
   "shell.banner.settingsUnavailable": ["应用设置不可用：{detail}", "App settings unavailable: {detail}"],
   "shell.banner.repair": ["一键修复", "Quick repair"],
 

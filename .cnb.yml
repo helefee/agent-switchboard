@@ -15,6 +15,7 @@ $:
           script: |
             set -e
             export DEBIAN_FRONTEND=noninteractive
+            node_version="$(cat .node-version)"
             # CNB 运行器位于境内机房：apt 走腾讯镜像（失败退回阿里云）、Node 用
             # 腾讯镜像压缩包、rust 与 crates.io 走 rsproxy、npm 走 npmmirror；
             # 基础镜像没有 CA 证书包，先关闭 apt 的 TLS 校验装好 ca-certificates
@@ -42,7 +43,6 @@ $:
             apt-get install -y --no-install-recommends \
               libayatana-appindicator3-dev libgtk-3-dev librsvg2-dev \
               libssl-dev libwebkit2gtk-4.1-dev libxdo-dev xdg-utils
-            node_version=22.23.2
             curl -fsSL "https://mirrors.tencent.com/nodejs-release/v${node_version}/node-v${node_version}-linux-x64.tar.xz" \
               | tar -xJ -C /usr/local --strip-components=1
             node --version
@@ -72,8 +72,7 @@ $:
             set -e
             export PATH="/root/.cargo/bin:$PATH"
             export RUSTUP_TOOLCHAIN=stable
-            cargo test --workspace
-            npm run build
+            npm run ci
         - name: 构建与汇集 Linux 安装包
           script: |
             set -e

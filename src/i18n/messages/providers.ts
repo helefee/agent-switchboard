@@ -50,7 +50,6 @@ export const messages = {
   "providers.route.notes.readError": ["读取失败：{detail}", "Failed to read: {detail}"],
   "providers.route.notes.missing": ["未找到配置文件", "Configuration file not found"],
   "providers.route.notes.syntaxError": ["配置语法错误", "Configuration syntax error"],
-  "providers.route.notes.externallyModified": ["配置已被外部修改，与上次切换不一致", "The configuration was modified externally and no longer matches the last switch"],
   "providers.route.notes.profileChanged": ["档案或客户端偏好已更改，尚未应用", "The profile or client preferences changed and have not been applied"],
   "providers.route.notes.unmanaged": ["当前配置未匹配已存档案", "The current configuration matches no stored profile"],
   "providers.route.notes.restoredBackup": ["当前配置来自已恢复的备份", "The current configuration comes from a restored backup"],

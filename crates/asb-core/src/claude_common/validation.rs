@@ -4,6 +4,7 @@ use crate::{
     AppKind,
 };
 pub fn validate(extra: &Extra) -> Result<(), String> {
+    super::model_preferences::validate(extra)?;
     let value = Value::Object(extra.clone());
     if value.to_string().len() > 256 * 1024 {
         return Err("Claude 额外通用配置超过 256 KiB".into());

@@ -47,7 +47,6 @@ export type MatchStatus =
   | { kind: "matchesProfile"; profileId: string; profileName: string }
   | { kind: "profileChanged"; profileName: string }
   | { kind: "restoredBackup"; at: string }
-  | { kind: "externallyModified"; at: string }
   | { kind: "unmanaged" }
   | { kind: "unknown" };
 

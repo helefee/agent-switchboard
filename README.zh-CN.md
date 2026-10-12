@@ -38,6 +38,10 @@ Windows 自绘安装器需要 .NET Framework 4.8.1；应用需要 Microsoft Edge
 
 配置缺失、语法错误或外部修改会显示具体原因；无法确认含义的错误不会被静默覆盖。
 
+客户端配置以当前 [Codex 配置参考](https://learn.chatgpt.com/docs/config-file/config-reference)和 [Claude Code 设置参考](https://code.claude.com/docs/en/settings-reference)为准。Codex 终端屏幕和恢复目录采用枚举，通知支持布尔值或事件名数组；供应商参数增加服务档位和压缩阈值。Claude 参数包含压缩窗口、快速模式、请求超时与输出限制，通用偏好包含回复语言与记忆目录。
+
+Claude 持久化推理强度在“供应商 → 运行参数”按模型编辑，写入 `modelSettings.<model>.effortLevel`，仅支持 `low`、`medium`、`high`、`xhigh`。复用现有供应商片段及逐叶所有权清单，网关投影同步映射客户端模型角色，退出接管恢复原路由声明的模型偏好。通用额外配置使用客户端字面模型标识，不能覆盖活动供应商已声明的路径。旧用户级顶层 `effortLevel`、按模型强度 `max`、Codex 布尔终端模式和 `approval_policy="untrusted"` 被明确拒绝，不猜测转换；存储中的失效值须显式修正。真实写入继续经过预览、确认、备份和可恢复事务。
+
 ## 界面预览
 
 以下截图来自 **0.2.8 的真实前端界面**，在独立无头浏览器中使用模拟数据渲染。供应商、模型、余额、用量和检测记录均为演示内容，不代表真实服务或实测结果；截图过程不连接模型服务，也不读取个人配置或凭据。
@@ -183,7 +187,7 @@ Codex 的默认子代理模型可选择其他已保存、未绑定账号的档�
 
 ### 环境准备
 
-使用 Node.js **22.12+（22.x）**、npm 和 Rust。平台系统依赖参见 [Tauri 官方说明](https://v2.tauri.app/start/prerequisites/)；本项目的 Rust 工具链和安装器要求如下。
+使用 [.node-version](.node-version) 固定版本的 Node.js、npm 和 Rust。平台系统依赖参见 [Tauri 官方说明](https://v2.tauri.app/start/prerequisites/)；本项目的 Rust 工具链和安装器要求如下。
 
 | 平台 | 项目要求 |
 | --- | --- |
@@ -224,8 +228,9 @@ npm run dev:desktop
 | `npm run dev:frontend` | 仅启动 Vite；单独运行不提供完整的本机业务功能 |
 | `npm run build` | TypeScript 检查与前端生产构建，输出到 `dist/` |
 | `npm run typecheck` | 仅检查 TypeScript 类型 |
+| `npm run ci` | 本地与远程共用门禁：笔记、前端测试、锁定依赖的 Rust 工作区测试及前端构建；日志在 `.tmp/ci-*/` |
 
-开发入口使用真实本机后端。涉及配置写入的开发验证须使用隔离目录；执行检查前遵循 [AGENTS.md](AGENTS.md)。当前 `package.json` 没有 `test` 脚本。
+开发入口使用真实本机后端。涉及配置写入的开发验证须使用隔离目录；执行检查前遵循 [AGENTS.md](AGENTS.md)。安装依赖 `npm ci` 后，显式执行 `npm run ci` 即可在开发机预演 GitHub 与 CNB 的同一组源码检查。测试自动隔离客户端及应用配置路径，真实供应商在线测试仍保持忽略；安装包仍在各自原生系统构建。
 
 ### 构建安装包
 
@@ -239,6 +244,8 @@ npm run dev:desktop
 | Linux | `npm run tauri:build:linux` |
 
 Windows 两个命令分别将 NSIS 或 MSI 引擎封装为自绘 `.exe` 安装器，成品位于 `target/release/bundle/installer/`。macOS 和 Linux 安装包位于 `target/release/bundle/` 下的相应格式目录。设置 `CARGO_TARGET_DIR` 时输出跟随该目录。
+
+Windows 远程流水线还构建 MSIX。开发机执行 `npm run msix:package` 需要 Windows SDK；独立 SDK 可设置标准环境变量 `WindowsSdkVerBinPath`，指向包含 `x64/MakeAppx.exe` 的版本目录。
 
 版本由 [Cargo.toml](Cargo.toml) 的工作区版本统一管理。完整脚本见 [package.json](package.json)，各平台构建矩阵与发布步骤见 [打包工作流](.github/workflows/package.yml)。本地构建不会自动发布版本。
 

@@ -12,7 +12,7 @@ export function SessionSearchControls({ search, disabled }: {
   const { t } = useI18n();
   return <div className="asb-session-search-controls">
     <form className="asb-session-search-form" onSubmit={(event) => { event.preventDefault(); search.submit(); }}>
-      <textarea className="asb-input" rows={1} value={search.draft} disabled={disabled}
+      <textarea className="asb-session-search-query" rows={1} value={search.draft} disabled={disabled}
         aria-label={t("sessions.search.aria")} placeholder={t("sessions.search.placeholder")}
         onChange={(event) => search.setDraft(event.target.value)} onKeyDown={(event) => {
           if (event.key === "Enter" && !event.shiftKey && !event.nativeEvent.isComposing) {

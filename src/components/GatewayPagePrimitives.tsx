@@ -53,11 +53,12 @@ export function CopyGatewayAddressButton({ value }: { value: string }) {
 }
 
 /** 网关页骨架的唯一拥有者：模块标题加「拓扑主图—图表带—最近请求」内容栈。 */
-export function GatewayPanel({ children }: { children: ReactNode }) {
+export function GatewayPanel({ children, controls }: { children: ReactNode; controls?: ReactNode }) {
   const { t } = useI18n();
   return (
     <section className="asb-panel asb-gateway-panel" aria-label={t("gateway.panelAriaLabel")}>
-      <ModuleHeader title={t("gateway.title")} primary={<p className="asb-gateway-intro">{t("gateway.intro")}</p>} />
+      <ModuleHeader title={t("gateway.title")} primary={<p className="asb-gateway-intro">{t("gateway.intro")}</p>}
+        primaryActions={controls} />
       <div className="asb-gateway-stack">{children}</div>
     </section>
   );

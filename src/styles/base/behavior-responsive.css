@@ -26,10 +26,6 @@
 
 /* Responsive layout */
 @media (max-width: 900px) {
-  .asb-topbar {
-    flex-wrap: wrap;
-  }
-
   .asb-session-layout {
     grid-template-columns: 1fr;
     grid-template-rows: auto minmax(0, 1fr);

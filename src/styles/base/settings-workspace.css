@@ -1,77 +1,7 @@
-.asb-settings-workspace {
-  display: grid;
-  grid-template-columns: 12rem minmax(0, 1fr);
-  align-items: start;
-  gap: var(--asb-space-5);
-  min-width: 0;
-}
-
-.asb-settings-sidebar {
-  position: sticky;
-  top: var(--asb-space-1);
-  display: flex;
-  flex-direction: column;
-  gap: var(--asb-space-4);
-  min-width: 0;
-}
-
-.asb-settings-sidebar-heading {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr);
-  align-items: center;
-  gap: var(--asb-space-2);
-  padding: var(--asb-space-2);
-}
-
-.asb-settings-sidebar-heading > .asb-btn { grid-column: 1 / -1; }
-
-/* The sidebar's page title: the workspace-title type step on the sidebar's
- * own surface, an owned class rather than the header component's internals. */
-.asb-settings-sidebar-title {
-  margin: 0;
-  font: var(--asb-text-title);
-  letter-spacing: -0.025em;
-}
-
-.asb-settings-navigation {
-  display: grid;
-  gap: var(--asb-space-unit);
-}
-
-.asb-settings-category {
-  display: flex;
-  align-items: center;
-  gap: var(--asb-space-2);
-  min-height: var(--asb-touch-target);
-  padding: var(--asb-space-2);
-  border: 1px solid transparent;
-  border-radius: var(--asb-radius);
-  background: transparent;
-  color: var(--asb-text-muted);
-  font: var(--asb-text-body);
-  text-align: left;
-  transition: background var(--asb-motion-press) var(--asb-easing), color var(--asb-motion-press) var(--asb-easing);
-}
-
-.asb-settings-category-icon { display: flex; flex: none; }
-
-.asb-settings-category:nth-child(4) { margin-top: var(--asb-space-3); }
-
-.asb-settings-category:hover {
-  background: var(--asb-content-muted);
-  color: var(--asb-text);
-}
-
-.asb-settings-category[aria-current="page"] {
-  background: var(--asb-row-selected);
-  color: var(--asb-link);
-  font-weight: 600;
-}
-
-.asb-settings-category:active {
-  background: var(--asb-surface-rail);
-}
-
+/* Settings workspace: the page follows the workspace-header contract — the
+   section tabs ride the header's primary row, panels stack below. The content
+   element doubles as the settings-content container scope for responsive
+   rules inside preference panels. */
 .asb-settings-content {
   min-width: 0;
   container: settings-content / inline-size;
@@ -438,29 +368,6 @@
   display: flex;
   flex-direction: column;
   gap: var(--asb-space-4);
-}
-
-@media (max-width: 900px) {
-  .asb-settings-workspace {
-    grid-template-columns: minmax(0, 1fr);
-  }
-
-  .asb-settings-sidebar {
-    position: static;
-  }
-
-  .asb-settings-sidebar-heading {
-    grid-template-columns: minmax(0, 1fr) auto;
-    padding: 0;
-  }
-
-  .asb-settings-sidebar-heading > .asb-btn { grid-column: auto; }
-
-  .asb-settings-navigation {
-    grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
-  }
-
-  .asb-settings-category:nth-child(4) { margin-top: 0; }
 }
 
 @media (max-width: 680px) {

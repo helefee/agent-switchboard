@@ -28,12 +28,6 @@ pub const CODEX_TOGGLES: &[ToggleSpec] = &[
         group: "ownership.group.terminalUi",
     },
     ToggleSpec {
-        key: "tui.notifications",
-        owner: SettingOwner::Client,
-        label: "ownership.label.tuiNotifications",
-        group: "ownership.group.terminalUi",
-    },
-    ToggleSpec {
         key: "tui.raw_output_mode",
         owner: SettingOwner::Client,
         label: "ownership.label.tuiRaw_output_mode",
@@ -116,18 +110,6 @@ pub const CODEX_TOGGLES: &[ToggleSpec] = &[
         owner: SettingOwner::Client,
         label: "ownership.label.analyticsEnabled",
         group: "ownership.group.privacyAndData",
-    },
-    ToggleSpec {
-        key: "tui.alternate_screen",
-        owner: SettingOwner::Client,
-        label: "ownership.label.tuiAlternate_screen",
-        group: "ownership.group.terminalUi",
-    },
-    ToggleSpec {
-        key: "tui.resume_cwd",
-        owner: SettingOwner::Client,
-        label: "ownership.label.tuiResume_cwd",
-        group: "ownership.group.terminalUi",
     },
     ToggleSpec {
         key: "features.apps",
@@ -222,6 +204,18 @@ pub const CODEX_TOGGLES: &[ToggleSpec] = &[
 ];
 
 pub const CLAUDE_TOGGLES: &[ToggleSpec] = &[
+    ToggleSpec {
+        key: "fastMode",
+        owner: SettingOwner::Provider,
+        label: "ownership.label.fastMode",
+        group: "ownership.group.modelBehavior",
+    },
+    ToggleSpec {
+        key: "fastModePerSessionOptIn",
+        owner: SettingOwner::Client,
+        label: "ownership.label.fastModePerSessionOptIn",
+        group: "ownership.group.modelBehavior",
+    },
     ToggleSpec {
         key: "alwaysThinkingEnabled",
         owner: SettingOwner::Provider,

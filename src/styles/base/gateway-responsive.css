@@ -1,49 +1,26 @@
-/* Respond to the gateway's usable width, including the settings sidebar. */
-@container gateway (max-width: 960px) {
+/* Breakpoints use the gateway content width, including app zoom and rail. */
+@container gateway (max-width: 920px) {
   .asb-gateway-map-canvas {
-    grid-template-columns: minmax(0, 1fr) minmax(19rem, 1.5fr) minmax(0, 1fr);
-    gap: var(--asb-space-4);
+    grid-template-columns: minmax(0, 1fr) minmax(18rem, 1.35fr) minmax(0, 1fr);
+    column-gap: var(--asb-space-4);
+    padding-inline: 0;
   }
 
-  .asb-gateway-connection {
-    display: flex;
-    flex-direction: column;
-    gap: var(--asb-space-2);
-    min-width: 0;
-  }
-
-  .asb-gateway-connection.is-client { grid-column: 1; }
   .asb-gateway-connection.is-provider { grid-column: 3; }
-  .asb-gateway-connection.is-provider .asb-gateway-node { order: -1; padding: 0; }
-  .asb-gateway-hub { grid-column: 2; margin-inline: 0; }
-  .asb-gateway-bus { display: none; }
-
-  .asb-gateway-run {
-    justify-content: flex-start;
-    flex-wrap: wrap;
-    min-height: 0;
-    padding: 0;
-  }
-
-  .asb-gateway-run::before,
-  .asb-gateway-run::after { display: none; }
-  .asb-gateway-chip { max-width: 100%; white-space: normal; overflow-wrap: anywhere; }
-  .asb-gateway-run-count { position: static; }
-  .asb-gateway-node.is-empty { grid-column: 3; margin: 0; }
+  .asb-gateway-hub { grid-column: 2; }
+  .asb-gateway-node.is-empty { grid-column: 3; }
   .asb-gateway-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @container gateway (max-width: 680px) {
-  .asb-gateway-map-canvas {
-    display: flex;
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .asb-gateway-hub { order: -1; padding: var(--asb-space-3); }
-  .asb-gateway-connection { padding-block: var(--asb-space-2); }
-  .asb-gateway-connection + .asb-gateway-connection { border-top: 1px solid var(--asb-hairline); }
-  .asb-gateway-node.is-empty { align-self: stretch; }
+  .asb-gateway-map-canvas { display: flex; flex-direction: column; align-items: stretch; gap: var(--asb-space-4); padding-top: var(--asb-space-2); }
+  .asb-gateway-floor,
+  .asb-gateway-wires { display: none; }
+  .asb-gateway-hub { align-self: stretch; }
+  .asb-gateway-node { grid-template-columns: minmax(0, 1fr) 112px; justify-items: start; text-align: left; }
+  .asb-gateway-node > .asb-gateway-device { grid-column: 2; grid-row: 1 / span 4; align-self: center; }
+  .asb-gateway-node > :not(.asb-gateway-device) { grid-column: 1; }
+  .asb-gateway-node-footer { justify-content: flex-start; }
   .asb-gateway-map-heading { align-items: flex-start; flex-direction: column; gap: var(--asb-space-1); }
   .asb-gateway-recent-heading { flex-wrap: wrap; }
 }
@@ -52,4 +29,5 @@
   .asb-gateway-strip { grid-template-columns: minmax(0, 1fr); }
   .asb-gateway-unavailable { align-items: flex-start; flex-wrap: wrap; }
   .asb-gateway-unavailable > .asb-btn { margin-left: 0; }
+  .asb-gateway-hub .asb-gateway-device { width: 72px; height: 60px; }
 }

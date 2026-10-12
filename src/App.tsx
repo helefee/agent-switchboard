@@ -1,5 +1,4 @@
 import { AppErrorBoundary } from "./components/AppErrorBoundary";
-import { Toaster } from "./components/Toaster";
 import { AppShell } from "./app/AppShell";
 import { AppWorkspace } from "./app/AppWorkspace";
 import { useDevtoolsShortcut, useKeyboardFocusMarker } from "./app/global-effects";
@@ -35,7 +34,6 @@ export default function App() {
         <AppErrorBoundary><AppWorkspace model={model} /></AppErrorBoundary>
       </AppShell>
       <OperationConfirmSheets operations={operations} providers={providers} />
-      <Toaster />
     </>
   );
 }

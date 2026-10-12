@@ -14,7 +14,7 @@ export interface GlobalPromptDocument {
 }
 
 /** One concrete client configuration value. */
-export type ConfigValue = boolean | string | number;
+export type ConfigValue = boolean | string | number | string[];
 
 /** One application-owned setting intent. Automatic means that no line/key is
  * written to the client configuration; explicit values are always projected. */
@@ -49,6 +49,22 @@ export type SettingSpec =
       group: string;
       control: "slider" | "segment";
       options: SettingChoiceOption[];
+    }
+  | {
+      key: string;
+      label: string;
+      group: string;
+      control: "text" | "notifications";
+      options: [];
+    }
+  | {
+      key: string;
+      label: string;
+      group: string;
+      control: "integer" | "stringInteger";
+      min: number;
+      max: number;
+      options: [];
     };
 
 /** One official configuration family with its real editing boundary. Paths
@@ -100,6 +116,7 @@ export interface ProviderParametersCatalog {
   defaults: SettingsValues;
   groups: string[];
   specs: SettingSpec[];
+  claudeEffortOptions: SettingChoiceOption[];
 }
 
 export function getProviderParametersCatalog(app: AppKind): Promise<ProviderParametersCatalog> {

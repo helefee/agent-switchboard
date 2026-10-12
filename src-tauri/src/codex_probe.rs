@@ -22,6 +22,8 @@ pub(crate) use ledger::{
 };
 pub(crate) use questions::{resolve_question, ResolvedQuestion, QUESTIONS};
 use runner::{cli_version, run_once, ProbeAbort};
+#[cfg(test)]
+pub(crate) use runner::codex_executable;
 pub(crate) const MAX_RUN_COUNT: u32 = 10;
 
 /// Grading outcome of one finished call. Execution failures, cancellation,

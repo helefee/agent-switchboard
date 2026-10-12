@@ -26,14 +26,9 @@
 
 /* The navigation row owns client selection and page actions; search and
    organization filters share the view-controls row. The surrounding flex
-   column owns spacing, so the header has no extra bottom margin. */
+   column owns spacing; the shared header rule removes its bottom margin. */
 .asb-sessions > .asb-workspace-header {
-  margin-bottom: 0;
-}
-
-.asb-sessions .asb-header-secondary .asb-input {
-  flex: 1 1 200px;
-  min-width: 0;
+  flex: none;
 }
 
 .asb-session-issues {

@@ -1,6 +1,6 @@
-/** App icon contract: semantic names bound to lucide-react glyphs. The chrome
- * set keeps the original 1.7 line weight; the small glyphs that CSS renders
- * below the 24-unit lucide grid (checks, chevrons, search) scale the stroke
+/** App icon contract: semantic names bound to library glyphs. Navigation uses
+ * Phosphor's regular/fill pairs; Lucide chrome keeps the 1.7 line weight. Small
+ * glyphs rendered below the 24-unit Lucide grid (checks, chevrons, search) scale the stroke
  * up by the same ratio so the rendered line weight is unchanged. */
 import type { LucideIcon } from "lucide-react";
 import {
@@ -29,6 +29,13 @@ import {
   Wifi,
   X,
 } from "lucide-react";
+
+export { ArrowsLeftRightIcon as ProviderSwitchIcon } from "@phosphor-icons/react/dist/csr/ArrowsLeftRight";
+export { SlidersHorizontalIcon as ClientConfigurationIcon } from "@phosphor-icons/react/dist/csr/SlidersHorizontal";
+export { PuzzlePieceIcon as ExtensionsIcon } from "@phosphor-icons/react/dist/csr/PuzzlePiece";
+export { ChatsIcon as SessionsIcon } from "@phosphor-icons/react/dist/csr/Chats";
+export { ChartBarIcon as UsageNavigationIcon } from "@phosphor-icons/react/dist/csr/ChartBar";
+export { GearSixIcon as SettingsIcon } from "@phosphor-icons/react/dist/csr/GearSix";
 
 interface IconProps {
   size?: number;

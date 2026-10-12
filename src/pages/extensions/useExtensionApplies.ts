@@ -14,7 +14,7 @@ import {
 } from "../../api/client";
 import { needsDisableScope } from "../../app/extensions/deployment-state";
 import type { DiscoverScan } from "../../app/extensions/useDiscoverScan";
-import { ToastMessageList } from "../../components/Toaster";
+import { ToastMessageList } from "../../components/ToastContent";
 import type { useExtensions } from "../../app/useExtensions";
 import { toast, toastMessage } from "../../components/use-toast";
 import { useExtensionApplyConfirmation } from "./useExtensionApplyConfirmation";
