@@ -75,6 +75,9 @@ mod tests {
         assert!(redirected.starts_with(guard.directory.path()));
         drop(guard);
 
+        // Another path guard may start immediately after drop releases the lock.
+        let _guard = CLIENT_PATH_LOCK.get().unwrap().lock()
+            .unwrap_or_else(|poisoned| poisoned.into_inner());
         let restored = local.target(asb_core::contracts::AppKind::Claude).unwrap();
         match previous_claude {
             Some(directory) => assert_eq!(restored, PathBuf::from(directory).join("settings.json")),

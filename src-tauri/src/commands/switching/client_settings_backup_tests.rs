@@ -18,6 +18,7 @@ fn record(state: &LocalState) -> BackupRecord {
 
 #[test]
 fn paired_backup_round_trips_exact_saved_intent_and_previews_settings_only_changes() {
+    let _paths = crate::test_client_paths::redirect_client_paths();
     let directory = tempfile::tempdir().unwrap();
     let state = LocalState::from_root(directory.path().to_path_buf());
     let backup = record(&state);
@@ -41,6 +42,7 @@ fn paired_backup_round_trips_exact_saved_intent_and_previews_settings_only_chang
 
 #[test]
 fn missing_snapshot_never_guesses_settings_for_paired_operations() {
+    let _paths = crate::test_client_paths::redirect_client_paths();
     let directory = tempfile::tempdir().unwrap();
     let state = LocalState::from_root(directory.path().to_path_buf());
     let mut backup = record(&state);
