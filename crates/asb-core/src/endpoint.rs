@@ -129,6 +129,14 @@ fn parse_base(base_url: &str, protocol: UpstreamProtocol) -> Result<Url, String>
             request_path(protocol),
         ));
     }
+    // The Anthropic contract takes the service root: `/v1` belongs to the
+    // request path. A version-prefixed base would silently double to
+    // `/v1/v1/messages`, so it is rejected instead of guessed away.
+    if protocol == UpstreamProtocol::AnthropicMessages
+        && url.path().trim_end_matches('/').rsplit('/').next() == Some("v1")
+    {
+        return Err("服务地址应填写服务根地址，不要包含 /v1 版本前缀".into());
+    }
     Ok(url)
 }
 
@@ -206,6 +214,22 @@ mod tests {
         assert_eq!(
             models_endpoint("https://example.test/proxy/", protocol).unwrap(),
             "https://example.test/proxy/v1/models"
+        );
+    }
+
+    #[test]
+    fn anthropic_version_prefixed_bases_are_rejected_instead_of_doubled() {
+        let protocol = UpstreamProtocol::AnthropicMessages;
+        for base in ["https://example.test/v1", "https://example.test/v1/"] {
+            assert!(validate_base_url(base, protocol).is_err());
+            assert!(upstream_endpoint(base, protocol).is_err());
+            assert!(models_endpoint(base, protocol).is_err());
+        }
+        // A non-v1 trailing segment is an explicit proxy prefix, not a
+        // doubled version: the declared root is preserved.
+        assert_eq!(
+            upstream_endpoint("https://example.test/v1beta", protocol).unwrap(),
+            "https://example.test/v1beta/v1/messages"
         );
     }
 

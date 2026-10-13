@@ -26,7 +26,7 @@ fn install(id: &str, target: ExtensionTarget) -> PlanRequestOperation {
 fn grouped_multi_scope_installs_keep_one_final_write_per_document() {
     let temp = tempfile::tempdir().unwrap();
     let store = ExtensionStore::from_root(temp.path().join("library"));
-    for id in ["server_a", "server_b"] { store.create_definition(&definition(id)).unwrap(); }
+    for id in ["server-a", "server-b"] { store.create_definition(&definition(id)).unwrap(); }
     let project = temp.path().join("project");
     std::fs::create_dir(&project).unwrap();
     store.create_project(&ProjectRegistration {
@@ -38,8 +38,8 @@ fn grouped_multi_scope_installs_keep_one_final_write_per_document() {
     let app = ExtensionTarget::App { client: AppKind::Codex };
     let project = ExtensionTarget::ProjectShared { client: AppKind::Codex, project_id: "project".into() };
     let request = PlanRequest { operations: vec![
-        install("server_a", app.clone()), install("server_b", app),
-        install("server_a", project.clone()), install("server_b", project),
+        install("server-a", app.clone()), install("server-b", app),
+        install("server-a", project.clone()), install("server-b", project),
     ] };
     let plan = planner.build(&request).unwrap();
     assert_eq!(plan.operations.len(), 2);
@@ -48,7 +48,7 @@ fn grouped_multi_scope_installs_keep_one_final_write_per_document() {
     assert_eq!(writes.len(), 2);
     for step in writes {
         let PlanStep::DocumentWrite { rendered, .. } = step else { panic!("unexpected step") };
-        assert!(rendered.contains("server_a") && rendered.contains("server_b"));
+        assert!(rendered.contains("server-a") && rendered.contains("server-b"));
     }
     assert!(!paths.home.exists());
 }

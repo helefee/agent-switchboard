@@ -118,13 +118,20 @@ pub(super) fn set_path(
     let table = current
         .as_table_like_mut()
         .ok_or_else(|| parent_conflict(path, &parent_path))?;
-    if table
-        .get(last)
-        .is_some_and(|item| item.as_table_like().is_some())
-    {
-        return Err(leaf_conflict(path));
+    match table.get_mut(last) {
+        // An existing scalar is updated in place: replacing the whole item
+        // would reset the key's decor and drop live-file comments attached
+        // to it (e.g. the leading `# live comment`).
+        Some(item) => {
+            let value_slot = item
+                .as_value_mut()
+                .ok_or_else(|| leaf_conflict(path))?;
+            *value_slot = to_toml_value(value);
+        }
+        None => {
+            table.insert(last, Item::Value(to_toml_value(value)));
+        }
     }
-    table.insert(last, Item::Value(to_toml_value(value)));
     Ok(())
 }
 

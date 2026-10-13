@@ -3,10 +3,16 @@ use crate::{claude_common, contracts::*, ownership};
 use serde_json::{json, Value};
 
 fn profile(app: AppKind) -> ProviderProfile {
+    // Codex keeps the OpenAI-style /v1 prefix; Claude's Anthropic contract
+    // takes the service root (endpoint.rs).
+    let base_url = match app {
+        AppKind::Codex => "https://provider.example/v1",
+        AppKind::Claude => "https://provider.example",
+    };
     ProviderProfile {
         id: "repair-profile".into(), app, route_mode: RouteMode::Custom,
         name: "Repair profile".into(), model: Some("saved-model".into()),
-        base_url: Some("https://provider.example/v1".into()), connection: Default::default(),
+        base_url: Some(base_url.into()), connection: Default::default(),
         api_key: "isolated-test-key".into(), authentication: None,
         upstream_protocol: Some(UpstreamProtocol::native_for(app)),
         responses_options: (app == AppKind::Codex).then_some(ResponsesOptions { request_mode: ResponsesRequestMode::Standard }),

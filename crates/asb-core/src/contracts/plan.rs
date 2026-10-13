@@ -246,9 +246,9 @@ impl std::fmt::Display for LocalizedMessage {
 }
 
 impl LocalizedMessage {
-    pub fn new(key: &'static str, params: serde_json::Value, text: impl Into<String>) -> Self {
+    pub fn new(key: impl Into<String>, params: serde_json::Value, text: impl Into<String>) -> Self {
         Self {
-            key: key.to_string(),
+            key: key.into(),
             params: (params != serde_json::Value::Null).then_some(params),
             text: text.into(),
         }

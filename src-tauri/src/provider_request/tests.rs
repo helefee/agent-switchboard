@@ -4,10 +4,10 @@ use asb_core::contracts::{
     CodexRouteMode, CodexUpstream, ResponsesRequestMode, DEFAULT_CODEX_CAPABILITIES,
 };
 
-fn draft(upstream: CodexUpstream) -> CodexProviderDraft {
+fn draft(upstream: CodexUpstream, endpoint: &str) -> CodexProviderDraft {
     CodexProviderDraft {
         name: "Saved request fixture".into(),
-        endpoint: CodexEndpoint("https://provider.example/v1".into()),
+        endpoint: CodexEndpoint(endpoint.into()),
         api_key: "isolated-test-key".into(), authentication: None, connection: Default::default(),
         upstream, request_mode: ResponsesRequestMode::Standard, default_model: "client-model".into(),
         catalog: vec![CodexCatalogEntry::default_entry("client-model")],
@@ -20,19 +20,20 @@ fn draft(upstream: CodexUpstream) -> CodexProviderDraft {
 
 #[test]
 fn saved_codex_direct_and_gateway_requests_use_the_native_store_and_upstream_model() {
-    for (upstream, mode, suffix) in [
-        (CodexUpstream::Responses, CodexRouteMode::Direct, "/responses"),
-        (CodexUpstream::ChatCompletions, CodexRouteMode::Gateway, "/chat/completions"),
-        (CodexUpstream::AnthropicMessages, CodexRouteMode::Gateway, "/messages"),
+    for (upstream, mode, base, path) in [
+        (CodexUpstream::Responses, CodexRouteMode::Direct, "https://provider.example/v1", "/responses"),
+        (CodexUpstream::ChatCompletions, CodexRouteMode::Gateway, "https://provider.example/v1", "/chat/completions"),
+        // Anthropic 地址契约是服务根：/v1 前缀由请求路径追加（endpoint.rs）。
+        (CodexUpstream::AnthropicMessages, CodexRouteMode::Gateway, "https://provider.example", "/v1/messages"),
     ] {
         let directory = tempfile::tempdir().unwrap();
         let store = ConfigStore::new(directory.path().join("state"));
-        let record = store.create_codex_provider(draft(upstream)).unwrap();
+        let record = store.create_codex_provider(draft(upstream, base)).unwrap();
         assert_eq!(record.profile.route_mode, mode);
         let requests = ProviderRequests::default();
         let prepared = prepare(&requests, &store,
             ProviderRequestTarget::Saved { profile_id: record.profile.id.clone() }).unwrap();
-        assert_eq!(prepared.endpoint, format!("https://provider.example/v1{suffix}"));
+        assert_eq!(prepared.endpoint, format!("{base}{path}"));
         assert_eq!(prepared.default_model.as_deref(), Some("upstream-model"));
         let source = requests.inspect(&prepared.request_id).unwrap().source;
         let connection = resolve_prepared(&store, source).unwrap();
@@ -46,7 +47,7 @@ fn saved_codex_direct_and_gateway_requests_use_the_native_store_and_upstream_mod
 fn a_changed_saved_codex_profile_rejects_the_prepared_request() {
     let directory = tempfile::tempdir().unwrap();
     let store = ConfigStore::new(directory.path().join("state"));
-    let record = store.create_codex_provider(draft(CodexUpstream::Responses)).unwrap();
+    let record = store.create_codex_provider(draft(CodexUpstream::Responses, "https://provider.example/v1")).unwrap();
     let requests = ProviderRequests::default();
     let prepared = prepare(&requests, &store,
         ProviderRequestTarget::Saved { profile_id: record.profile.id.clone() }).unwrap();
@@ -73,7 +74,7 @@ fn saved_official_codex_keeps_its_own_contract_and_cannot_send_a_custom_request(
 fn corrupt_codex_storage_is_not_reinterpreted_as_a_generic_missing_provider() {
     let directory = tempfile::tempdir().unwrap();
     let store = ConfigStore::new(directory.path().join("state"));
-    let record = store.create_codex_provider(draft(CodexUpstream::Responses)).unwrap();
+    let record = store.create_codex_provider(draft(CodexUpstream::Responses, "https://provider.example/v1")).unwrap();
     let path = store.providers_dir(AppKind::Codex).join(format!("{}.json", record.profile.id));
     std::fs::write(path, "{}").unwrap();
     assert!(matches!(store.resolve_saved_provider(&record.profile.id),
@@ -98,7 +99,7 @@ fn xai_accounts(root: &std::path::Path, profile_id: &str, selected: &str, token:
 fn saved_xai_request_uses_the_bound_account_and_rejects_changed_account_identity() {
     let directory = tempfile::tempdir().unwrap();
     let store = ConfigStore::new(directory.path().join("state"));
-    let mut input = draft(CodexUpstream::Responses);
+    let mut input = draft(CodexUpstream::Responses, "https://provider.example/v1");
     input.connection.provider_type = Some("xai_oauth".into());
     input.api_key = asb_core::contracts::XAI_OAUTH_PLACEHOLDER.into();
     let record = store.create_codex_provider(input).unwrap();
