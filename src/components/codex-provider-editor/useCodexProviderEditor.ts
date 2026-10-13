@@ -14,6 +14,7 @@ function codexDraftFromSource(source: CodexEditorSource | null): CodexEditorDraf
 export function useCodexProviderEditor(source: CodexEditorSource | null, busy: boolean) {
   const { t } = useI18n();
   const [draft, setDraft] = useState<CodexEditorDraft>(() => codexDraftFromSource(source));
+  const baseline = useRef(draft);
   const [parametersOpen, setParametersOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
@@ -31,6 +32,9 @@ export function useCodexProviderEditor(source: CodexEditorSource | null, busy: b
     responsesOptions: draft.upstream === "responses" ? { requestMode: draft.requestMode } : null,
   });
   const seedParameters = useCallback((defaults: SettingsValues) => {
+    if (baseline.current.parameters === null) {
+      baseline.current = { ...baseline.current, parameters: { settings: { ...defaults.settings } } };
+    }
     setDraft((current) => current.parameters === null
       ? { ...current, parameters: { settings: { ...defaults.settings } } }
       : current);
@@ -48,7 +52,7 @@ export function useCodexProviderEditor(source: CodexEditorSource | null, busy: b
     const value = prepareCodexDraft(draft);
     if (value) onSave(value);
   };
-  return { draft, setDraft, parametersOpen, setParametersOpen,
+  return { draft, setDraft, dirty: JSON.stringify(draft) !== JSON.stringify(baseline.current), parametersOpen, setParametersOpen,
     triggerRef, headingRef, connection, parameters, problems, canSave, save };
 }
 

@@ -11,7 +11,7 @@ use asb_core::extensions::validate::validate_binding;
 use crate::commands::error::CommandError;
 use crate::commands::extensions::support::*;
 
-use super::Planner;
+use super::{deployed_binding, Planner};
 
 impl Planner<'_> {
     pub(super) fn build_binding_change(
@@ -94,12 +94,13 @@ impl Planner<'_> {
                 plan.targets.push(PlannedTarget {
                     binding_id: Some(binding.id.clone()),
                     target: next.target.clone(),
-                    binding: next,
+                    binding: deployed_binding(&definition, &next),
                     baseline,
                     steps,
                     warnings,
                     changes,
                     adopts_native_entry,
+                    skip_reason: None,
                 });
             }
             PlanOperation::Disable => {
@@ -110,6 +111,10 @@ impl Planner<'_> {
                 let mut next = binding.clone();
                 next.desired = DesiredState::Disabled;
                 next.updated_at = now();
+                if matches!(definition.payload, ExtensionPayload::Mcp(_))
+                    && next.target.client() == AppKind::Codex {
+                    next = deployed_binding(&definition, &next);
+                }
                 plan.targets.push(PlannedTarget {
                     binding_id: Some(binding.id.clone()),
                     target: binding.target.clone(),
@@ -119,6 +124,7 @@ impl Planner<'_> {
                     warnings,
                     changes,
                     adopts_native_entry: false,
+                    skip_reason: None,
                 });
             }
             PlanOperation::Remove => {
@@ -168,6 +174,7 @@ impl Planner<'_> {
                     warnings,
                     changes,
                     adopts_native_entry: false,
+                    skip_reason: None,
                 });
                 let _ = new_baseline;
             }

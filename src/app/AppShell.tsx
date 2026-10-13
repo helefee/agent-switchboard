@@ -1,4 +1,4 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import type { CommandError } from "../api/client";
 import { useI18n } from "../i18n";
 import type { Page } from "./navigation";
@@ -46,10 +46,12 @@ export function AppShell({
   children,
 }: AppShellProps) {
   const { t } = useI18n();
+  const [collapsed, setCollapsed] = useState(false);
   return (
     <>
-      <div className="asb-shell">
-        <SideNav page={page} onPageChange={onPageChange} />
+      <div className={`asb-shell${collapsed ? " is-collapsed" : ""}`}>
+        <SideNav page={page} onPageChange={onPageChange} collapsed={collapsed}
+          onToggle={() => setCollapsed((value) => !value)} />
         <div className="asb-body">
           <header className="asb-titlebar" data-tauri-drag-region>
             <span className="asb-titlebar-name" data-tauri-drag-region>Agent Switchboard</span>

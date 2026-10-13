@@ -348,7 +348,7 @@ export function ModelPicker({ models, current, ariaLabel, disabled = false, onSe
               onSelect={selectModel}
               onClose={() => close()}
             />,
-            document.body,
+            trigger.current?.closest<HTMLElement>('[role="dialog"]') ?? document.body,
           )
         : null}
     </div>

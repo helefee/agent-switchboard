@@ -25,7 +25,7 @@ impl ProbeLedger {
                  sum(CASE WHEN r.status='passed' THEN 1 ELSE 0 END), \
                  sum(CASE WHEN r.status IN ('passed','failed') THEN 1 ELSE 0 END), \
                  sum(CASE WHEN r.total_tokens IS NOT NULL THEN 1 ELSE 0 END), \
-                 sum(r.total_tokens) \
+                 sum(r.total_tokens), b.grading_version \
                  FROM probe_batches b LEFT JOIN probe_runs r ON r.batch_id = b.id \
                  {where_clause} \
                  GROUP BY b.id ORDER BY b.started_at DESC, b.rowid DESC LIMIT ?{} OFFSET ?{}",
@@ -47,6 +47,7 @@ impl ProbeLedger {
                     status: ProbeBatchStatus::parse(&row.get::<_, String>(3)?)
                         .unwrap_or(ProbeBatchStatus::Failed),
                     question_label: row.get(4)?,
+                    grading_version: map_grading(row, 12)?,
                     profile_id: row.get(5)?,
                     profile_name: row.get(6)?,
                     run_count: row.get::<_, i64>(7)?.max(0) as u32,

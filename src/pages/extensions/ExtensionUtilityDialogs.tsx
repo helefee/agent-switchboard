@@ -1,6 +1,8 @@
-import { useState } from "react";
+import { useId, useState } from "react";
 import { pickDirectory, pickFile } from "../../api/client";
 import { AppDialog } from "../../components/AppDialog";
+import { Button } from "../../components/Button";
+import { useUnsavedChanges } from "../../components/useUnsavedChanges";
 import { useI18n } from "../../i18n";
 import { ExtensionHistory } from "../../components/extensions/ExtensionHistory";
 import { NewMcpForm } from "../../components/extensions/NewMcpForm";
@@ -12,15 +14,13 @@ import type { ExtensionWorkspace } from "./useExtensionWorkspace";
 type Props = { workspace: ExtensionWorkspace };
 
 export function NewMcpDialog({ workspace: w }: Props) {
-  const { t } = useI18n();
   return (
-    <AppDialog title={t("extensions.toolbar.addMcp")} busy={w.busy} onClose={w.nav.closeDialog}>
       <NewMcpForm
         busy={w.writeBlocked}
+        onCancel={w.nav.closeDialog}
         onPutSecret={w.ext.putSecret}
         onSave={w.createMcp}
       />
-    </AppDialog>
   );
 }
 
@@ -28,9 +28,14 @@ export function NewSkillDialog({ workspace: w }: Props) {
   const { t } = useI18n();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const id = useId();
+  const leave = useUnsavedChanges(Boolean(name || description), w.busy);
   return (
-    <AppDialog title={t("extensions.toolbar.newSkill")} busy={w.busy} onClose={w.nav.closeDialog}>
+    <AppDialog title={t("extensions.toolbar.newSkill")} busy={w.busy} onClose={() => leave.request(w.nav.closeDialog)}
+      footer={<><Button variant="secondary" disabled={w.busy} onClick={() => leave.request(w.nav.closeDialog)}>{t("confirm.cancel")}</Button>
+        <Button type="submit" form={id} variant="primary" disabled={w.writeBlocked}>{t("extensions.newSkill.create")}</Button></>}>
       <NewSkillForm
+        formId={id}
         busy={w.writeBlocked}
         newSkillName={name}
         setNewSkillName={setName}
@@ -40,7 +45,7 @@ export function NewSkillDialog({ workspace: w }: Props) {
           const definition = await w.ext.createSkill({ name: name.trim(), description: description.trim() });
           if (definition) w.nav.openSkillEditor(definition.id);
         }}
-      />
+      />{leave.confirmation}
     </AppDialog>
   );
 }
@@ -48,9 +53,14 @@ export function NewSkillDialog({ workspace: w }: Props) {
 export function PortableImportDialog({ workspace: w }: Props) {
   const { t } = useI18n();
   const [path, setPath] = useState("");
+  const id = useId();
+  const leave = useUnsavedChanges(Boolean(path), w.busy);
   return (
-    <AppDialog title={t("extensions.toolbar.importPortable")} busy={w.busy} onClose={w.nav.closeDialog}>
+    <AppDialog title={t("extensions.toolbar.importPortable")} busy={w.busy} onClose={() => leave.request(w.nav.closeDialog)}
+      footer={<><Button variant="secondary" disabled={w.busy} onClick={() => leave.request(w.nav.closeDialog)}>{t("confirm.cancel")}</Button>
+        <Button type="submit" form={id} variant="primary" disabled={w.writeBlocked}>{t("extensions.import.submit")}</Button></>}>
       <PortableImportForm
+        formId={id}
         busy={w.writeBlocked}
         portablePath={path}
         setPortablePath={setPath}
@@ -63,7 +73,7 @@ export function PortableImportDialog({ workspace: w }: Props) {
           const result = await w.ext.importPortable(path.trim());
           if (result) w.nav.closeDialog();
         }}
-      />
+      />{leave.confirmation}
     </AppDialog>
   );
 }
@@ -71,9 +81,14 @@ export function PortableImportDialog({ workspace: w }: Props) {
 export function ProjectDialog({ workspace: w }: Props) {
   const { t } = useI18n();
   const [root, setRoot] = useState("");
+  const id = useId();
+  const leave = useUnsavedChanges(Boolean(root), w.busy);
   return (
-    <AppDialog title={t("extensions.toolbar.registerProject")} busy={w.busy} onClose={w.nav.closeDialog}>
+    <AppDialog title={t("extensions.toolbar.registerProject")} busy={w.busy} onClose={() => leave.request(w.nav.closeDialog)}
+      footer={<><Button variant="secondary" disabled={w.busy} onClick={() => leave.request(w.nav.closeDialog)}>{t("confirm.cancel")}</Button>
+        <Button type="submit" form={id} variant="primary" disabled={w.writeBlocked}>{t("extensions.project.submit")}</Button></>}>
       <ProjectRegisterForm
+        formId={id}
         busy={w.writeBlocked}
         projectRoot={root}
         setProjectRoot={setRoot}
@@ -84,7 +99,7 @@ export function ProjectDialog({ workspace: w }: Props) {
         submitProject={async () => {
           if (root.trim() && (await w.ext.addProject(root.trim()))) w.nav.closeDialog();
         }}
-      />
+      />{leave.confirmation}
     </AppDialog>
   );
 }

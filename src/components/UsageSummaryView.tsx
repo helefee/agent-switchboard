@@ -1,7 +1,7 @@
 import { RefreshCw } from "lucide-react";
 import type { UsageReading } from "../api/client";
 import { useI18n } from "../i18n";
-import { formatUsageValue, usagePrimary, usageTone } from "../lib/usage-format";
+import { formatUsageValue, usagePrimary, usageTone, usageStatusLabel } from "../lib/usage-format";
 import { Button } from "./Button";
 import { Time } from "./Time";
 import { Tooltip } from "./Tooltip";
@@ -15,8 +15,7 @@ function ReadingSummary({ reading }: { reading: UsageReading }) {
       {primary && <span className="asb-usage-primary">
         <span>{primary.label}</span><strong>{formatUsageValue(primary.value, reading.unit)}</strong>
       </span>}
-      {reading.isValid !== false && reading.remaining !== null && reading.remaining <= 0 && <span className="asb-usage-invalid">{t("usage.reading.exhausted")}</span>}
-      {reading.isValid === false && <span className="asb-usage-invalid">{reading.invalidMessage || t("usage.reading.invalid")}</span>}
+      {usageTone(reading) === "danger" && <span className="asb-usage-invalid">{usageStatusLabel(reading)}</span>}
       {reading.unit !== "%" && <span className="asb-usage-secondary">
         {/* The primary chip already shows the used/total measure when it won
             the primary slot; these guards restate that structurally instead of

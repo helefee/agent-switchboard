@@ -24,10 +24,10 @@
   position: relative;
   isolation: isolate;
   display: grid;
-  grid-template-columns: minmax(10rem, 1fr) minmax(2rem, .35fr) minmax(18rem, 1.5fr) minmax(2rem, .35fr) minmax(12rem, 1.15fr);
+  grid-template-columns: minmax(0, 1fr) 1rem minmax(0, 1fr) 1rem minmax(0, 1fr);
   align-items: center;
-  row-gap: var(--asb-space-5);
-  padding: var(--asb-space-4) var(--asb-space-2) var(--asb-space-5);
+  row-gap: var(--asb-space-3);
+  padding: var(--asb-space-2);
 }
 
 .asb-gateway-floor {

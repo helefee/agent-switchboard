@@ -16,7 +16,7 @@ impl TryFrom<&ProviderProfile> for ProviderRequestConnection {
         Ok(Self {
             app: profile.app,
             claude_account: None,
-            base_url: profile.base_url.clone().ok_or_else(invalid)?,
+            base_url: profile.upstream_base_url().ok_or_else(invalid)?.to_string(),
             connection: profile.connection.clone(),
             api_key: profile.api_key.clone(),
             authentication: profile.authentication,

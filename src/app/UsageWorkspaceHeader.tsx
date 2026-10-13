@@ -32,7 +32,8 @@ interface RadarControlsProps {
 function RadarControls({ active, probe, form, onQuestionChange, runCount, onRunCountChange, onOpenHistory }: RadarControlsProps) {
   const { t } = useI18n();
   const custom = form.questionId === CUSTOM_PROBE_QUESTION_ID;
-  const ready = !custom || (form.customQuestion.trim().length > 0 && /^\d+$/.test(form.customAnswer.trim()));
+  const ready = !custom || (form.customQuestion.trim().length > 0
+    && (form.customGradingVersion !== "1" || /^\d+$/.test(form.customAnswer.trim())));
   const locked = !active || probe.running || probe.starting || !!probe.status?.persistPending;
   return (
     <div className="asb-model-usage-controls">
@@ -56,7 +57,8 @@ function RadarControls({ active, probe, form, onQuestionChange, runCount, onRunC
             if (form.questionId === null) return;
             void probe.start({ runCount, questionId: form.questionId,
               customQuestion: custom ? form.customQuestion.trim() : undefined,
-              customAnswer: custom ? form.customAnswer.trim() : undefined });
+              customAnswer: custom && form.customGradingVersion === "1" ? form.customAnswer.trim() : undefined,
+              customGradingVersion: custom ? form.customGradingVersion : undefined });
           }}>
           {probe.starting ? t("usage.radar.starting") : t("usage.radar.start")}
         </Button>

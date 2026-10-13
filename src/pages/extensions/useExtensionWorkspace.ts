@@ -13,6 +13,7 @@ import { searchNeedle } from "./list-filters";
 import { useExtensionApplies } from "./useExtensionApplies";
 import { useExtensionView, type ExtensionNavigation } from "./useExtensionView";
 import { useSkillUpdates } from "./useSkillUpdates";
+import { useMcpConnectionCheck } from "./useMcpConnectionCheck";
 
 function definitionActions(
   ext: ReturnType<typeof useExtensions>,
@@ -75,6 +76,10 @@ export function useExtensionWorkspace(deps: ExtensionsDeps & ExtensionNavigation
     onError: deps.onError,
   });
   const nav = useExtensionView(deps);
+  const check = useMcpConnectionCheck(
+    nav.dialog?.type === "management" ? nav.dialog.definitionId : null,
+    ext.refresh, deps.onError,
+  );
   const applies = useExtensionApplies(ext, discovery);
   const updates = useSkillUpdates(ext, applies);
   const items = ext.workspace?.items ?? [];
@@ -109,6 +114,7 @@ export function useExtensionWorkspace(deps: ExtensionsDeps & ExtensionNavigation
     nav,
     applies,
     updates,
+    check,
     items,
     kindItems,
     visible,

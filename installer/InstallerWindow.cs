@@ -28,6 +28,7 @@ namespace AgentSwitchboard.Installer
         private TextBlock summary;
         private TextBlock version;
         private TextBlock diagnostic;
+        private Button copyDiagnostic;
         private TextBlock existing;
         private FrameworkElement locationCard;
         private Button primary;
@@ -163,6 +164,7 @@ namespace AgentSwitchboard.Installer
             {
                 summary.Foreground = Brush("Error");
                 summary.Text = copy.LaunchFailureStatus;
+                copyDiagnostic.Content = copy.CopyDiagnostic;
                 diagnostic.Text = copy.LaunchFailureDiagnostic(result.LaunchError);
                 diagnostic.Visibility = Visibility.Visible;
             }
@@ -189,6 +191,7 @@ namespace AgentSwitchboard.Installer
             title.Text = copy.FailureTitle(error);
             summary.Foreground = Brush("Error");
             summary.Text = copy.FailureStatus(error);
+            copyDiagnostic.Content = copy.CopyDiagnostic;
             diagnostic.Text = copy.FailureDiagnostic(error);
             diagnostic.Visibility = String.IsNullOrWhiteSpace(diagnostic.Text)
                 ? Visibility.Collapsed
@@ -230,6 +233,7 @@ namespace AgentSwitchboard.Installer
                 {
                     summary.Foreground = Brush("Error");
                     summary.Text = copy.LaunchFailureStatus;
+                    copyDiagnostic.Content = copy.CopyDiagnostic;
                     diagnostic.Text = copy.LaunchFailureDiagnostic(error.Message);
                     diagnostic.Visibility = Visibility.Visible;
                     launch.IsChecked = false;

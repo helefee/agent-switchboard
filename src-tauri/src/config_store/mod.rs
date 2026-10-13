@@ -23,8 +23,10 @@ mod codex_providers;
 pub mod history;
 pub mod providers;
 mod repair;
+mod saved_provider;
 pub mod snapshot;
 pub use repair::RepairReport;
+pub(crate) use saved_provider::SavedProvider;
 
 pub(crate) const SWITCH_INTENT_FILE: &str = "switch-intent.json";
 pub(crate) const PROFILE_PREIMAGE_FILE: &str = "save-before.json";

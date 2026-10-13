@@ -317,13 +317,13 @@
   z-index: 1;
   flex: none;
   display: flex;
+  flex-wrap: wrap;
   justify-content: flex-end;
   gap: var(--asb-space-2);
   min-width: 0;
   margin: 0;
   padding: var(--asb-space-3) 0 0;
   border: 0;
-  border-top: 1px solid var(--asb-hairline);
   border-radius: 0;
 }
 
@@ -342,9 +342,8 @@
   align-items: start;
   gap: var(--asb-space-4);
   padding: var(--asb-space-4);
-  border: 1px solid var(--asb-hairline);
-  border-radius: var(--asb-radius);
-  background: var(--asb-content);
+  border-radius: var(--asb-radius-group);
+  background: var(--asb-content-muted);
 }
 
 .asb-editor-section > .asb-section-title {

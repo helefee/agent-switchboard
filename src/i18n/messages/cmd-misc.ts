@@ -49,6 +49,7 @@ export const messages = {
   // provider_request/mod.rs
   "errors.misc.providerRequestModelInvalid": ["请填写有效的模型 ID（1–256 个字符，不含控制字符）", "Enter a valid model ID (1–256 characters, no control characters)"],
   "errors.misc.providerRequestProfileChanged": ["供应商档案已变化，请重新准备并核对请求目标后再发送", "The provider profile has changed; prepare again and verify the request target before sending"],
+  "errors.misc.providerRequestSavedRequired": ["xAI 托管请求需要已保存供应商的账号绑定，请保存后再测试", "Managed xAI requests require an account binding for a saved provider; save the provider before testing"],
   "errors.misc.providerRequestInterrupted": ["真实请求任务中断，请重试", "The real request task was interrupted; try again"],
   // provider_request/registry.rs
   "errors.misc.providerRequestLimitReached": ["待处理请求过多，请关闭其他请求面板后重试", "Too many pending requests; close other request panels and retry"],

@@ -312,7 +312,7 @@ function ClientSettingsToolbar({
             {instructionsOpen ? t("clientConfig.toolbar.collapseInstructions") : t("clientConfig.toolbar.instructions")}
           </Button>
           <Button
-            variant="danger"
+            variant="secondary"
             aria-expanded={resetOpen}
             aria-controls={resetId}
             disabled={!configuration.canNativeReset || panel.busy || configuration.applying}

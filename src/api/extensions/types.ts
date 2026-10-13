@@ -126,7 +126,8 @@ export interface SkillSourceView {
 type ExtensionListItemCommon = ExtensionDefinitionEnvelope & {
   bindings: BindingStatus[];
   dependencyStates: DependencyStatus[];
-  lastCheck: McpCheckResult | null;
+  /** Latest result per target for this definition revision, newest first. */
+  checks: McpCheckResult[];
 };
 
 export type ExtensionListItem =
@@ -320,6 +321,10 @@ export interface McpCheckResult {
   durationMs: number;
   truncated: boolean;
 }
+
+export type McpCheckStatus =
+  | { state: "running" }
+  | { state: "completed"; result: McpCheckResult };
 
 export type TargetOutcome =
   | { kind: "applied" }

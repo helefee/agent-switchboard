@@ -16,6 +16,8 @@ import {
   GripVertical,
   Minus,
   Network,
+  PanelLeftClose,
+  PanelLeftOpen,
   Pencil,
   Pin,
   Play,
@@ -67,6 +69,8 @@ export const UsageIcon = icon(ChartColumnIncreasing, 16);
 export const ConnectivityIcon = icon(Wifi, 16);
 export const RequestIcon = icon(Send, 16);
 export const GatewayIcon = icon(Network, 20);
+export const CollapseNavigationIcon = icon(PanelLeftClose, 20);
+export const ExpandNavigationIcon = icon(PanelLeftOpen, 20);
 
 export const ChevronDownIcon = icon(ChevronDown, 16, 2.4);
 export const ChevronUpIcon = icon(ChevronUp, 16, 2.4);

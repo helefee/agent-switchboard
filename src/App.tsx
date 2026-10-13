@@ -33,7 +33,7 @@ export default function App() {
           ? { latestVersion: updateCheck.updateCheck.latestVersion, onOpen: () => model.openSettings("about") } : null}>
         <AppErrorBoundary><AppWorkspace model={model} /></AppErrorBoundary>
       </AppShell>
-      <OperationConfirmSheets operations={operations} providers={providers} />
+      <OperationConfirmSheets operations={operations} providers={providers} busy={busy} />
     </>
   );
 }

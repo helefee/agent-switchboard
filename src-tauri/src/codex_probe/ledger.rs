@@ -82,7 +82,7 @@ fn map_batch(row: &rusqlite::Row<'_>) -> rusqlite::Result<ProbeBatchRecord> {
             text: row.get(7)?,
             expected_answer: row.get(8)?,
         },
-        grading_version: row.get(9)?,
+        grading_version: map_grading(row, 9)?,
         cli_version: row.get(10)?,
         config: ProbeConfigRecord {
             profile_id: row.get(11)?,
@@ -93,6 +93,15 @@ fn map_batch(row: &rusqlite::Row<'_>) -> rusqlite::Result<ProbeBatchRecord> {
             fingerprint: row.get(16)?,
         },
         status_error: row.get(17)?,
+    })
+}
+
+fn map_grading(row: &rusqlite::Row<'_>, index: usize) -> rusqlite::Result<super::ProbeGrading> {
+    let version: String = row.get(index)?;
+    super::ProbeGrading::parse(&version).ok_or_else(|| {
+        rusqlite::Error::FromSqlConversionFailure(index, rusqlite::types::Type::Text,
+            Box::new(std::io::Error::new(std::io::ErrorKind::InvalidData,
+                format!("不支持的检测判分规则：{version}"))))
     })
 }
 

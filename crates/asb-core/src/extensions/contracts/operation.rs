@@ -284,8 +284,8 @@ pub enum McpCheckOutcome {
     },
     /// The user cancelled the probe.
     Cancelled,
-    /// The server requires an interactive login that only the native client
-    /// can perform; no verdict about the host session is implied.
+    /// The transport or interactive authorization requires a native-client
+    /// check; no verdict about the host session is implied.
     NeedsNativeConfirmation,
 }
 
@@ -311,8 +311,7 @@ pub enum TargetOutcome {
         message: String,
         backup: String,
     },
-    /// The target was not part of the executed plan (for example after the
-    /// user removed it from a batch).
+    /// The target was explicitly skipped (for example a pinned content version).
     Skipped {
         message: String,
     },

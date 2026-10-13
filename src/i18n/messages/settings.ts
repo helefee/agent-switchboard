@@ -3,6 +3,7 @@ import type { MessageEntry } from "../types";
 /** Application preferences (外观 / 窗口与托盘 / 性能 / 日志 / 语言), the
  * settings page chrome, and the settings load/save failure states. */
 export const messages = {
+  "settings.font.loadFailed": ["系统字体读取失败：{detail}", "Could not read system fonts: {detail}"],
   "settings.page.backToProviders": ["返回供应商", "Back to providers"],
   "settings.page.categories.aria": ["设置分类", "Settings categories"],
   "settings.page.loading": ["正在读取设置", "Reading settings"],

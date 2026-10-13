@@ -6,6 +6,7 @@ import { useProviderParameters } from "./useProviderParameters";
 
 export function useProviderEditor(profile: ProviderProfile | null, initialApp: AppKind, busy: boolean) {
   const [draft, setDraft] = useState(() => draftFrom(profile, initialApp));
+  const baseline = useRef(draft);
   const [parametersOpen, setParametersOpen] = useState(false);
   const [loginDone, setLoginDone] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
@@ -14,6 +15,9 @@ export function useProviderEditor(profile: ProviderProfile | null, initialApp: A
   const connection = useProviderConnection(draft);
   const app = draft.app;
   const seedParameters = useCallback((defaults: SettingsValues) => {
+    if (baseline.current.app === app && baseline.current.parameters === null) {
+      baseline.current = { ...baseline.current, parameters: { settings: { ...defaults.settings } } };
+    }
     setDraft((current) => current.app === app && current.parameters === null
       ? { ...current, parameters: { settings: { ...defaults.settings } } }
       : current);
@@ -31,7 +35,7 @@ export function useProviderEditor(profile: ProviderProfile | null, initialApp: A
     const value = prepareDraft(draft);
     if (value) onSave(value);
   };
-  return { draft, setDraft, parametersOpen, setParametersOpen, loginDone, setLoginDone,
+  return { draft, setDraft, dirty: JSON.stringify(draft) !== JSON.stringify(baseline.current), parametersOpen, setParametersOpen, loginDone, setLoginDone,
     triggerRef, headingRef, connection, parameters, canSave, save };
 }
 

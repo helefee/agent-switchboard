@@ -11,6 +11,7 @@ import { ConfirmSheet } from "./ConfirmSheet";
 import { Input } from "./Input";
 import { Textarea } from "./Textarea";
 import { useI18n } from "../i18n";
+import { errorText } from "../i18n/errors";
 import { toast, toastMessage } from "./use-toast";
 
 type PendingOperation = "upload" | "restore" | null;
@@ -50,6 +51,7 @@ function supabaseDashboardLinks(projectUrl: string): SupabaseDashboardLinks {
 }
 
 interface Props {
+  active: boolean;
   settings: CloudBackupSettings | null;
   loaded: boolean;
   busy: boolean;
@@ -64,6 +66,7 @@ interface Props {
 export function CloudBackupPanel({
   settings,
   loaded,
+  active,
   busy,
   onSave,
   onTestConnection,
@@ -82,10 +85,21 @@ export function CloudBackupPanel({
   const [setupSql, setSetupSql] = useState<string | null>(null);
   const [guideOpen, setGuideOpen] = useState(false);
   const connectionForm = useRef<HTMLFormElement>(null);
+  const baseline = useRef<CloudBackupSettings | null>(null);
   const dashboardLinks = supabaseDashboardLinks(draft.projectUrl);
 
   useEffect(() => {
-    if (settings) setDraft(settings);
+    if (active || busy) return;
+    setAccountPassword("");
+    setBackupPassword("");
+    setPending(null);
+  }, [active, busy]);
+
+  useEffect(() => {
+    if (!settings) return;
+    const previous = baseline.current;
+    baseline.current = settings;
+    setDraft((current) => !previous || JSON.stringify(current) === JSON.stringify(previous) ? settings : current);
   }, [settings]);
 
   const revealSetupSql = () => {
@@ -138,7 +152,8 @@ export function CloudBackupPanel({
 
   const openGuideLink = (event: MouseEvent<HTMLAnchorElement>) => {
     event.preventDefault();
-    void openUrl(event.currentTarget.href);
+    void openUrl(event.currentTarget.href).catch((error) => toast({ kind: "error",
+      title: toastMessage("backup.cloud.guideOpenFailed"), description: errorText(error, t) }));
   };
 
   return (
@@ -356,6 +371,7 @@ export function CloudBackupPanel({
       {pending === "upload" && (
         <ConfirmSheet
           title={t("backup.cloud.uploadConfirmTitle")}
+          busy={busy}
           confirmLabel={t("backup.cloud.uploadConfirmConfirm")}
           onConfirm={() => void confirm()}
           onCancel={() => setPending(null)}
@@ -370,6 +386,7 @@ export function CloudBackupPanel({
       {pending === "restore" && (
         <ConfirmSheet
           title={t("backup.cloud.restoreConfirmTitle")}
+          busy={busy}
           confirmLabel={t("backup.confirmRestore")}
           destructive
           onConfirm={() => void confirm()}

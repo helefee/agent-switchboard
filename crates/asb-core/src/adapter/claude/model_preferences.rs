@@ -9,9 +9,13 @@ fn error(message: String) -> AdapterError { AdapterError { message, line: None }
 pub(super) fn projected(plan: &SwitchPlan) -> Result<(Extra, Extra), AdapterError> {
     let shared = plan.client_settings.claude_extra.clone();
     crate::claude_common::validate(&shared).map_err(error)?;
-    let profile = project(&plan.profile.claude_fragment, plan)?;
+    let profile = projected_profile(plan)?;
     crate::claude_common::validate_scopes(&shared, &profile).map_err(error)?;
     Ok((shared, profile))
+}
+
+pub(super) fn projected_profile(plan: &SwitchPlan) -> Result<Extra, AdapterError> {
+    project(&plan.profile.claude_fragment, plan)
 }
 
 fn project(extra: &Extra, plan: &SwitchPlan) -> Result<Extra, AdapterError> {

@@ -38,7 +38,7 @@ export const messages = {
   "providerDiagnostics.backend.directRoute": ["此供应商使用客户端直连，无需本地协议网关。", "The client connects directly to this provider; no local protocol gateway is needed."],
   "providerDiagnostics.backend.gatewayReady": ["本地网关正在监听，且当前供应商路由已加载。", "The local gateway is listening and the current provider’s route is loaded."],
   "providerDiagnostics.backend.gatewayUnavailable": ["当前供应商需要本地网关，但监听器或路由尚未就绪。", "This provider needs the local gateway, but its listener or route is not ready."],
-  "providerDiagnostics.backend.gatewayFacts": ["网关状态：{stateKey}；配置端口 {configuredPort}，实际监听 {listeningPort}；供应商路由{routeKey}。{detail}", "Gateway: {stateKey}; configured port {configuredPort}, listening port {listeningPort}; provider route {routeKey}. {detail}"],
+  "providerDiagnostics.backend.gatewayFacts": ["网关状态：{stateKey}；配置端口 {configuredPort}，实际监听 {listeningPort}，客户端入口 {clientPort}；供应商路由{routeKey}。{detail}", "Gateway: {stateKey}; configured port {configuredPort}, listening port {listeningPort}, client port {clientPort}; provider route {routeKey}. {detail}"],
   "providerDiagnostics.backend.routePresent": ["已加载", "loaded"],
   "providerDiagnostics.backend.routeMissing": ["未加载", "not loaded"],
   "providerDiagnostics.backend.gatewayStandby": ["待机", "standby"],

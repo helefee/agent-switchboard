@@ -95,7 +95,6 @@
   flex-direction: column;
   gap: var(--asb-space-2);
   padding-bottom: var(--asb-space-2);
-  border-bottom: 1px solid var(--asb-hairline);
 }
 
 .asb-session-selection-row,
@@ -192,7 +191,7 @@
 .asb-session-project-menu .asb-select-viewport { min-width: 0; }
 .asb-session-project-menu .asb-select-item { width: 100%; min-width: 0; font: var(--asb-text-label); }
 .asb-session-project-menu .asb-select-item > span:first-child { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-.asb-session-result-row { border-bottom: 1px solid var(--asb-hairline); padding-bottom: var(--asb-space-1); }
+.asb-session-result-row { padding-bottom: var(--asb-space-2); }
 .asb-session-result-row > .asb-session-item { width: 100%; }
 .asb-session-project-heading {
   width: 100%;

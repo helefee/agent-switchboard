@@ -77,15 +77,18 @@ impl ExtensionPlan {
             .flat_map(|operation| operation.targets.iter_mut())
     }
 
-    /// All bindings in their post-apply state, in target order. The library
-    /// commit consumes exactly this list.
+    /// Executed targets' post-apply bindings, in target order. Explicitly
+    /// skipped targets do not participate in the library commit.
     pub fn planned_bindings(&self) -> impl Iterator<Item = &ExtensionBinding> {
-        self.planned_targets().map(|target| &target.binding)
+        self.planned_targets()
+            .filter(|target| target.skip_reason.is_none())
+            .map(|target| &target.binding)
     }
 
     /// Post-apply baseline files keyed by binding id.
     pub fn planned_baselines(&self) -> Vec<(String, &ManagedBaselineFile)> {
         self.planned_targets()
+            .filter(|target| target.skip_reason.is_none())
             .filter_map(|target| {
                 target
                     .baseline
@@ -122,6 +125,8 @@ pub struct PlannedTarget {
     pub target: ExtensionTarget,
     /// The binding as it should exist after a successful apply.
     pub binding: ExtensionBinding,
+    /// A reported target that does not participate in execution or library writes.
+    pub skip_reason: Option<String>,
     /// The complete baseline file as it should exist after a successful
     /// apply (directory ownership plus every rule this binding owns).
     pub baseline: Option<ManagedBaselineFile>,
@@ -399,6 +404,7 @@ mod tests {
             warnings: Vec::new(),
             changes,
             adopts_native_entry: false,
+            skip_reason: None,
         }
     }
 
@@ -449,5 +455,26 @@ mod tests {
         assert!(
             serde_json::from_str::<PlanStep>(r#"{"kind":"runCommand","command":"rm"}"#).is_err()
         );
+    }
+
+    #[test]
+    fn skipped_targets_never_enter_the_library_commit() {
+        let mut target = planned_target_with_secret();
+        target.skip_reason = Some("pinned older content".into());
+        target.steps.clear();
+        target.baseline = Some(ManagedBaselineFile::new(&target.binding.id, Vec::new()));
+        let plan = ExtensionPlan {
+            plan_id: "skip".into(), created_at: "2026-10-13T00:00:00Z".into(),
+            operations: vec![PlannedOperation {
+                definition_id: "r-1".into(), definition_revision: 2,
+                operation: PlanOperation::Update, targets: vec![target],
+            }],
+            preconditions: PlanPreconditions {
+                expires_at: "2026-10-13T00:15:00Z".into(), generation: 0,
+                secret_digests: BTreeMap::new(),
+            },
+        };
+        assert_eq!(plan.planned_bindings().count(), 0);
+        assert!(plan.planned_baselines().is_empty());
     }
 }

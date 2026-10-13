@@ -27,6 +27,9 @@ pub struct ConfigFileStatus {
     pub exists: bool,
     pub syntax_ok: bool,
     pub route: Option<RouteState>,
+    /// Internal gateway fact; the public route URL is already redacted.
+    #[serde(skip)]
+    pub(crate) gateway_port: Option<u16>,
     pub read_error: Option<String>,
     /// Current durable transaction state; diagnostics remain readable while writes are blocked.
     pub recovery_issue: Option<String>,

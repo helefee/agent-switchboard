@@ -5,9 +5,11 @@
 //! JavaScript expression in a fresh, resource-bounded QuickJS context. The
 //! script can calculate a request and extract JSON, but receives no host I/O;
 //! the shared probe transport remains the only process that performs a
-//! network request.
+//! network request. Both query modes normalize extracted facts through one
+//! business owner; exhausted or unavailable quotas are successful readings.
 
 mod declarative;
+mod response;
 pub(crate) mod scheduler;
 mod script;
 

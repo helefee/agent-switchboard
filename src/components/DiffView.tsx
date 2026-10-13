@@ -1,5 +1,6 @@
 import type { KeyChange } from "../api/client";
 import { useI18n } from "../i18n";
+import { Table, type TableColumn } from "./Table";
 
 interface Props {
   changes: KeyChange[];
@@ -9,35 +10,30 @@ interface Props {
 
 /**
  * The single owner of change-row diff rendering (DESIGN.md §8): one change
- * per row — the key plus its red outgoing → green incoming line in code
- * style on a near-solid backdrop. Every diff surface (switch preview,
- * backup diff) consumes this component. The arrow and the 移除 word keep
- * each change legible without relying on color alone.
+ * per row, with aligned key, before and after columns. Every diff surface
+ * consumes this component; Table owns its markup and base treatment.
+ * Column labels and removal text keep changes legible without color alone.
  */
 export function DiffView({ changes, label }: Props) {
   const { t } = useI18n();
+  if (changes.length === 0) return null;
+  const columns: Array<TableColumn<KeyChange>> = [
+    { key: "key", header: t("providers.diff.column.key"), cellClassName: "asb-diff-key", render: (change) => change.key },
+    {
+      key: "before", header: t("providers.diff.column.before"), cellClassName: "asb-diff-value",
+      render: (change) => change.before === null
+        ? <span className="asb-diff-none">{t("providers.diff.none")}</span>
+        : <span className="asb-diff-old">{change.before}</span>,
+    },
+    {
+      key: "after", header: t("providers.diff.column.after"), cellClassName: "asb-diff-value",
+      render: (change) => change.after === null
+        ? <span className="asb-diff-remove">{t("providers.diff.removed")}</span>
+        : <span className="asb-diff-new">{change.after}</span>,
+    },
+  ];
   return (
-    <ul className="asb-diff" aria-label={label}>
-      {changes.map((change) => (
-        <li key={change.key} className="asb-diff-row">
-          <span className="asb-diff-key">{change.key}</span>
-          <span className="asb-diff-value">
-            {change.before === null ? (
-              <span className="asb-diff-none">{t("providers.diff.none")}</span>
-            ) : (
-              <span className="asb-diff-old">{change.before}</span>
-            )}{" "}
-            <span className="asb-diff-arrow" aria-hidden="true">
-              →
-            </span>{" "}
-            {change.after === null ? (
-              <span className="asb-diff-remove">{t("providers.diff.removed")}</span>
-            ) : (
-              <span className="asb-diff-new">{change.after}</span>
-            )}
-          </span>
-        </li>
-      ))}
-    </ul>
+    <Table columns={columns} rows={changes} rowKey={(change) => change.key}
+      ariaLabel={label} className="asb-diff" />
   );
 }

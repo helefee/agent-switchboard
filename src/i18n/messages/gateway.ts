@@ -3,6 +3,7 @@ import type { MessageEntry } from "../types";
 /** Domain dictionary for gateway (zh-CN / en-US pairs). Keys are prefixed with
  * "gateway." and must never collide with another domain file. */
 export const messages = {
+  "gateway.releaseFailed": ["端口准备记录释放失败", "Could not release the port preparation"],
   "gateway.title": ["本机网关", "Local gateway"],
   "gateway.intro": ["网关在这台电脑上转发请求，帮助 Codex 和 Claude Code 连接模型服务。", "The gateway forwards requests on this computer to connect Codex and Claude Code to model services."],
   "gateway.panelAriaLabel": ["本机网关", "Local gateway"],

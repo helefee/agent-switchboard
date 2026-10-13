@@ -3,6 +3,9 @@ import type { MessageEntry } from "../types";
 /** Domain dictionary for codex (zh-CN / en-US pairs). Keys are prefixed with
  * "codex." and must never collide with another domain file. */
 export const messages = {
+  "codex.reset.dailyData": ["查看逐日数据", "View daily data"],
+  "codex.reset.dailyDate": ["日期", "Date"],
+  "codex.reset.dailyCount": ["次数", "Count"],
   // Shared
   "codex.optional": ["（可选）", "(optional)"],
   "codex.loading": ["正在读取", "Loading"],
@@ -281,7 +284,7 @@ export const messages = {
   "codex.probe.readingProgress": ["正在读取检测进度…", "Reading probe progress…"],
   "codex.probe.starting": ["正在启动检测…", "Starting the probe…"],
   "codex.probe.notStarted": ["尚未开始检测。每次检测都会真实调用当前激活的 Codex 配置并消耗额度。", "No probe has run yet. Each probe really calls the currently active Codex configuration and consumes quota."],
-  "codex.probe.note": ["仅按最终非负整数答案判分；运行失败不算通过。检测会消耗额度并计入「消耗统计」；自定义题目与最终回答会保存在本机检测历史中。单题结果存在方差，持续的低通过率只是参考信号，不构成模型判定。", "Grading uses only the final non-negative integer answer; failed runs do not count as passes. A probe consumes quota and counts toward the usage statistics; custom questions and final answers are kept in the local probe history. Single-question results vary, and a persistently low pass rate is only a reference signal, not a model verdict."],
+  "codex.probe.note": ["整数题仅按最终非负整数答案判分；图像与动画题直接显示结果，由人工观察。检测会消耗额度并计入「消耗统计」；题目与原始回答保存在本机检测历史中，刷新与重启后可查看。单题结果存在方差，仅供参考，不构成模型判定。", "Integer questions are graded only against the final nonnegative integer answer; images and animations are displayed for human observation. Probes consume quota and count toward usage statistics. Questions and original answers are kept in local history across refreshes and restarts. Individual results vary and are reference signals, not model verdicts."],
   "codex.probe.customQuestion": ["自定义题目", "Custom question"],
   "codex.probe.customQuestionPlaceholder": ["输入题目；检测时会要求模型只输出最终非负整数", "Enter a question; the probe asks the model to output only the final non-negative integer"],
   "codex.probe.expectedAnswer": ["期望答案（非负整数）", "Expected answer (non-negative integer)"],
@@ -345,7 +348,6 @@ export const messages = {
   // Probe history
   "codex.history.title": ["检测历史", "Probe history"],
   "codex.history.backToRadar": ["返回降智雷达", "Back to degradation radar"],
-  "codex.history.backToView": ["返回查看", "Back to the probe"],
   "codex.history.runningBadge": ["检测进行中 · 已完成 {done}/{total} 次", "Probe running · {done}/{total} completed"],
   "codex.history.rangeAll": ["全部时间", "All time"],
   "codex.history.range7": ["近 7 天", "Last 7 days"],
@@ -389,7 +391,7 @@ export const messages = {
   "codex.history.questionMeta": ["题目（{label}）· 判分规则 v{version} · 期望答案 {answer}", "Question ({label}) · grading v{version} · expected answer {answer}"],
   "codex.history.noRuns": ["该批次没有已记录的运行。", "This batch has no recorded runs."],
   "codex.history.reuseQuestion": ["使用此题重新检测", "Re-probe with this question"],
-  "codex.history.reuseNote": ["重新检测只填入题目与次数，点击开始后将以当前激活的 Codex 配置执行，并作为新批次记录。", "A re-probe only fills in the question and run count; once started it runs against the currently active Codex configuration and is recorded as a new batch."],
+  "codex.history.reuseNote": ["重新检测填入当时的题目、回答方式、期望答案与次数，点击开始后将以当前激活的 Codex 配置执行，并作为新批次记录。", "Re-probing fills in the stored question, answer format, expected answer and run count. Starting uses the currently active Codex configuration and creates a new batch."],
   "codex.history.deleteTitle": ["删除检测历史", "Delete probe history"],
   "codex.history.confirmDelete": ["确认删除", "Confirm deletion"],
   "codex.history.deleteCount": ["数量 {count} 条检测批次", "{count} probe batches"],
@@ -419,6 +421,8 @@ export const messages = {
   "codex.plans.currentSaved": ["当前工作状态已保存为场景；尚未修改 Codex 配置。", "The current work state is saved as a scenario; the Codex configuration is unchanged."],
   "codex.plans.actionsAria": ["场景操作", "Scenario actions"],
   "codex.plans.restoreGroup": ["恢复场景", "Restore scenario"],
+  "codex.plans.maintenanceTitle": ["维护场景记录", "Manage scenario record"],
+  "codex.plans.maintenanceNote": ["更新场景记录或当前标记，不会写入 Codex 配置。", "Update the saved scenario or current marker without writing Codex configuration."],
   "codex.plans.restoreNote": ["恢复前会先显示配置变更。场景只组合已有的供应商、扩展和指令，不会创建第二套配置。", "Configuration changes are shown before restoring. A scenario only combines existing providers, extensions and prompts; it never creates a second configuration."],
   "codex.plans.previewApply": ["预览并恢复场景", "Preview and restore scenario"],
   "codex.plans.updateFromCurrent": ["用当前状态更新场景", "Update scenario from current state"],

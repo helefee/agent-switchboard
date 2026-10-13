@@ -1,4 +1,4 @@
-import { useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 
 interface Props {
   /** Whether the panel is expanded; the content unmounts after the collapse
@@ -26,6 +26,16 @@ export function RowPanelDisclosure({ open, children }: Props) {
     frameRef.current?.getBoundingClientRect();
     setExpanded(true);
   }, [mounted, open, expanded]);
+  useEffect(() => {
+    if (open || !mounted) return;
+    const frame = frameRef.current;
+    const durations = frame ? getComputedStyle(frame).transitionDuration.split(",") : [];
+    const delay = Math.max(0, ...durations.map((value) =>
+      Number.parseFloat(value) * (value.trim().endsWith("ms") ? 1 : 1000)));
+    // Cleanup must also happen with zero motion or an interrupted transition.
+    const timer = window.setTimeout(() => setMounted(false), delay);
+    return () => window.clearTimeout(timer);
+  }, [open, mounted]);
   if (!mounted) return null;
   return (
     <div

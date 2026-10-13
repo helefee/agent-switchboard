@@ -281,7 +281,6 @@ function useProviderSaves(
   const runPendingSave = useCallback(async () => {
     if (busy || !pendingSave) return;
     const pending = pendingSave;
-    setPendingSave(null);
     setBusy(true);
     clearError();
     try {
@@ -296,6 +295,7 @@ function useProviderSaves(
     } catch (caught) {
       onError(caught as CommandError);
     } finally {
+      setPendingSave(null);
       setBusy(false);
     }
   }, [busy, clearError, invalidateCandidates, onError, pendingSave, refresh,
@@ -415,7 +415,6 @@ function useProviderRemoval(deps: ProvidersDeps, setEditorSession: SetEditorSess
   const runDelete = useCallback(async () => {
     if (busy || !deletePending) return;
     const target = deletePending;
-    setDeletePending(null);
     if (target.kind === "codexThirdParty") {
       const id = target.record.profile.id;
       invalidateCandidates();
@@ -429,6 +428,7 @@ function useProviderRemoval(deps: ProvidersDeps, setEditorSession: SetEditorSess
       } catch (caught) {
         onError(caught as CommandError);
       } finally {
+        setDeletePending(null);
         setBusy(false);
       }
       return;
@@ -437,6 +437,7 @@ function useProviderRemoval(deps: ProvidersDeps, setEditorSession: SetEditorSess
     const record = [...records, ...codexOfficialRecords]
       .find((candidate) => candidate.profile.id === id);
     if (!record) {
+      setDeletePending(null);
       onError({ code: "profile-not-found", message: "", messageKey: "operations.delete.missing" });
       return;
     }
@@ -459,6 +460,7 @@ function useProviderRemoval(deps: ProvidersDeps, setEditorSession: SetEditorSess
     } catch (caught) {
       onError(caught as CommandError);
     } finally {
+      setDeletePending(null);
       setBusy(false);
     }
   }, [busy, clearError, codexOfficialRecords, deletePending, invalidateCandidates, onError, records,

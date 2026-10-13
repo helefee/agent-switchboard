@@ -26,7 +26,6 @@ export const messages = {
   "format.window.hoursMany": ["{count} 小时", "{count} hours"],
   "format.window.minutesOne": ["{count} 分钟", "{count} minute"],
   "format.window.minutesMany": ["{count} 分钟", "{count} minutes"],
-  "format.tray.invalidReading": ["已失效", "Invalid"],
   "format.tray.noReading": ["暂无读数", "No readings"],
   "format.tray.depleted": ["· 已耗尽", "· depleted"],
   "format.provider.notLoaded": ["未加载", "Not loaded"],

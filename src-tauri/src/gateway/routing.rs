@@ -421,11 +421,10 @@ pub(super) fn config_points_at_gateway(app: AppKind, configuration: &str) -> boo
     }
 }
 
-/// Managed xAI (SuperGrok) cards are pinned to the xAI API origin: the
-/// editable provider endpoint is a display fact, never a routing fact.
-pub(super) fn xai_pinned_upstream(
-    profile: &asb_core::contracts::CodexProviderProfile,
-) -> Option<String> {
-    (profile.connection.provider_type.as_deref() == Some("xai_oauth"))
-        .then(|| asb_core::contracts::XAI_API_BASE_URL.to_string())
+/// Read-only routing fact extracted before renderer-visible URL redaction.
+pub(crate) fn client_gateway_port(app: AppKind, configuration: &str) -> Option<u16> {
+    if !config_points_at_gateway(app, configuration) { return None; }
+    adapter::route_state(app, configuration).base_url
+        .and_then(|base_url| reqwest::Url::parse(&base_url).ok())
+        .and_then(|url| url.port())
 }

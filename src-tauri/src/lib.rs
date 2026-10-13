@@ -20,6 +20,7 @@ mod dev_api;
 mod distribution;
 mod desktop_shortcut;
 mod extensions;
+mod exit_recovery;
 mod fonts;
 mod gateway;
 mod local_state;
@@ -337,10 +338,7 @@ fn handle_run_event(app: &tauri::AppHandle, event: tauri::RunEvent) {
             if let Err(error) = codex_probe::shutdown_on_exit(app) {
                 api.prevent_exit();
                 log::error!("检测未能安全结束，已取消退出：{error}");
-                tray::recover_main(app, "检测结果尚未保存");
-                use tauri_plugin_dialog::DialogExt;
-                app.dialog().message(format!("检测未能安全结束，已取消退出。{error}\n请在降智雷达中重试保存后退出。"))
-                    .title("Agent Switchboard").show(|_| {});
+                exit_recovery::show(app, exit_recovery::Destination::Radar, &error.to_string());
                 return;
             }
             return;
@@ -358,10 +356,7 @@ fn handle_run_event(app: &tauri::AppHandle, event: tauri::RunEvent) {
             if let Err(error) = codex_probe::shutdown_on_exit(app) {
                 api.prevent_exit();
                 log::error!("检测未能安全结束，已取消退出：{error}");
-                tray::recover_main(app, "检测结果尚未保存");
-                use tauri_plugin_dialog::DialogExt;
-                app.dialog().message(format!("检测未能安全结束，已取消退出。{error}\n请在降智雷达中重试保存后退出。"))
-                    .title("Agent Switchboard").show(|_| {});
+                exit_recovery::show(app, exit_recovery::Destination::Radar, &error.to_string());
                 return;
             }
             if let Some(gateway) = app.try_state::<gateway::GatewayController>() {
@@ -369,11 +364,7 @@ fn handle_run_event(app: &tauri::AppHandle, event: tauri::RunEvent) {
                     api.prevent_exit();
                     app.state::<codex_probe::ProbeRegistry>().resume_after_blocked_exit();
                     log::error!("Claude 接管恢复失败，已取消退出：{error}");
-                    tray::recover_main(app, "Claude 接管恢复失败");
-                    use tauri_plugin_dialog::DialogExt;
-                    app.dialog().message(format!("Claude 接管恢复失败，已取消退出。{error}\n请在切换历史中处理恢复后再退出。"))
-                        .title("Agent Switchboard")
-                        .kind(tauri_plugin_dialog::MessageDialogKind::Error).show(|_| {});
+                    exit_recovery::show(app, exit_recovery::Destination::Backups, &error.to_string());
                 } else {
                     gateway.shutdown();
                 }

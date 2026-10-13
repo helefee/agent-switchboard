@@ -1,5 +1,6 @@
 import { useEffect, useId, useState } from "react";
-import { CUSTOM_PROBE_QUESTION_ID, type ModelUsageRange } from "../api/client";
+import { CUSTOM_PROBE_QUESTION_ID, type CodexProbeGradingVersion, type CodexProbeQuestionSnapshot,
+  type ModelUsageRange } from "../api/client";
 import { CodexOfficialResetPanel } from "../components/CodexOfficialResetPanel";
 import { CodexProbeHistory } from "../components/CodexProbeHistory";
 import { CodexProbePanel, type CodexProbeFormState } from "../components/CodexProbePanel";
@@ -11,6 +12,32 @@ import { UsagePage } from "../pages/UsagePage";
 import { useModelUsageReport } from "../pages/use-model-usage-report";
 import { UsageWorkspaceHeader } from "./UsageWorkspaceHeader";
 import type { UsageSection } from "./navigation";
+
+function useProbeForm(probe: ReturnType<typeof useCodexProbe>, closeHistory: () => void) {
+  const [questionId, setQuestionId] = useState<string | null>(null);
+  const [runCount, setRunCount] = useState(3);
+  const [customQuestion, setCustomQuestion] = useState("");
+  const [customAnswer, setCustomAnswer] = useState("");
+  const [customGradingVersion, setCustomGradingVersion] = useState<CodexProbeGradingVersion>("1");
+  useEffect(() => {
+    if (questionId === null && probe.questions && probe.questions.length > 0) {
+      setQuestionId(probe.questions[0].id);
+    }
+  }, [questionId, probe.questions]);
+  const form: CodexProbeFormState = { questionId, customQuestion, customAnswer, customGradingVersion,
+    onCustomQuestionChange: setCustomQuestion, onCustomAnswerChange: setCustomAnswer,
+    onCustomGradingChange: setCustomGradingVersion };
+  const reuseQuestion = (question: CodexProbeQuestionSnapshot,
+    plannedRuns: number, gradingVersion: CodexProbeGradingVersion) => {
+    setQuestionId(CUSTOM_PROBE_QUESTION_ID);
+    setCustomQuestion(question.text);
+    setCustomAnswer(question.expectedAnswer);
+    setCustomGradingVersion(gradingVersion);
+    setRunCount(plannedRuns);
+    closeHistory();
+  };
+  return { form, runCount, setRunCount, setQuestionId, reuseQuestion };
+}
 
 export function UsageWorkspace({ active, section, onSectionChange }: {
   active: boolean;
@@ -32,28 +59,7 @@ export function UsageWorkspace({ active, section, onSectionChange }: {
   // live entry to a running batch.
   const radarActive = active && section === "radar";
   const probe = useCodexProbe(radarActive);
-  const [questionId, setQuestionId] = useState<string | null>(null);
-  const [runCount, setRunCount] = useState(3);
-  const [customQuestion, setCustomQuestion] = useState("");
-  const [customAnswer, setCustomAnswer] = useState("");
-  useEffect(() => {
-    if (questionId === null && probe.questions && probe.questions.length > 0) {
-      setQuestionId(probe.questions[0].id);
-    }
-  }, [questionId, probe.questions]);
-  const form: CodexProbeFormState = { questionId, customQuestion, customAnswer,
-    onCustomQuestionChange: setCustomQuestion, onCustomAnswerChange: setCustomAnswer };
-  /** Fills the radar form from a historical question; the start action still
-   * belongs to the user, and the new batch runs against the current
-   * configuration. */
-  const reuseQuestion = (question: { id: string; text: string; expectedAnswer: string },
-    plannedRuns: number) => {
-    setQuestionId(CUSTOM_PROBE_QUESTION_ID);
-    setCustomQuestion(question.text);
-    setCustomAnswer(question.expectedAnswer);
-    setRunCount(plannedRuns);
-    setHistoryOpen(false);
-  };
+  const { form, runCount, setRunCount, setQuestionId, reuseQuestion } = useProbeForm(probe, () => setHistoryOpen(false));
   const quotaReadsVisible = quotaOpened || section === "quota";
   const officialReset = useCodexOfficialReset(quotaReadsVisible);
   const resetSignal = useCodexResetSignal(quotaReadsVisible);

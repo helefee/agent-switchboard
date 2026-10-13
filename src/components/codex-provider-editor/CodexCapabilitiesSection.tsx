@@ -1,9 +1,7 @@
-import { useState } from "react";
 import type { CodexCapabilities, CodexChatReasoning } from "../../api/client";
 import type { MessageKey } from "../../i18n";
 import { useI18n } from "../../i18n";
 import { Checkbox } from "../Checkbox";
-import { ChevronDownIcon } from "../icons";
 import { RadioOption } from "../RadioOption";
 import { Select } from "../Select";
 import { reconcileCodexCapabilities } from "./draft";
@@ -94,40 +92,39 @@ function ChatReasoningControls({ editor, busy }: Props) {
 export function CodexCapabilitiesSection({ editor, busy }: Props) {
   const { t } = useI18n();
   const { draft, setDraft } = editor;
-  const [expanded, setExpanded] = useState(false);
   const enabledCount = CAPABILITY_LABELS.filter(({ key }) => draft.capabilities[key]).length;
   return (
-    <details className="asb-provider-disclosure" open={expanded}
-      onToggle={(event) => setExpanded(event.currentTarget.open)}>
-      <summary><span>{t("codex.capabilities.title")}</span><span className="asb-provider-disclosure-value">
-        {t("codex.capabilities.enabledCount", { count: enabledCount })}
-      </span><ChevronDownIcon /></summary>
-      <div className="asb-provider-disclosure-body">
-        <p className="asb-scope-note">{t("codex.capabilities.note")}</p>
-        <div className="asb-provider-field-grid">
-          <div className="asb-field">
-            <span>{t("codex.capabilities.basic")}</span>
-            <div className="asb-catalog-levels-options" role="group" aria-label={t("codex.capabilities.basic")}>
-              <Checkbox label="Responses" checked disabled
-                onChange={() => undefined} />
-            </div>
-            <p className="asb-scope-note">{t("codex.capabilities.alwaysOn")}</p>
+    <section className="asb-provider-advanced-group" aria-label={t("codex.capabilities.title")}>
+      <h4 className="asb-provider-advanced-heading">
+        <span>{t("codex.capabilities.title")}</span>
+        <span className="asb-provider-advanced-value">
+          {t("codex.capabilities.enabledCount", { count: enabledCount })}
+        </span>
+      </h4>
+      <p className="asb-scope-note">{t("codex.capabilities.note")}</p>
+      <div className="asb-provider-field-grid">
+        <div className="asb-field">
+          <span>{t("codex.capabilities.basic")}</span>
+          <div className="asb-catalog-levels-options" role="group" aria-label={t("codex.capabilities.basic")}>
+            <Checkbox label="Responses" checked disabled
+              onChange={() => undefined} />
           </div>
-          <div className="asb-field">
-            <span>{t("codex.capabilities.operations")}</span>
-            <div className="asb-catalog-levels-options" role="group" aria-label={t("codex.capabilities.operations")}>
-              {CAPABILITY_LABELS.map(({ key, labelKey }) => (
-                <Checkbox key={key} label={t(labelKey)} checked={draft.capabilities[key]} disabled={busy}
-                  onChange={(checked) => setDraft((current) => reconcileCodexCapabilities(current,
-                    { ...current.capabilities, [key]: checked }))} />
-              ))}
-            </div>
+          <p className="asb-scope-note">{t("codex.capabilities.alwaysOn")}</p>
+        </div>
+        <div className="asb-field">
+          <span>{t("codex.capabilities.operations")}</span>
+          <div className="asb-catalog-levels-options" role="group" aria-label={t("codex.capabilities.operations")}>
+            {CAPABILITY_LABELS.map(({ key, labelKey }) => (
+              <Checkbox key={key} label={t(labelKey)} checked={draft.capabilities[key]} disabled={busy}
+                onChange={(checked) => setDraft((current) => reconcileCodexCapabilities(current,
+                  { ...current.capabilities, [key]: checked }))} />
+            ))}
           </div>
         </div>
-        {draft.upstream === "chatCompletions" && draft.capabilities.reasoning
-          ? <ChatReasoningControls editor={editor} busy={busy} />
-          : <p className="asb-scope-note">{t("codex.capabilities.chatReasoningOffNote")}</p>}
       </div>
-    </details>
+      {draft.upstream === "chatCompletions" && draft.capabilities.reasoning
+        ? <ChatReasoningControls editor={editor} busy={busy} />
+        : <p className="asb-scope-note">{t("codex.capabilities.chatReasoningOffNote")}</p>}
+    </section>
   );
 }

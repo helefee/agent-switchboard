@@ -324,6 +324,15 @@ fn execute_steps<Io: SwitchIo>(
     let mut target_index = 0usize;
     for (resource_index, operation) in plan.operations.iter().enumerate() {
         for planned in &operation.targets {
+            if let Some(message) = &planned.skip_reason {
+                record.resources[resource_index].targets.push(ExtensionTargetResult {
+                    target: planned.target.clone(),
+                    outcome: TargetOutcome::Skipped { message: message.clone() },
+                    warnings: planned.warnings.clone(),
+                });
+                target_index += 1;
+                continue;
+            }
             for (index, step) in planned.steps.iter().enumerate() {
                 // Preparation: all checks, backups, and staging happen before
                 // the step is announced; a preparation failure leaves nothing.

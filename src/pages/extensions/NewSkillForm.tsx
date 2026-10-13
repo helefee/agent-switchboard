@@ -1,9 +1,9 @@
-import { Button } from "../../components/Button";
 import { Input } from "../../components/Input";
 import { useI18n } from "../../i18n";
 
 interface Props {
   busy: boolean;
+  formId: string;
   newSkillName: string;
   setNewSkillName: (value: string) => void;
   newSkillDescription: string;
@@ -14,6 +14,7 @@ interface Props {
 /** Creates one editable local Skill from the built-in template. */
 export function NewSkillForm({
   busy,
+  formId,
   newSkillName,
   setNewSkillName,
   newSkillDescription,
@@ -23,10 +24,12 @@ export function NewSkillForm({
   const { t } = useI18n();
   return (
     <form
+      id={formId}
       className="asb-form"
       aria-label={t("extensions.toolbar.newSkill")}
       onSubmit={(event) => {
         event.preventDefault();
+        if (busy) return;
         void createSkill();
       }}
     >
@@ -50,11 +53,6 @@ export function NewSkillForm({
           onChange={(event) => setNewSkillDescription(event.target.value)}
         />
       </label>
-      <div className="asb-form-actions">
-        <Button type="submit" variant="primary" disabled={busy}>
-          {t("extensions.newSkill.create")}
-        </Button>
-      </div>
     </form>
   );
 }

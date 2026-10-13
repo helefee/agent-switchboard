@@ -23,6 +23,7 @@ export function ExtensionManagementDialog({
         projects={w.ext.workspace?.projects ?? []}
         capabilities={w.ext.workspace?.capabilities ?? []}
         busy={w.writeBlocked}
+        check={w.check}
         installTargets={targets}
         onInstallTargetsChange={setTargets}
         updateReport={updateReport}

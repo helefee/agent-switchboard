@@ -1,6 +1,9 @@
 import type { OfficialSettingDirectoryEntry } from "../api/client";
+import { useState } from "react";
 import { useI18n } from "../i18n";
 import { catalogText } from "../i18n/errors";
+import { Input } from "./Input";
+import { Button } from "./Button";
 
 interface Props {
   entries: OfficialSettingDirectoryEntry[];
@@ -14,6 +17,10 @@ interface Props {
  */
 export function OfficialSettingsDirectory({ entries }: Props) {
   const { t } = useI18n();
+  const [query, setQuery] = useState("");
+  const needle = query.trim().toLocaleLowerCase();
+  const visible = entries.filter((entry) => [entry.title, entry.detail, ...entry.paths]
+    .map((value) => catalogText(value, t)).join(" ").toLocaleLowerCase().includes(needle));
   const dispositionLabel: Record<OfficialSettingDirectoryEntry["disposition"], string> = {
     direct: t("clientConfig.directory.dispositionDirect"),
     separateModule: t("clientConfig.directory.dispositionSeparate"),
@@ -22,8 +29,12 @@ export function OfficialSettingsDirectory({ entries }: Props) {
   return (
     <section className="asb-official-directory" aria-label={t("clientConfig.directory.title")}>
       <h3 className="asb-official-directory-title">{t("clientConfig.directory.title")}</h3>
+      <Input type="search" value={query} aria-label={t("clientConfig.directory.search")}
+        placeholder={t("clientConfig.directory.search")} onChange={(event) => setQuery(event.target.value)} />
+      {needle && <Button variant="secondary" onClick={() => setQuery("")}>{t("common.clearFilters")}</Button>}
       <div className="asb-official-directory-list">
-        {entries.map((entry) => (
+        {visible.length === 0 && <p role="status">{t("clientConfig.directory.noMatches")}</p>}
+        {visible.map((entry) => (
           <article className="asb-official-directory-entry" key={`${entry.title}:${entry.paths.join("|")}`}>
             <div className="asb-official-directory-entry-head">
               <h4 className="asb-group-title">{catalogText(entry.title, t)}</h4>

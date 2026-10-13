@@ -238,7 +238,9 @@ pub async fn set_binding_lock(
         if locked {
             let baseline = store.get_baseline_file(&binding.id).map_err(store_error)?;
             let projects = store.list_projects().map_err(store_error)?;
-            if binding_file_state(&binding, &definition, baseline.as_ref(), &projects)
+            let mut current_content = binding.clone();
+            current_content.locked_digest = None;
+            if binding_file_state(&current_content, &definition, baseline.as_ref(), &projects)
                 != FileState::InSync
             {
                 return Err(CommandError::keyed(

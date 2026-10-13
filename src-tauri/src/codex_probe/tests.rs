@@ -27,21 +27,25 @@ fn answers_are_whole_nonnegative_integers_not_substrings() {
     for answer in ["145", "45.5", "-45", "45 44", "not 45", "", "**45**"] {
         assert!(!answer_matches(answer, "45"), "{answer}");
     }
-    let question = resolve_question(CUSTOM_QUESTION_ID, Some("题目".into()), Some("000".into())).unwrap();
+    let question = resolve_question(CUSTOM_QUESTION_ID, Some("题目".into()), Some("000".into()),
+        Some(ProbeGrading::Integer)).unwrap();
     assert_eq!(question.expected_answer, "0");
 }
 
 #[test]
-fn builtin_questions_have_unique_ids_and_pure_digit_answers() {
+fn builtin_questions_have_unique_ids_and_answers_matching_their_format() {
     let mut ids = Vec::new();
     for question in QUESTIONS.iter() {
         assert!(!question.id.is_empty());
         assert!(!question.label.is_empty());
         assert!(!question.prompt.is_empty());
-        assert!(question
-            .expected_answer
-            .bytes()
-            .all(|byte| byte.is_ascii_digit()));
+        match question.grading {
+            ProbeGrading::Integer => {
+                assert!(!question.expected_answer.is_empty());
+                assert!(question.expected_answer.bytes().all(|byte| byte.is_ascii_digit()));
+            }
+            ProbeGrading::SvgVisual | ProbeGrading::HtmlVisual => assert!(question.expected_answer.is_empty()),
+        }
         ids.push(question.id);
     }
     ids.sort_unstable();
@@ -51,7 +55,7 @@ fn builtin_questions_have_unique_ids_and_pure_digit_answers() {
 
 #[test]
 fn resolve_question_validates_builtin_and_custom_selections() {
-    let builtin = resolve_question(QUESTIONS[0].id, None, None).expect("builtin question");
+    let builtin = resolve_question(QUESTIONS[0].id, None, None, None).expect("builtin question");
     assert_eq!(builtin.id, QUESTIONS[0].id);
     assert_eq!(builtin.label, QUESTIONS[0].label);
     assert_eq!(builtin.expected_answer, QUESTIONS[0].expected_answer);
@@ -60,16 +64,57 @@ fn resolve_question_validates_builtin_and_custom_selections() {
         CUSTOM_QUESTION_ID,
         Some("  题目文本 ".to_string()),
         Some(" 21 ".to_string()),
+        Some(ProbeGrading::Integer),
     )
     .expect("custom question");
     assert_eq!(custom.id, CUSTOM_QUESTION_ID);
     assert_eq!(custom.prompt, "题目文本");
     assert_eq!(custom.expected_answer, "21");
 
-    assert!(resolve_question("unknown", None, None).is_err());
-    assert!(resolve_question(CUSTOM_QUESTION_ID, None, None).is_err());
-    assert!(resolve_question(CUSTOM_QUESTION_ID, Some("题目".into()), None).is_err());
-    assert!(resolve_question(CUSTOM_QUESTION_ID, Some("题目".into()), Some("x".into())).is_err());
+    assert!(resolve_question("unknown", None, None, None).is_err());
+    assert!(resolve_question(CUSTOM_QUESTION_ID, None, None, Some(ProbeGrading::Integer)).is_err());
+    assert!(resolve_question(CUSTOM_QUESTION_ID, Some("题目".into()), None, Some(ProbeGrading::Integer)).is_err());
+    assert!(resolve_question(CUSTOM_QUESTION_ID, Some("题目".into()), Some("x".into()),
+        Some(ProbeGrading::Integer)).is_err());
+}
+
+#[test]
+fn custom_svg_answers_keep_their_visual_contract_without_an_integer_reference() {
+    let question = resolve_question(CUSTOM_QUESTION_ID, Some("画一幅 SVG".into()),
+        None, Some(ProbeGrading::SvgVisual)).unwrap();
+    assert_eq!(question.grading, ProbeGrading::SvgVisual);
+    assert_eq!(question.execution_prompt(), "画一幅 SVG");
+    assert!(question.expected_answer.is_empty());
+    let custom = resolve_question(CUSTOM_QUESTION_ID, Some(question.prompt.clone()),
+        Some(question.expected_answer.clone()), Some(question.grading)).unwrap();
+    assert_eq!(custom.execution_prompt(), question.execution_prompt());
+    assert_eq!(custom.grading, question.grading);
+    assert!(resolve_question(CUSTOM_QUESTION_ID, Some("画图".into()), Some("45".into()),
+        Some(ProbeGrading::SvgVisual)).is_err());
+    assert!(resolve_question(CUSTOM_QUESTION_ID, Some("画图".into()), None, None).is_err());
+    assert!(ProbeGrading::parse("unknown").is_none());
+}
+
+#[test]
+fn linuxdo_animation_keeps_its_full_prompt_and_html_output_contract() {
+    let question = resolve_question("pelican-riding-bicycle", None, None, None).unwrap();
+    assert_eq!(QUESTIONS.iter().filter(|item| item.id.contains("pelican")).count(), 1);
+    assert!(resolve_question("pelican-riding-bicycle-animation", None, None, None).is_err());
+    assert_eq!(question.grading, ProbeGrading::HtmlVisual);
+    assert_eq!(question.prompt, "生成html，内容是svg绘制鹈鹕骑自行车2D动画，不用进行测试。\n直接在最终回答中输出完整 HTML 源码，不要只返回文件路径或完成说明。");
+    assert_eq!(question.execution_prompt(), question.prompt);
+    assert!(question.expected_answer.is_empty());
+    assert_eq!(QUESTIONS.iter().find(|item| item.id == question.id).unwrap().source_url,
+        Some("https://linux.do/t/topic/2702004"));
+    let custom = resolve_question(CUSTOM_QUESTION_ID, Some(question.prompt.clone()),
+        None, Some(question.grading)).unwrap();
+    assert_eq!(custom.execution_prompt(), question.execution_prompt());
+    assert_eq!(custom.grading, question.grading);
+    assert!(resolve_question(CUSTOM_QUESTION_ID, Some("生成 HTML".into()), Some("45".into()),
+        Some(ProbeGrading::HtmlVisual)).is_err());
+    for grading in [ProbeGrading::Integer, ProbeGrading::SvgVisual, ProbeGrading::HtmlVisual] {
+        assert_eq!(ProbeGrading::parse(grading.as_str()), Some(grading));
+    }
 }
 
 #[test]
@@ -181,7 +226,7 @@ fn pending_results_are_visible_in_both_views_and_retry_releases_the_slot() {
         id: "pending".into(), started_at: ledger::now_rfc3339(), planned_runs: 1,
         question: ledger::ProbeQuestionSnapshot { id: "custom".into(), label: "题".into(),
             text: "题干".into(), expected_answer: "45".into() },
-        grading_version: "1".into(), cli_version: None, config: Default::default(),
+        grading_version: ProbeGrading::Integer, cli_version: None, config: Default::default(),
     }).unwrap();
     ledger.start_run("pending", 1).unwrap();
     registry.worker_finished("pending", Some(UnsavedProbe {

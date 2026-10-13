@@ -50,10 +50,7 @@ interface ProviderWorkspaceShellProps {
   children: ReactNode;
 }
 
-/** The one provider-workspace skeleton: the observed connection cards lead
- * the supplier page, followed by the workspace header — row 1 the title
- * alone, row 2 the client switch left and every page action right — and the
- * filtered supplier list. */
+/** The page heading leads, while connection cards keep their existing visual expression. */
 export function ProviderWorkspaceShell({
   ariaLabel,
   app,
@@ -70,8 +67,6 @@ export function ProviderWorkspaceShell({
   const { t } = useI18n();
   return (
     <section className="asb-provider-workspace" aria-label={ariaLabel}>
-      <DualRelay statuses={statuses} profiles={profiles} locks={locks} />
-      <section className="asb-panel asb-provider-list-panel" aria-label={t("providers.list.aria")}>
         <WorkspaceHeader
           title={t("nav.page.providers")}
           primary={
@@ -95,6 +90,8 @@ export function ProviderWorkspaceShell({
             </>
           }
         />
+      <DualRelay statuses={statuses} profiles={profiles} locks={locks} />
+      <section className="asb-panel asb-provider-list-panel" aria-label={t("providers.list.aria")}>
         {children}
       </section>
     </section>
@@ -168,7 +165,7 @@ interface ProviderRowShellProps {
   primaryAction?: ReactNode;
   /** Secondary explicit action, such as official re-login. */
   secondaryAction?: ReactNode;
-  /** Secondary icon actions; hidden until hover or keyboard focus on pointer devices. */
+  /** Secondary icon actions, visible beside or beneath the primary data row. */
   actions?: ReactNode;
   /** Expansion blocks rendered below the data row. */
   children?: ReactNode;

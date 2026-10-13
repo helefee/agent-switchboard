@@ -10,6 +10,7 @@ import { Button } from "../Button";
 import { DiffView } from "../DiffView";
 import { Select } from "../Select";
 import { AppDialog } from "../AppDialog";
+import { Table } from "../Table";
 import { OPERATION_LABELS, targetLabel } from "./labels";
 
 interface Props {
@@ -45,18 +46,15 @@ function TargetPreview({ target, label }: { target: PlannedTargetView; label: st
       )}
       {target.files && target.files.length > 0 && (
         <div>
-          <p className="asb-scope-note">
-            {target.files.some((file) => file.action === "remove")
-              ? t("extensions.plan.filesRemove")
-              : t("extensions.plan.filesDeploy")}
-          </p>
-          <ul className="asb-ext-file-list">
-            {target.files.map((file) => (
-              <li key={file.relativePath} className="asb-code">
-                {file.relativePath}
-              </li>
-            ))}
-          </ul>
+          <p className="asb-scope-note">{t("extensions.plan.fileChanges")}</p>
+          <div className="asb-ext-table-scroll" tabIndex={0}>
+            <Table rows={target.files} rowKey={(file) => `${file.action}:${file.relativePath}`}
+              ariaLabel={t("extensions.plan.diffLabel", { target: label })} columns={[
+                { key: "file", header: t("extensions.table.file"), render: (file) => <span className="asb-code">{file.relativePath}</span> },
+                { key: "action", header: t("extensions.table.actions"), render: (file) => t(file.action === "remove"
+                  ? "extensions.plan.fileRemove" : "extensions.plan.fileDeploy") },
+              ]} />
+          </div>
         </div>
       )}
     </div>

@@ -12,6 +12,10 @@ namespace AgentSwitchboard.Installer
             get { return InstallerProductMetadata.ProductName; }
         }
 
+        internal string CopyDiagnostic { get { return T("复制诊断信息", "Copy diagnostics"); } }
+        internal string CopiedDiagnostic { get { return T("已复制", "Copied"); } }
+        internal string CopyDiagnosticFailed { get { return T("复制失败，请重试", "Copy failed; try again"); } }
+
         internal string BrandName
         {
             get { return InstallerProductMetadata.ProductName; }

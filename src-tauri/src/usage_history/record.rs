@@ -3,7 +3,7 @@ use super::ledger::{
     validate_optional_number, OfficialHistoryPoint, ProviderHistoryPoint,
 };
 use crate::local_state::LocalState;
-use asb_core::contracts::{CodexOfficialQuota, ProviderProfile, UsageSummary};
+use asb_core::contracts::{CodexOfficialQuota, ProviderProfile, UsageAvailability, UsageSummary};
 
 /// Records every normalized reading in one successful provider network query.
 /// The caller treats persistence errors as warnings so a fresh query result
@@ -22,7 +22,7 @@ pub(crate) fn record_provider(
     let points = summary
         .readings
         .iter()
-        .filter(|reading| reading.is_valid != Some(false))
+        .filter(|reading| !matches!(&reading.availability, UsageAvailability::Unavailable { .. }))
         .map(|reading| {
             validate_optional_number(reading.remaining)?;
             validate_optional_number(reading.used)?;

@@ -3,6 +3,7 @@ import type { MessageEntry } from "../types";
 /** Tray popup panel (tray.html entry). Language follows the tray snapshot's
  * app settings through the same provider as the main window. */
 export const messages = {
+  "tray.retry": ["重新读取", "Read again"],
   "tray.panel.aria": ["Agent Switchboard 托盘", "Agent Switchboard tray"],
   "tray.loading": ["正在读取供应商…", "Reading providers…"],
   "tray.emptyGroup": ["暂无供应商", "No providers"],

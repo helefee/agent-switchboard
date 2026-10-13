@@ -4,6 +4,7 @@ import { getRuntimeOverview, openAppDataDir, type RuntimeOverview } from "../api
 import { useI18n, type TFunction } from "../i18n";
 import { FactPath } from "./FactPath";
 import { ModuleHeader } from "./WorkspaceHeader";
+import { Button } from "./Button";
 
 function buildModeLabel(buildMode: RuntimeOverview["buildMode"], t: TFunction): string {
   return buildMode === "release" ? t("providers.runtime.build.release") : t("providers.runtime.build.debug");
@@ -48,9 +49,11 @@ export function RuntimeOverviewPanel() {
   const { t } = useI18n();
   const [runtime, setRuntime] = useState<RuntimeOverview | null>(null);
   const [error, setError] = useMessageState();
+  const [revision, setRevision] = useState(0);
 
   useEffect(() => {
     let active = true;
+    setError(null);
 
     void getRuntimeOverview()
       .then((overview) => {
@@ -63,7 +66,7 @@ export function RuntimeOverviewPanel() {
     return () => {
       active = false;
     };
-  }, []);
+  }, [revision]);
 
   return (
     <section className="asb-panel" aria-labelledby="runtime-overview-heading">
@@ -79,6 +82,7 @@ export function RuntimeOverviewPanel() {
       {error && (
         <p className="asb-warn-text" role="alert">
           {t("providers.runtime.loadFailed", { detail: error })}
+          {" "}<Button variant="secondary" onClick={() => setRevision((value) => value + 1)}>{t("settings.retry")}</Button>
         </p>
       )}
       {runtime !== null && (

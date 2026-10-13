@@ -5,7 +5,8 @@ use crate::contracts::AppKind;
 /// One explicit usage-balance query mode owned by a profile. Declarative
 /// queries use the application's fixed GET/auth/JSON-Pointer behavior;
 /// script queries provide the two constrained JavaScript functions evaluated
-/// by the desktop runtime. The tag is the only persisted discriminator.
+/// by the desktop runtime. Both modes feed the same business normalization.
+/// The tag is the only persisted discriminator.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(
     tag = "kind",
@@ -38,6 +39,7 @@ pub enum UsageQuery {
     },
     /// JavaScript source that evaluates to `{ request(input), extract(input) }`.
     /// It is compiled and executed only by the constrained desktop runtime.
+    /// Extracted facts are normalized separately from query success.
     Script {
         source: String,
         /// Minutes between the desktop scheduler's automatic re-queries of
@@ -66,9 +68,35 @@ impl UsageQuery {
     }
 }
 
-/// One named or unnamed set of numbers picked out of a usage-query response.
-/// A declarative query always produces exactly one unnamed reading; a script
-/// may return several named readings when one provider exposes multiple plans.
+/// Facts returned by extraction, before business availability is determined.
+#[derive(Debug, Clone, PartialEq, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct UsageReadingInput {
+    pub plan_name: Option<String>,
+    pub remaining: Option<f64>,
+    pub used: Option<f64>,
+    pub total: Option<f64>,
+    pub unit: Option<String>,
+    pub resets_at: Option<String>,
+    pub is_valid: Option<bool>,
+    pub invalid_message: Option<String>,
+    pub extra: Option<String>,
+}
+
+/// Availability is a successful reading's business state, never a query error.
+#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
+#[serde(tag = "kind", rename_all = "camelCase", deny_unknown_fields)]
+pub enum UsageAvailability {
+    Available,
+    Exhausted,
+    Unavailable {
+        #[serde(skip_serializing_if = "Option::is_none")]
+        message: Option<String>,
+    },
+    Unknown,
+}
+
+/// Normalized reading consumed by the cache, history, and renderer.
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase", deny_unknown_fields)]
 pub struct UsageReading {
@@ -81,10 +109,7 @@ pub struct UsageReading {
     /// Provider-reported reset time, normalized to RFC 3339 by the extractor.
     #[serde(skip_serializing_if = "Option::is_none")]
     pub resets_at: Option<String>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub is_valid: Option<bool>,
-    #[serde(skip_serializing_if = "Option::is_none")]
-    pub invalid_message: Option<String>,
+    pub availability: UsageAvailability,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub extra: Option<String>,
 }

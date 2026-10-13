@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from "react";
+import { Button as MenuButton, Menu, MenuItem, MenuTrigger, Popover } from "react-aria-components";
 import { getSessionMetadata, type SessionBookmark, type SessionMeta } from "../../api/client";
 import { useI18n } from "../../i18n";
 import { useMessageState } from "../../i18n/use-message-state";
@@ -36,8 +37,14 @@ function BookmarkDetail({ item, busy, onRemove, onOpen }: {
         <span className="asb-scope-note">{t("sessions.bookmarks.savedAt")} <Time iso={item.savedAt} /></span>
       </div>
       <div className="asb-session-actions">
-        <Button variant="secondary" disabled={opening} onClick={() => void open()}>{t("sessions.bookmarks.openSource")}</Button>
-        <Button variant="danger" disabled={busy} onClick={onRemove}>{t("sessions.bookmarks.remove")}</Button>
+        <Button variant="primary" disabled={opening} onClick={() => void open()}>{t("sessions.bookmarks.openSource")}</Button>
+        <MenuTrigger><MenuButton className="asb-btn asb-btn-secondary" isDisabled={busy}
+          aria-label={t("sessions.actions.moreAria")}>{t("sessions.actions.more")}</MenuButton>
+          <Popover placement="bottom end" className="asb-session-more-menu">
+            <Menu aria-label={t("sessions.actions.moreAria")} className="asb-session-more-items">
+              <MenuItem id="remove" className="asb-session-more-item is-danger" isDisabled={busy}
+                onAction={onRemove}>{t("sessions.bookmarks.remove")}</MenuItem>
+            </Menu></Popover></MenuTrigger>
       </div>
     </header>
     <p className="asb-scope-note">{t("sessions.bookmarks.snapshot")}</p>
@@ -81,8 +88,9 @@ export function SessionBookmarksPane({ bookmarks, onOpen, query, filter }: {
           aria-label={t("sessions.bookmarks.detail")}><p>{t("sessions.bookmarks.select")}</p></section>}
     </div>
     {pending && <ConfirmSheet title={t("sessions.bookmarks.remove")} confirmLabel={t("sessions.bookmarks.remove")}
+      busy={bookmarks.busy}
       confirmDisabled={bookmarks.busy || bookmarks.loading}
-      destructive onCancel={() => setPending(null)} onConfirm={() => { void bookmarks.remove(pending.id); setPending(null); }}>
+      destructive onCancel={() => setPending(null)} onConfirm={() => { void bookmarks.remove(pending.id).finally(() => setPending(null)); }}>
       <p>{t("sessions.bookmarks.removeDetail", { title: pending.sessionTitle })}</p>
     </ConfirmSheet>}
   </>;

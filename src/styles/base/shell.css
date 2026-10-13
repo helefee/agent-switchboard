@@ -16,6 +16,10 @@
   min-height: 0;
 }
 
+.asb-shell.is-collapsed {
+  --asb-sidebar-width: var(--asb-sidebar-collapsed-width);
+}
+
 /* The workspace is one inset surface; chrome stays continuous above and left. */
 .asb-workspace {
   position: relative;
@@ -26,17 +30,12 @@
   min-height: 0;
   margin: 0 var(--asb-space-unit) var(--asb-space-unit) 0;
   border: 1px solid var(--asb-hairline);
-  border-radius: var(--asb-radius);
+  border-radius: var(--asb-radius-panel);
   overflow: clip;
-  background:
-    radial-gradient(38% 32% at 18% 12%, var(--asb-ambient-light-codex), transparent 70%),
-    radial-gradient(34% 30% at 84% 78%, var(--asb-ambient-light-claude), transparent 70%),
-    var(--asb-canvas);
+  background: var(--asb-content);
 }
 
-/* Icon navigation rail: fixed 64px width (Codex-desktop style). Names live
-   in each button's accessible name and surface as right-side tooltips, so
-   the rail carries no text of its own. */
+/* Width and text share one duration; flex gives the workspace the remaining width. */
 .asb-sidebar {
   display: flex;
   flex-direction: column;
@@ -45,13 +44,16 @@
   min-height: 0;
   user-select: none;
   -webkit-user-select: none;
+  transition: width var(--asb-motion-navigation) var(--asb-easing);
 }
 
 .asb-sidebar-top {
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
   flex: none;
-  height: var(--asb-sidebar-width);
+  height: var(--asb-titlebar-height);
+  padding-inline: var(--asb-space-1);
 }
 
 .asb-sidebar-icon {
@@ -59,6 +61,10 @@
   width: var(--asb-icon-size-xl);
   height: var(--asb-icon-size-xl);
   object-fit: contain;
+}
+
+.asb-shell.is-collapsed .asb-sidebar-icon {
+  display: none;
 }
 
 .asb-sidenav {
@@ -80,17 +86,13 @@
   padding: 0;
   list-style: none;
   overflow-y: auto;
-  /* Both gutters keep the button axis fixed when this group scrolls. */
-  scrollbar-gutter: stable both-edges;
+  overflow-x: hidden;
 }
 
 .asb-sidenav-footer {
-  align-self: center;
   flex: none;
-  width: var(--asb-touch-target);
   margin: 0;
   padding: var(--asb-space-2) 0 0;
-  border-top: 1px solid var(--asb-hairline);
   list-style: none;
 }
 
@@ -102,24 +104,44 @@
 }
 
 .asb-sidenav-item {
-  display: grid;
-  place-items: center;
+  display: flex;
+  align-items: center;
   flex: none;
-  width: var(--asb-touch-target);
+  width: min(100%, calc(var(--asb-sidebar-width) - var(--asb-space-3)));
   height: var(--asb-touch-target);
-  padding: 0;
+  padding: 0 var(--asb-space-1);
+  gap: var(--asb-space-2);
+  overflow: hidden;
   border: 0;
-  border-radius: var(--asb-radius);
+  border-radius: var(--asb-radius-navigation);
   background: transparent;
   color: var(--asb-text-muted);
   cursor: pointer;
   transition:
     background-color var(--asb-motion-press) var(--asb-easing),
-    color var(--asb-motion-press) var(--asb-easing);
+    color var(--asb-motion-press) var(--asb-easing),
+    width var(--asb-motion-navigation) var(--asb-easing),
+    gap var(--asb-motion-navigation) var(--asb-easing);
 }
+
+.asb-sidenav-label {
+  min-width: 0;
+  width: calc(var(--asb-sidebar-expanded-width) - var(--asb-row-min-height));
+  overflow: hidden;
+  white-space: nowrap;
+  text-align: left;
+  font: var(--asb-text-label);
+  opacity: 1;
+  transition: width var(--asb-motion-navigation) var(--asb-easing),
+    opacity var(--asb-motion-navigation) var(--asb-easing);
+}
+
+.asb-shell.is-collapsed .asb-sidenav-item { gap: 0; }
+.asb-shell.is-collapsed .asb-sidenav-label { width: 0; opacity: 0; }
 
 .asb-sidenav-item > svg {
   display: block;
+  flex: none;
   width: var(--asb-icon-size-xl);
   height: var(--asb-icon-size-xl);
 }
@@ -132,7 +154,7 @@
 .asb-sidenav-item[aria-current="page"],
 .asb-sidenav-item:active {
   background: var(--asb-sidebar-selected);
-  color: var(--asb-text);
+  color: var(--asb-action);
 }
 
 .asb-sidenav-item:focus-visible {
@@ -144,8 +166,8 @@
 .asb-titlebar {
   display: flex;
   flex: none;
-  min-height: var(--asb-sidebar-width);
-  height: var(--asb-sidebar-width);
+  min-height: var(--asb-titlebar-height);
+  height: var(--asb-titlebar-height);
   align-items: center;
   justify-content: flex-end;
   gap: var(--asb-space-3);

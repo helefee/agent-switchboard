@@ -5,6 +5,7 @@ import { useI18n } from "../../i18n";
 
 interface Props {
   busy: boolean;
+  formId: string;
   portablePath: string;
   setPortablePath: (value: string) => void;
   browsePortable: () => void | Promise<void>;
@@ -14,6 +15,7 @@ interface Props {
 /** Imports one key-free portable extension package from a local file. */
 export function PortableImportForm({
   busy,
+  formId,
   portablePath,
   setPortablePath,
   browsePortable,
@@ -22,10 +24,12 @@ export function PortableImportForm({
   const { t } = useI18n();
   return (
     <form
+      id={formId}
       className="asb-form"
       aria-label={t("extensions.toolbar.importPortable")}
       onSubmit={(event) => {
         event.preventDefault();
+        if (busy) return;
         void submitPortableImport();
       }}
     >
@@ -45,11 +49,6 @@ export function PortableImportForm({
           </Button>
         </div>
       </label>
-      <div className="asb-form-actions">
-        <Button type="submit" variant="primary" disabled={busy}>
-          {t("extensions.import.submit")}
-        </Button>
-      </div>
     </form>
   );
 }

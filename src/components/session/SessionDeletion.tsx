@@ -30,7 +30,6 @@ export function useSessionDeletion(onRemoved: (keys: Set<string>) => void) {
     if (lock.current || pending.length === 0) return;
     lock.current = true; setBusy(true); setError(null);
     const targets = pending;
-    setPending([]);
     try {
       const outcomes = await deleteSessions(targets.map(({ app, sessionId }) => ({ app, sessionId })));
       const removed = new Set(outcomes.filter((item) => item.deleted).map(sessionKey));
@@ -47,7 +46,7 @@ export function useSessionDeletion(onRemoved: (keys: Set<string>) => void) {
             : toastMessage("sessions.batchDelete.failedUnknown", { title });
         })} /> });
     } catch (caught) { setError(caught); }
-    finally { lock.current = false; setBusy(false); }
+    finally { lock.current = false; setBusy(false); setPending([]); }
   };
   const updateMetadata = (sessions: SessionMeta[]) => setChosen((current) => new Map([...current].map(([key, value]) =>
     [key, sessions.find((session) => sessionKey(session) === key) ?? value])));
@@ -64,6 +63,7 @@ export function SessionDeletion({ state, disabled = false }: { state: SessionDel
       title={t(state.pending.length === 1 ? "sessions.delete.title" : "sessions.batchDelete.title")}
       confirmLabel={t(state.pending.length === 1 ? "sessions.delete.confirm" : "sessions.batchDelete.confirm")}
       confirmDisabled={state.busy || disabled}
+      busy={state.busy}
       destructive onConfirm={() => void state.confirm()}
       onCancel={() => state.setPending([])}>
       <ul className="asb-dialog-details">

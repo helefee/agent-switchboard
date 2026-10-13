@@ -203,6 +203,7 @@ fn observe_client_file(
         exists: false,
         syntax_ok: false,
         route: None,
+        gateway_port: None,
         read_error: None,
         recovery_issue: recovery_issue.map(str::to_owned),
         client_settings: None,
@@ -252,6 +253,7 @@ fn populate_route_status(
 ) -> Result<(), CommandError> {
     let kind = status.app;
     let mut route = adapter::route_state(kind, text);
+    status.gateway_port = crate::gateway::client_gateway_port(kind, text);
     // Route URLs cross the redact boundary under their ownership key: hosts
     // stay readable, token-shaped values still mask.
     route.base_url = route.base_url.map(|url| match kind {

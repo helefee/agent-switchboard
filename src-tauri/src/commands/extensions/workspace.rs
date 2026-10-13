@@ -106,16 +106,17 @@ pub async fn list_extensions(app: AppHandle) -> Result<ExtensionsWorkspaceDto, C
                     .collect(),
                 ExtensionPayload::Mcp(_) => Vec::new(),
             };
-            let last_check = checks
+            let mut current_checks = checks
                 .iter()
-                .filter(|check| check.definition_id == definition.id)
-                .max_by(|a, b| a.checked_at.cmp(&b.checked_at))
-                .cloned();
+                .filter(|check| check.definition_id == definition.id
+                    && check.definition_revision == definition.revision)
+                .cloned().collect::<Vec<_>>();
+            current_checks.sort_by(|a, b| b.checked_at.cmp(&a.checked_at));
             items.push(extension_list_item(
                 definition,
                 binding_rows,
                 dependency_states,
-                last_check,
+                current_checks,
             ));
         }
         // Listing stays read-only: interrupted transactions are reported

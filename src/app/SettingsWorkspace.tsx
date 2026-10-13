@@ -11,6 +11,8 @@ export function SettingsWorkspace({ model, active }: { model: SwitchboardModel; 
     <SettingsPage section={model.settingsSection} onSectionChange={model.setSettingsSection}
       onReturnToProviders={model.settingsReturnToProviders ? model.returnToProviders : undefined}
       backups={<BackupsPage records={snapshot.backups} busy={busy} lastSwitch={model.lastSwitchOverall}
+        recoveryRequest={model.backupRecoveryRequest}
+        active={active && model.settingsSection === "backups"}
         cloudBackup={model.cloudBackup} onRestore={operations.runRestore} onUndo={operations.requestUndo}
         onOpenDir={model.openBackupFolder} />}
       gateway={<GatewayPage active={active && model.settingsSection === "gateway"} profiles={snapshot.profiles} />}

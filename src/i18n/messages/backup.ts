@@ -9,6 +9,7 @@ export const messages = {
   "backup.tabsAria": ["备份类型", "Backup type"],
   "backup.tab.local": ["本地备份", "Local backups"],
   "backup.tab.cloud": ["加密云端备份", "Encrypted cloud backup"],
+  "backup.cloud.guideOpenFailed": ["无法打开设置指南链接", "Could not open the setup guide link"],
   "backup.lastSwitch.prefix": ["上次操作：{app}", "Last action: {app}"],
   "backup.lastSwitch.projectionNamed": [" 已投影供应商「{name}」", " projected provider “{name}”"],
   "backup.lastSwitch.projectionPlain": [" 已写入客户端配置", " wrote the client configuration"],

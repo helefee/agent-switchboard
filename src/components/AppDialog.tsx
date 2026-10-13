@@ -11,6 +11,7 @@ interface Props {
   children: ReactNode;
   footer?: ReactNode;
   wide?: boolean;
+  narrow?: boolean;
 }
 
 const AppDialogSuspensionContext = createContext(false);
@@ -32,7 +33,7 @@ export function AppDialogSuspension({ suspended, children }: {
  * Aria's focus isolation, the title slot and the close affordance, so every
  * dialog in the app lands on one anatomy and one of three widths.
  */
-export function AppDialog({ title, busy, onClose, children, footer, wide = false }: Props) {
+export function AppDialog({ title, busy, onClose, children, footer, wide = false, narrow = false }: Props) {
   const suspended = useContext(AppDialogSuspensionContext);
   const { t } = useI18n();
   return (
@@ -46,8 +47,8 @@ export function AppDialog({ title, busy, onClose, children, footer, wide = false
       aria-hidden={suspended || undefined}
       className={`asb-dialog-backdrop${suspended ? " is-suspended" : ""}`}
     >
-      <Modal className={`asb-dialog${wide ? " is-wide" : ""}`}>
-        <Dialog aria-label={title} className="asb-dialog-surface">
+      <Modal className={`asb-dialog${wide ? " is-wide" : narrow ? " is-narrow" : ""}`}>
+        <Dialog aria-label={title} aria-busy={busy} className="asb-dialog-surface">
           <header className="asb-dialog-heading">
             <Heading slot="title" className="asb-dialog-title">
               {title}

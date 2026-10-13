@@ -1,12 +1,13 @@
 import { uiMessage } from "../../i18n/errors";
 import { useMessageState } from "../../i18n/use-message-state";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Save } from "lucide-react";
 import type { SkillRepository, SkillRepositoryInput } from "../../api/extensions/skill-sources";
 import { useI18n } from "../../i18n";
 import { Button } from "../Button";
 import { Checkbox } from "../Checkbox";
 import { Input } from "../Input";
+import { useUnsavedChanges } from "../useUnsavedChanges";
 import { skillRepositoryName } from "./skill-repository-model";
 
 interface Props {
@@ -14,15 +15,20 @@ interface Props {
   busy: boolean;
   onSave: (input: SkillRepositoryInput) => Promise<boolean>;
   onCancel: () => void;
+  onDirtyChange: (dirty: boolean) => void;
 }
 
-export function SkillRepositoryForm({ initial, busy, onSave, onCancel }: Props) {
+export function SkillRepositoryForm({ initial, busy, onSave, onCancel, onDirtyChange }: Props) {
   const { t } = useI18n();
   const [repo, setRepo] = useState(initial ? skillRepositoryName(initial.repo) ?? "" : "");
   const [refName, setRefName] = useState(initial?.refName ?? "");
   const [subpath, setSubpath] = useState(initial?.subpath ?? "");
   const [enabled, setEnabled] = useState(initial?.enabled ?? true);
   const [error, setError] = useMessageState();
+  const dirty = repo !== (initial ? skillRepositoryName(initial.repo) ?? "" : "") || refName !== (initial?.refName ?? "")
+    || subpath !== (initial?.subpath ?? "") || enabled !== (initial?.enabled ?? true);
+  const leave = useUnsavedChanges(dirty, busy);
+  useEffect(() => { onDirtyChange(dirty); return () => onDirtyChange(false); }, [dirty, onDirtyChange]);
   return (
     <form className="asb-skill-repository-form" aria-label={initial ? t("extensions.repo.formEditAria") : t("extensions.repo.formAddAria")}
       onSubmit={async (event) => {
@@ -55,9 +61,10 @@ export function SkillRepositoryForm({ initial, busy, onSave, onCancel }: Props) 
       <Checkbox label={t("extensions.repo.enable")} checked={enabled} onChange={setEnabled} disabled={busy} />
       {error && <p className="asb-warn-text" role="alert">{error}</p>}
       <div className="asb-skill-repository-actions">
-        <Button variant="secondary" disabled={busy} onClick={onCancel}>{t("confirm.cancel")}</Button>
+        <Button variant="secondary" disabled={busy} onClick={() => leave.request(onCancel)}>{t("confirm.cancel")}</Button>
         <Button variant="primary" type="submit" disabled={busy}><Save size={16} />{t("extensions.repo.save")}</Button>
       </div>
+      {leave.confirmation}
     </form>
   );
 }

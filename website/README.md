@@ -3,6 +3,8 @@
 独立静态介绍站：Vite + React + TypeScript，与桌面应用工程完全分离。
 内容契约见 `src/content/site-content.ts`；视觉令牌唯一所有者是 `src/styles/tokens.css`。
 
+软件截图于 2026 年 10 月 13 日从当前源码前端使用隔离模拟数据重新截取。`public/media/screenshots/` 与根目录 `docs/screenshots/` 共用同一组图片；供应商使用 OpenAI、Claude 演示档案，模型名使用当前官方名称。余额、用量、检测与网关请求均为模拟记录。来源、隔离边界和图片清单见[截图数据说明](../docs/screenshots/README.md)。
+
 ## 本地开发
 
 ```bash

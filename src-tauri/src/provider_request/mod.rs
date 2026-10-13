@@ -6,6 +6,8 @@ mod contracts;
 mod registry;
 mod response;
 mod transport;
+#[cfg(test)]
+mod tests;
 
 pub(crate) use contracts::{
     ProviderRequestConnection, ProviderRequestInput, ProviderRequestPreparation,
@@ -14,45 +16,61 @@ pub(crate) use contracts::{
 pub(crate) use registry::ProviderRequests;
 
 use crate::commands::error::{blocking, operation_error, CommandError};
-use crate::config_store::{ConfigStore, StoreOperationError};
+use crate::config_store::{ConfigStore, SavedProvider, StoreOperationError};
 use registry::PreparedSource;
 use std::time::Instant;
 
-/// Reads one saved profile and returns its connection with the file hash that
+/// Reads one saved profile and returns its connection with the source revision
 /// execute later re-checks. Every caller that can block on storage must call
 /// this from the blocking pool: it scans, reads and parses provider files.
 fn saved_connection(
     store: &ConfigStore,
     profile_id: &str,
 ) -> Result<(ProviderRequestConnection, String), CommandError> {
-    let record = store
-        .find_provider_record(profile_id)
-        .map_err(profile_error)?;
-    Ok((
-        ProviderRequestConnection::try_from(&record.profile)?,
-        record.file_hash,
-    ))
+    let saved = store.resolve_saved_provider(profile_id).map_err(profile_error)?;
+    let mut connection = ProviderRequestConnection::try_from(&saved.profile())?;
+    let mut revision = saved.revision().to_string();
+    if let SavedProvider::Codex { file, .. } = &saved {
+        connection.default_model = Some(file.profile.resolve_model(&file.profile.default_model)
+            .map_err(|message| CommandError::new("provider-request-model-invalid", message))?);
+        if file.profile.connection.provider_type.as_deref() == Some("xai_oauth") {
+            let account = crate::xai_auth::valid_token_for_profile(store.state_root(), profile_id)
+                .map_err(|message| CommandError::new("xai-account-unavailable", message))?;
+            // Account credentials use the provider-owned origin and models path.
+            connection.connection.is_full_url = false;
+            connection.connection.models_url = None;
+            connection.api_key = account.access_token;
+            connection.authentication = Some(asb_core::AuthenticationScheme::Bearer);
+            revision = asb_switch::sha256_hex(&format!("{revision}:{}", account.account_id));
+        }
+    }
+    Ok((connection, revision))
 }
 
 /// The one owner of "request target → connection" resolution. The saved
-/// branch also carries the record hash so execute can reject a profile that
-/// changed between preparation and execution.
+/// branch carries the file revision and managed account identity so execute
+/// rejects a changed source before sending a request.
 fn resolve(
     store: &ConfigStore,
     target: ProviderRequestTarget,
 ) -> Result<(ProviderRequestConnection, PreparedSource), CommandError> {
     match target {
         ProviderRequestTarget::Saved { profile_id } => {
-            let (connection, file_hash) = saved_connection(store, &profile_id)?;
+            let (connection, revision) = saved_connection(store, &profile_id)?;
             Ok((
                 connection,
                 PreparedSource::Saved {
                     profile_id,
-                    file_hash,
+                    revision,
                 },
             ))
         }
         ProviderRequestTarget::Draft { connection } => {
+            if connection.app == asb_core::AppKind::Codex
+                && connection.connection.provider_type.as_deref() == Some("xai_oauth") {
+                return Err(CommandError::keyed("provider-request-saved-required", "errors.misc.providerRequestSavedRequired",
+                    "xAI 托管请求需要已保存供应商的账号绑定，请保存后再测试"));
+            }
             let source = PreparedSource::Draft(connection.clone());
             Ok((connection, source))
         }
@@ -70,10 +88,10 @@ fn resolve_prepared(
         PreparedSource::Draft(connection) => Ok(connection),
         PreparedSource::Saved {
             profile_id,
-            file_hash,
+            revision,
         } => {
-            let (connection, current_hash) = saved_connection(store, &profile_id)?;
-            if current_hash != file_hash {
+            let (connection, current_revision) = saved_connection(store, &profile_id)?;
+            if current_revision != revision {
                 return Err(profile_changed());
             }
             Ok(connection)

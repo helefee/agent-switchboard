@@ -96,11 +96,12 @@ pub fn read_subagent_settings(text: &str) -> Result<CodexSubagentSettings, Adapt
     })
 }
 
-/// Removes historical ASB-owned keys without reading or mapping them into
-/// the current settings contract. Every Codex renderer calls this same helper
-/// so a stale alias cannot survive any confirmed configuration write.
+pub(super) const RETIRED_MAX_THREADS_KEY: &str = "agents.max_threads";
+
+/// Client-setting writes remove retired keys without accepting their old
+/// contract. Provider-only repairs leave client-owned settings untouched.
 pub(crate) fn remove_retired_keys(doc: &mut toml_edit::DocumentMut) -> Result<(), AdapterError> {
-    remove_path(doc, "agents.max_threads")
+    remove_path(doc, RETIRED_MAX_THREADS_KEY)
 }
 
 /// Renders the complete candidate document. Automatic removes the canonical

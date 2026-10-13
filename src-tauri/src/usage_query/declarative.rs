@@ -1,6 +1,7 @@
 use asb_core::contracts::{
-    ProviderConnectionOptions, UpstreamProtocol, UsageReading, UsageSummary,
+    ProviderConnectionOptions, UpstreamProtocol, UsageReadingInput, UsageSummary,
 };
+use super::response::{normalize_readings, parse_response};
 
 /// Substitutes placeholders in the stored URL. `{{baseUrl}}` loses any
 /// trailing slash so `/user/balance` style paths concatenate cleanly.
@@ -49,8 +50,8 @@ pub(super) fn extract_declarative_summary(
     if remaining.is_none() && used.is_none() && total.is_none() {
         return Err("响应中未找到任何配置的用量字段，请检查提取路径".to_string());
     }
-    Ok(UsageSummary {
-        readings: vec![UsageReading {
+    normalize_readings(
+        vec![UsageReadingInput {
             plan_name: None,
             remaining,
             used,
@@ -62,7 +63,7 @@ pub(super) fn extract_declarative_summary(
             extra: None,
         }],
         at,
-    })
+    )
 }
 
 pub(super) fn run_declarative_query(
@@ -84,15 +85,6 @@ pub(super) fn run_declarative_query(
     let at = chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Millis, true);
     let headers = crate::probe::provider_auth_headers(api_key, upstream_protocol, authentication)?;
     let (status, body) = crate::probe::http_get_with_options(&url, &headers, connection)?;
-    if status == 401 || status == 403 {
-        return Err(format!(
-            "服务地址拒绝了 API 密钥（HTTP {status}），请确认密钥仍然有效"
-        ));
-    }
-    if !(200..300).contains(&status) {
-        return Err(format!("用量查询返回 HTTP {status}"));
-    }
-    let value: serde_json::Value =
-        serde_json::from_str(&body).map_err(|_| "用量响应不是有效 JSON".to_string())?;
+    let value = parse_response(status, &body)?;
     extract_declarative_summary(&value, remaining_path, used_path, total_path, unit, at)
 }

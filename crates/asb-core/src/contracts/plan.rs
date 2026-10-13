@@ -13,6 +13,7 @@ use crate::contracts::{
 pub struct SwitchPlan {
     pub profile: ProviderProfile,
     pub client_settings: SettingsValues,
+    scope: ProjectionScope,
     client_route: ClientRoute,
     codex_model_catalog: Option<String>,
     codex_managed_auth: Option<super::CodexManagedAuth>,
@@ -20,6 +21,12 @@ pub struct SwitchPlan {
     /// Codex-only common-file fragment; Claude plans never carry one.
     codex_common_fragment: Option<CodexCommonFragment>,
     claude_route_revision: Option<String>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ProjectionScope {
+    Provider,
+    ProviderAndClient,
 }
 
 /// The user's raw common-file TOML snippet plus its per-profile enable
@@ -54,6 +61,7 @@ impl SwitchPlan {
         Self {
             profile,
             client_settings,
+            scope: ProjectionScope::ProviderAndClient,
             client_route: ClientRoute::Direct,
             codex_model_catalog: None,
             codex_managed_auth: None,
@@ -74,6 +82,7 @@ impl SwitchPlan {
         Self {
             profile,
             client_settings,
+            scope: ProjectionScope::ProviderAndClient,
             client_route: ClientRoute::Gateway {
                 base_url,
                 bearer_token,
@@ -90,6 +99,17 @@ impl SwitchPlan {
     pub fn with_codex_model_catalog(mut self, pointer: String) -> Self {
         self.codex_model_catalog = Some(pointer);
         self
+    }
+
+    /// Repair reapplies the selected provider without replacing live client
+    /// preferences or the client's shared fragment with stored values.
+    pub fn for_provider_repair(mut self) -> Self {
+        self.scope = ProjectionScope::Provider;
+        self
+    }
+
+    pub fn writes_client_settings(&self) -> bool {
+        self.scope == ProjectionScope::ProviderAndClient
     }
 
     pub fn with_codex_preserve_official_login(mut self, preserve: bool) -> Self {

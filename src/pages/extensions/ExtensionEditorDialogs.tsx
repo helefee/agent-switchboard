@@ -1,10 +1,8 @@
 import type { ExtensionListItem, McpEditViewEnvelope } from "../../api/client";
 import type { SkillUpdatePreparation } from "../../app/extensions/extension-ops";
-import { AppDialog } from "../../components/AppDialog";
 import { McpEditForm } from "../../components/extensions/McpEditForm";
 import { SkillWorkbench } from "../../components/extensions/SkillWorkbench";
 import { toast, toastMessage } from "../../components/use-toast";
-import { useI18n } from "../../i18n";
 import type { ExtensionWorkspace } from "./useExtensionWorkspace";
 
 async function deployUpdatedDefinition(w: ExtensionWorkspace, saved: SkillUpdatePreparation | null) {
@@ -36,11 +34,12 @@ export function McpEditorDialog({
   workspace: ExtensionWorkspace;
   envelope: McpEditViewEnvelope;
 }) {
-  const { t } = useI18n();
   return (
-    <AppDialog title={t("extensions.editor.editMcp", { name: envelope.name })} busy={w.busy} onClose={w.nav.closeDialog} wide>
       <McpEditForm
+        key={envelope.id}
         envelope={envelope}
+        currentRevision={w.items.find((item) => item.id === envelope.id)?.revision ?? envelope.revision}
+        onReload={() => w.ext.loadMcpEdit(envelope.id)}
         busy={w.writeBlocked}
         onPutSecret={w.ext.putSecret}
         onCancel={w.nav.closeDialog}
@@ -50,7 +49,6 @@ export function McpEditorDialog({
           return deployUpdatedDefinition(w, result);
         }}
       />
-    </AppDialog>
   );
 }
 
@@ -61,9 +59,7 @@ export function SkillEditorDialog({
   workspace: ExtensionWorkspace;
   item: Extract<ExtensionListItem, { kind: "skill" }>;
 }) {
-  const { t } = useI18n();
   return (
-    <AppDialog title={t("extensions.editor.editSkill", { name: item.name })} busy={w.busy} onClose={w.nav.closeDialog} wide>
       <SkillWorkbench
         item={item}
         mcpOptions={w.items
@@ -78,7 +74,7 @@ export function SkillEditorDialog({
         }}
         onRestoreVersion={async (id, digest) => {
           const result = await w.ext.restoreSkillVersion(id, digest);
-          await deployUpdatedDefinition(w, result);
+          return deployUpdatedDefinition(w, result);
         }}
         onSaveDependencies={w.ext.saveSkillDependencies}
         onFork={(id) =>
@@ -88,6 +84,5 @@ export function SkillEditorDialog({
         }
         onClose={w.nav.closeDialog}
       />
-    </AppDialog>
   );
 }

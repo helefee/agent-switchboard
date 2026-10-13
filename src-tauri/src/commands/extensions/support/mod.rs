@@ -21,7 +21,6 @@ use asb_core::extensions::plan::ExtensionPlan;
 use serde::Serialize;
 
 use crate::commands::error::CommandError;
-use crate::extensions::checks::CheckRegistry;
 use crate::extensions::sources::{self, SkillCandidate};
 use crate::extensions::store::ExtensionStore;
 use crate::local_state::LocalState;
@@ -95,20 +94,6 @@ static LATEST_DISCOVERY_SCAN: OnceLock<Mutex<Option<CachedDiscoveryScan>>> = Onc
 
 pub(super) fn latest_discovery_scan() -> &'static Mutex<Option<CachedDiscoveryScan>> {
     LATEST_DISCOVERY_SCAN.get_or_init(|| Mutex::new(None))
-}
-
-static CHECK_REGISTRY: OnceLock<CheckRegistry> = OnceLock::new();
-
-pub(super) fn check_registry() -> &'static CheckRegistry {
-    CHECK_REGISTRY.get_or_init(CheckRegistry::new)
-}
-
-static CHECK_RESULTS: OnceLock<Mutex<BTreeMap<String, Result<McpCheckResult, CommandError>>>> =
-    OnceLock::new();
-
-pub(super) fn check_results(
-) -> &'static Mutex<BTreeMap<String, Result<McpCheckResult, CommandError>>> {
-    CHECK_RESULTS.get_or_init(|| Mutex::new(BTreeMap::new()))
 }
 
 /// A placeholder binding row for a restore whose original binding no longer
@@ -254,7 +239,7 @@ pub enum ExtensionListItemDto {
         dependencies: Vec<SkillDependency>,
         bindings: Vec<BindingStatusDto>,
         dependency_states: Vec<DependencyStatusDto>,
-        last_check: Option<McpCheckResult>,
+        checks: Vec<McpCheckResult>,
     },
     Mcp {
         schema_version: u8,
@@ -269,7 +254,7 @@ pub enum ExtensionListItemDto {
         connection: McpConnectionView,
         bindings: Vec<BindingStatusDto>,
         dependency_states: Vec<DependencyStatusDto>,
-        last_check: Option<McpCheckResult>,
+        checks: Vec<McpCheckResult>,
     },
 }
 
@@ -277,7 +262,7 @@ pub(super) fn extension_list_item(
     definition: ExtensionDefinition,
     bindings: Vec<BindingStatusDto>,
     dependency_states: Vec<DependencyStatusDto>,
-    last_check: Option<McpCheckResult>,
+    checks: Vec<McpCheckResult>,
 ) -> ExtensionListItemDto {
     let ExtensionDefinition {
         schema_version,
@@ -305,7 +290,7 @@ pub(super) fn extension_list_item(
             dependencies: skill.dependencies,
             bindings,
             dependency_states,
-            last_check,
+            checks,
         },
         ExtensionPayload::Mcp(mcp) => ExtensionListItemDto::Mcp {
             schema_version,
@@ -318,7 +303,7 @@ pub(super) fn extension_list_item(
             connection: mcp.into(),
             bindings,
             dependency_states,
-            last_check,
+            checks,
         },
     }
 }

@@ -92,7 +92,6 @@
   flex-wrap: wrap;
   gap: var(--asb-space-1);
   padding-left: var(--asb-space-2);
-  border-left: 1px solid var(--asb-hairline);
 }
 .asb-ext-client-summary-scope {
   color: var(--asb-text-muted);
@@ -277,10 +276,10 @@
 .asb-ext-client-summary-item:disabled { cursor: default; }
 
 .asb-ext-table-deployments { white-space: nowrap; }
-.asb-ext-table-action-cell { text-align: right; }
+.asb-ext-table-action-cell { text-align: left; }
 .asb-ext-table-actions {
   display: flex;
-  justify-content: flex-end;
+  justify-content: flex-start;
   gap: var(--asb-space-1);
 }
 .asb-ext-table-manage.asb-btn {

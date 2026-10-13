@@ -181,12 +181,24 @@
 }
 
 .asb-model-usage-analysis {
-  display: flex;
-  flex-direction: column;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
   /* Never exceeds the parent group gap (.asb-model-usage-content): the
      analysis band reads as one subgroup, not two loose panels. */
   gap: var(--asb-space-3);
   min-width: 0;
+}
+
+.asb-model-usage { container: model-usage / inline-size; }
+.asb-model-usage-loading { display: grid; gap: var(--asb-space-4); }
+.asb-model-usage-loading .asb-usage-stat-band > .asb-skeleton { height: var(--asb-space-6); }
+.asb-model-usage-loading-chart { height: 24rem; }
+
+@container model-usage (min-width: 72rem) {
+  .asb-model-usage-analysis { grid-template-columns: minmax(0, 1fr) minmax(0, 1.2fr); }
+  .asb-model-usage-analysis :is(.asb-usage-donut-card, .asb-usage-chart-card) { flex: 1; }
+  .asb-model-usage-analysis .asb-usage-donut-stage { width: 14rem; height: 14rem; }
+  .asb-model-usage-analysis .asb-usage-donut-layout { gap: var(--asb-space-4); }
 }
 
 .asb-model-usage-trend,
@@ -199,6 +211,11 @@
 
 .asb-model-usage-table {
   min-width: max-content;
+}
+
+.asb-probe-answer-viewer { display: grid; gap: var(--asb-space-4); min-width: 0; }
+.asb-probe-answer-viewer :is(.asb-probe-svg, .asb-probe-html) {
+  width: 100%; height: 60dvh; max-width: 100%; object-fit: contain;
 }
 
 
@@ -268,4 +285,59 @@
 .asb-codex-probe-empty {
   flex: 1;
   justify-content: center;
+}
+
+.asb-probe-question-text {
+  margin: 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+.asb-probe-answer-cell {
+  white-space: normal;
+}
+
+.asb-probe-answer {
+  display: flex;
+  flex-direction: column;
+  gap: var(--asb-space-2);
+  width: clamp(18rem, 38vw, 32rem);
+}
+
+.asb-probe-answer--html {
+  width: clamp(22rem, 46vw, 40rem);
+}
+
+.asb-probe-svg,
+.asb-probe-html {
+  display: block;
+  width: 100%;
+  height: 18rem;
+  object-fit: contain;
+  border: 1px solid var(--asb-hairline);
+  border-radius: var(--asb-radius);
+  background: var(--asb-image-canvas);
+}
+
+.asb-probe-html {
+  height: 28rem;
+}
+
+.asb-probe-answer-source summary {
+  color: var(--asb-text-muted);
+  font: var(--asb-text-label);
+  cursor: pointer;
+}
+
+.asb-probe-answer-source pre {
+  max-height: 20rem;
+  margin: var(--asb-space-2) 0 0;
+  padding: var(--asb-space-3);
+  overflow: auto;
+  border: 1px solid var(--asb-hairline);
+  border-radius: var(--asb-radius);
+  background: var(--asb-code-bg);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  font: var(--asb-text-code);
 }

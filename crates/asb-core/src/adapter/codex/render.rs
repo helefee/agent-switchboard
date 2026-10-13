@@ -8,6 +8,9 @@ use crate::adapter::codex::overlay::{client_settings_overlay, overlay};
 pub(crate) fn render(current: &str, plan: &SwitchPlan) -> Result<String, AdapterError> {
     super::validate_projection(plan)?;
     let rendered = render_entries(current, overlay(plan))?;
+    if !plan.writes_client_settings() {
+        return Ok(rendered);
+    }
     match plan.codex_common_fragment() {
         None => Ok(rendered),
         Some(fragment) => {
@@ -135,8 +138,5 @@ pub(crate) fn render_entries(
             }
         }
     }
-    // A retired ASB-owned alias is cleaned by every Codex configuration write,
-    // not only by the subagent settings form.
-    super::subagents::remove_retired_keys(&mut doc)?;
     Ok(doc.to_string())
 }

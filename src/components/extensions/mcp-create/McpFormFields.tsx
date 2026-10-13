@@ -75,11 +75,12 @@ interface JsonProps {
   busy: boolean;
   focus: boolean;
   invalid: boolean;
+  errorId: string;
   onChange: (json: string) => void;
   onWizard: () => void;
 }
 
-export function McpJsonField({ value, busy, focus, invalid, onChange, onWizard }: JsonProps) {
+export function McpJsonField({ value, busy, focus, invalid, errorId, onChange, onWizard }: JsonProps) {
   const { t } = useI18n();
   return (
     <div className="asb-mcp-json-field">
@@ -91,6 +92,7 @@ export function McpJsonField({ value, busy, focus, invalid, onChange, onWizard }
       </div>
       <Textarea code aria-label={t("mcp.field.jsonAria")} value={value} rows={12} spellCheck={false}
         autoComplete="off" autoFocus={focus} disabled={busy} aria-invalid={invalid}
+        aria-describedby={invalid ? errorId : undefined} aria-errormessage={invalid ? errorId : undefined}
         placeholder={'{\n  "command": "uvx",\n  "args": ["mcp-server-fetch"]\n}'}
         onChange={(event) => onChange(event.target.value)} />
     </div>

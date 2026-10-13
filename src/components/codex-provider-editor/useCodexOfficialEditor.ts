@@ -17,11 +17,15 @@ function officialDraft(profile: ProviderProfile | null): ProviderEditorDraft {
 /** Official records retain their saved parameters; only new drafts receive defaults. */
 export function useCodexOfficialEditor(profile: ProviderProfile | null, busy: boolean) {
   const [draft, setDraft] = useState(() => officialDraft(profile));
+  const baseline = useRef(draft);
   const [parametersOpen, setParametersOpen] = useState(false);
   const triggerRef = useRef<HTMLButtonElement>(null);
   const headingRef = useRef<HTMLHeadingElement>(null);
   const lastSection = useRef(false);
   const seed = useCallback((defaults: SettingsValues) => {
+    if (baseline.current.parameters === null) {
+      baseline.current = { ...baseline.current, parameters: { settings: { ...defaults.settings } } };
+    }
     setDraft((current) => current.parameters === null
       ? { ...current, parameters: { settings: { ...defaults.settings } } }
       : current);
@@ -38,6 +42,6 @@ export function useCodexOfficialEditor(profile: ProviderProfile | null, busy: bo
     const value = prepareDraft(draft);
     if (value) onSave(value);
   };
-  return { draft, setDraft, parameters, parametersOpen, setParametersOpen,
+  return { draft, setDraft, dirty: JSON.stringify(draft) !== JSON.stringify(baseline.current), parameters, parametersOpen, setParametersOpen,
     triggerRef, headingRef, canSave, save };
 }

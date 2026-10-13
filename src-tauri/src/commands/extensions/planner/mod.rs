@@ -17,8 +17,8 @@ use asb_core::extensions::validate::validate_binding;
 use serde::Deserialize;
 use tauri::AppHandle;
 
-use self::deploy::required_id;
 use self::document::synchronize_document_baselines;
+use self::binding::deployed_binding;
 use super::support::*;
 use crate::commands::error::{blocking, state, CommandError};
 use crate::extensions::discovery::DiscoveredPaths;
@@ -234,107 +234,6 @@ pub(super) struct Planner<'a> {
 }
 
 impl Planner<'_> {
-    fn build(&self, request: &PlanRequest) -> Result<ExtensionPlan, CommandError> {
-        if request.operations.is_empty() {
-            return Err(CommandError::keyed(
-                "extension-invalid",
-                "errors.extops.batchPlanNoOperations",
-                "批量计划没有包含任何资源操作",
-            ));
-        }
-        // Per-document working state for the whole batch: every patch
-        // threads through one text per document and each document is
-        // written exactly once when the batch is complete.
-        // Per-document working state for the whole batch: every patch
-        // threads through one text per document and each document is
-        // written exactly once when the batch is complete.
-        let mut batch = document::DocumentBatch::default();
-        let mut operations = Vec::new();
-        for entry in &request.operations {
-            let planned = match entry.operation {
-                PlanOperation::Install => {
-                    let definition_id =
-                        required_id(&entry.definition_id, "errors.extops.installPlanMissingId", "安装计划缺少扩展 id")?;
-                    self.build_install(definition_id, &entry.targets, &mut batch)?
-                }
-                PlanOperation::Update => {
-                    let definition_id =
-                        required_id(&entry.definition_id, "errors.extops.updatePlanMissingId", "更新计划缺少扩展 id")?;
-                    let definition = self
-                        .store
-                        .get_definition(definition_id)
-                        .map_err(store_error)?
-                        .ok_or_else(|| {
-                            CommandError::keyed(
-                                "extension-not-found",
-                                "errors.extops.definitionNotFound",
-                                "扩展不存在或已被删除",
-                            )
-                        })?;
-                    let bindings: Vec<ExtensionBinding> = self
-                        .store
-                        .list_bindings()
-                        .map_err(store_error)?
-                        .into_iter()
-                        .filter(|binding| binding.resource_id == definition_id)
-                        .collect();
-                    self.build_redeploy(&definition, &bindings, &mut batch)?
-                }
-                PlanOperation::Enable | PlanOperation::Disable | PlanOperation::Remove => {
-                    let binding_id =
-                        required_id(&entry.binding_id, "errors.extops.operationMissingBindingId", "该操作缺少绑定 id")?;
-                    self.build_binding_change(
-                        entry.operation,
-                        binding_id,
-                        entry.shared_settings,
-                        &mut batch,
-                    )?
-                }
-                PlanOperation::Restore => {
-                    return Err(CommandError::keyed(
-                        "extension-invalid",
-                        "errors.extops.restoreUseDedicatedCommand",
-                        "恢复请使用 prepare_extension_restore",
-                    ))
-                }
-                PlanOperation::Repair => {
-                    return Err(CommandError::keyed(
-                        "extension-invalid",
-                        "errors.extops.repairUseDedicatedCommand",
-                        "修复请使用 prepare_extension_repair",
-                    ))
-                }
-            };
-            batch.advance(planned.targets.len());
-            operations.push(planned);
-        }
-        // One resource may appear at most once per batch; overlapping writes
-        // to the same definition are a request bug, not a merge.
-        let mut seen = BTreeSet::new();
-        for operation in &operations {
-            if !seen.insert(operation.definition_id.clone()) {
-                return Err(CommandError::keyed(
-                    "extension-conflict",
-                    "errors.extops.duplicateOperationInBatch",
-                    "同一批量计划不能对同一扩展声明多个操作",
-                ));
-            }
-        }
-        // Every touched document lands as exactly one write, carried by the
-        // first target that changed it.
-        document::materialize_document_writes(&mut batch, &mut operations);
-        Ok(ExtensionPlan {
-            plan_id: String::new(),
-            created_at: String::new(),
-            operations,
-            preconditions: asb_core::extensions::plan::PlanPreconditions {
-                expires_at: String::new(),
-                generation: 0,
-                secret_digests: BTreeMap::new(),
-            },
-        })
-    }
-
     fn build_install(
         &self,
         definition_id: &str,
@@ -413,12 +312,13 @@ impl Planner<'_> {
         operation.targets.push(PlannedTarget {
             binding_id: Some(binding.id.clone()),
             target: binding.target.clone(),
-            binding: binding.clone(),
+            binding: deployed_binding(definition, binding),
             baseline,
             steps,
             warnings,
             changes,
             adopts_native_entry,
+            skip_reason: None,
         });
         Ok(())
     }
@@ -461,6 +361,8 @@ impl Planner<'_> {
         }
     }
 }
+mod batch;
+mod binding;
 mod capability;
 mod deploy;
 mod document;

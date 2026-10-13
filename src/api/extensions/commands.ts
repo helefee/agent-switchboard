@@ -9,7 +9,7 @@ import type {
   ExtensionPlanView,
   ExtensionTarget,
   ExtensionsWorkspace,
-  McpCheckResult,
+  McpCheckStatus,
   McpEditRequest,
   McpEditViewEnvelope,
   PlanRequest,
@@ -243,14 +243,15 @@ export function prepareExtensionRestore(operationId: string): Promise<ExtensionP
 
 export function checkMcpConnection(
   definitionId: string,
+  definitionRevision: number,
   target: ExtensionTarget,
   confirm: boolean,
 ): Promise<{ checkId: string }> {
-  return invoke<{ checkId: string }>("check_mcp_connection", { definitionId, target, confirm });
+  return invoke<{ checkId: string }>("check_mcp_connection", { definitionId, definitionRevision, target, confirm });
 }
 
-export function getMcpCheck(checkId: string): Promise<McpCheckResult | null> {
-  return invoke<McpCheckResult | null>("get_mcp_check", { checkId });
+export function getMcpCheck(checkId: string): Promise<McpCheckStatus> {
+  return invoke<McpCheckStatus>("get_mcp_check", { checkId });
 }
 
 export function cancelMcpCheck(checkId: string): Promise<boolean> {

@@ -242,6 +242,7 @@ function recentColumns(t: TFunction, profileNames: Map<string, string>): Array<T
     },
     {
       key: "duration",
+      align: "end",
       header: t("gateway.colDuration"),
       render: (sample) => (
         <span className="asb-gateway-row-value">{formatDuration(sample.durationMs)}</span>

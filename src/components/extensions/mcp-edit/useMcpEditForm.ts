@@ -1,5 +1,5 @@
 import { uiMessage } from "../../../i18n/errors";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { AppKind, McpEditRequest, McpEditViewEnvelope } from "../../../api/client";
 import type { PutSecret } from "../mcp-create/mcp-draft";
 import { formatMcpJson, jsonServiceName, parseMcpJson, renameJsonService, type CreateSource } from "../mcp-create/mcp-json";
@@ -10,6 +10,8 @@ import { mcpEditSource } from "./edit-source";
 
 export interface McpEditFormProps {
   envelope: McpEditViewEnvelope;
+  currentRevision: number;
+  onReload: () => Promise<McpEditViewEnvelope | null>;
   busy: boolean;
   initialClients?: AppKind[];
   existingNames?: string[];
@@ -24,6 +26,8 @@ export function useMcpEditForm(props: McpEditFormProps) {
   const [document, setDocument] = useState(() => ({ name: original.name, json: formatMcpJson(original.server) }));
   const [metadata, setMetadata] = useState(() => metadataDraft(props.envelope.mcpMetadata));
   const [clients, setClients] = useState(() => [...(props.initialClients ?? [])]);
+  const baseline = useRef(JSON.stringify({ document, metadata, clients }));
+  const dirty = baseline.current !== JSON.stringify({ document, metadata, clients });
   const [wizard, setWizard] = useState<CreateSource | null>(null);
   const [focusJson, setFocusJson] = useState(false);
   const submission = useMcpSubmission(props.busy, async () => {
@@ -57,6 +61,6 @@ export function useMcpEditForm(props: McpEditFormProps) {
     setError(null);
     closeWizard();
   };
-  return { ...document, ...submission, original, metadata, clients, wizard, focusJson,
+  return { ...document, ...submission, original, metadata, clients, wizard, focusJson, dirty,
     changeName, changeJson, changeMetadata, toggleClient, openWizard, closeWizard, applyWizard };
 }

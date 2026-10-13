@@ -1,9 +1,7 @@
-import { useState } from "react";
 import type { AppKind } from "../../api/client";
 import { useI18n } from "../../i18n";
 import { clientName } from "../../lib/client-name";
 import { ClientLogo } from "../ClientLogo";
-import { ChevronDownIcon } from "../icons";
 import { Input } from "../Input";
 import { RadioOption } from "../RadioOption";
 import { Select } from "../Select";
@@ -122,16 +120,12 @@ export function ProviderNotesField({ value, busy, onChange }: {
   onChange: (value: string) => void;
 }) {
   const { t } = useI18n();
-  const [expanded, setExpanded] = useState(() => Boolean(value?.trim()));
   return (
-    <details className="asb-provider-disclosure" open={expanded}
-      onToggle={(event) => setExpanded(event.currentTarget.open)}>
-      <summary><span>{t("providers.editor.notes")}</span><span className="asb-provider-disclosure-value">{value?.trim() ? t("providers.editor.notes.filled") : t("providers.editor.notes.optional")}</span><ChevronDownIcon /></summary>
-      <div className="asb-provider-disclosure-body">
-        <Textarea aria-label={t("providers.editor.notes")} rows={3} value={value ?? ""} disabled={busy}
-          placeholder={t("providers.editor.notesPlaceholder")}
-          onChange={(event) => onChange(event.target.value)} />
-      </div>
-    </details>
+    <label className="asb-field asb-provider-advanced-group">
+      <span>{t("providers.editor.notes")}</span>
+      <Textarea rows={3} value={value ?? ""} disabled={busy}
+        placeholder={t("providers.editor.notesPlaceholder")}
+        onChange={(event) => onChange(event.target.value)} />
+    </label>
   );
 }

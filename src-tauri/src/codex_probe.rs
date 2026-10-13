@@ -20,14 +20,14 @@ pub(crate) use ledger::{
     ProbeBatchStatus, ProbeHistoryPage, ProbeHistoryProfile, ProbeHistoryQuery,
     ProbeLedger, ProbeProfileFilter,
 };
-pub(crate) use questions::{resolve_question, ResolvedQuestion, QUESTIONS};
+pub(crate) use questions::{resolve_question, ProbeGrading, ResolvedQuestion, QUESTIONS};
 use runner::{cli_version, run_once, ProbeAbort};
 #[cfg(test)]
 pub(crate) use runner::codex_executable;
 pub(crate) const MAX_RUN_COUNT: u32 = 10;
 
-/// Grading outcome of one finished call. Execution failures, cancellation,
-/// and interruption never grade.
+/// Automatic grading outcome. Visual answers, execution failures,
+/// cancellation and interruption never grade.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum ProbeRunOutcome {
     Passed,

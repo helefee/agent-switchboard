@@ -16,6 +16,7 @@
 }
 
 .asb-sessions {
+  container: sessions / inline-size;
   display: flex;
   flex-direction: column;
   gap: var(--asb-space-3);
@@ -61,11 +62,13 @@
   padding: var(--asb-space-3);
 }
 
+.asb-session-detail { container: transcript / inline-size; }
+
 .asb-session-list {
   display: flex;
   flex-direction: column;
   gap: var(--asb-space-2);
-  border-radius: var(--asb-radius);
+  border-radius: var(--asb-radius-group);
   background: var(--asb-content-muted);
 }
 
@@ -271,13 +274,11 @@
   --asb-session-toc-width: 248px;
   width: var(--asb-session-toc-width);
   min-height: 0;
-  border-left: 1px solid var(--asb-hairline);
   padding-left: var(--asb-space-3);
 }
 
 .asb-session-toc-heading {
   padding-bottom: var(--asb-space-2);
-  border-bottom: 1px solid var(--asb-hairline);
   color: var(--asb-text-muted);
   font: var(--asb-text-label);
 }
@@ -310,7 +311,7 @@
 }
 
 .asb-session-toc-items .asb-btn:hover {
-  background: var(--asb-row-selected);
+  background: var(--asb-row-hover);
   color: var(--asb-text);
 }
 
@@ -430,7 +431,6 @@
    same "you are here" signal the active row uses elsewhere. */
 .asb-session-message.is-target {
   outline: 1px solid var(--asb-action);
-  box-shadow: var(--asb-shadow-raised);
 }
 
 .asb-session-message-toggle {
@@ -446,4 +446,16 @@
 
 .asb-session-message-toggle:hover {
   color: var(--asb-text);
+}
+
+/* Adapt to the actual workspace width, including expanded navigation and zoom. */
+@container sessions (max-width: 68rem) {
+  .asb-session-layout { grid-template-columns: minmax(12rem, .7fr) minmax(0, 1.3fr); }
+  .asb-session-list, .asb-session-detail { padding: var(--asb-space-2); }
+}
+@container transcript (max-width: 42rem) {
+  .asb-session-body { flex-direction: column; }
+  .asb-session-toc { order: -1; width: 100%; max-height: 8rem; padding-left: 0; flex: none; }
+  .asb-session-toc-items { flex-direction: row; gap: var(--asb-space-1); }
+  .asb-session-toc-items .asb-btn { flex: 0 0 12rem; }
 }

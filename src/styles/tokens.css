@@ -19,24 +19,27 @@
   --asb-focus-ring: rgba(10, 132, 255, 0.42);
 
   /* Semantic colors — light mode (Aurora Ice) */
-  --asb-canvas: var(--asb-ice);
+  --asb-canvas: var(--asb-content);
   --asb-text: var(--asb-ink);
   --asb-text-muted: rgba(20, 22, 27, 0.62);
   --asb-link: color-mix(in srgb, var(--asb-action) 68%, var(--asb-text));
   --asb-hairline: rgba(20, 22, 27, 0.12);
   --asb-hairline-strong: rgba(20, 22, 27, 0.2);
-  --asb-content: #ffffff;
-  --asb-content-muted: #f1f3f8;
-  --asb-surface-rail: #eef0f7;
-  --asb-sidebar-bg: #eceef1;
+  --asb-content: hsl(0 0% 98%);
+  --asb-content-muted: hsl(240 16% 96%);
+  --asb-surface-rail: var(--asb-content-muted);
+  --asb-sidebar-bg: hsl(240 12% 93%);
   --asb-sidebar-hover: color-mix(in srgb, var(--asb-text) 5%, var(--asb-sidebar-bg));
-  --asb-sidebar-selected: color-mix(in srgb, var(--asb-text) 10%, var(--asb-sidebar-bg));
-  --asb-surface-menu: #f5f6fa;
-  --asb-surface-sheet: #f2f3f8;
+  --asb-sidebar-selected: var(--asb-row-selected);
+  --asb-surface-menu: var(--asb-content);
+  --asb-surface-sheet: var(--asb-content);
+  --asb-overlay-backdrop: rgba(20, 22, 27, 0.32);
+  --asb-row-hover: color-mix(in srgb, var(--asb-text) 3%, var(--asb-content));
   --asb-row-selected: color-mix(in srgb, var(--asb-action) 8%, white);
   --asb-danger: #d70015;
   --asb-warning: #b25000;
   --asb-code-bg: #f0f1f5;
+  --asb-image-canvas: #ffffff;
 
   /* Diff semantics — red outgoing / green incoming (user-directed
      2026-08-28). Owned here; diff surfaces never re-derive these colors.
@@ -60,7 +63,7 @@
   --asb-gradient-button-glow-hover: inset 0 0 16px 0 #ffffff,
     inset 0 0 14px 0 #80b4ff;
 
-  /* Typography.  /* Typography. The user-selected interface font leads both text stacks; the
+  /* Typography. The user-selected interface font leads both text stacks; the
      fallback here is the bundled default (see main.tsx @font-face imports).
      useAppSettings overrides --asb-font-user at runtime. */
   --asb-font-user: "Noto Sans SC";
@@ -84,7 +87,7 @@
   /* The one sanctioned display metric: a single large number (usage share,
      reset answer). It is not a text step — never used for copy, never a
      heading, never a label. */
-  --asb-text-signal: 700 72px/0.95 var(--asb-font-display);
+  --asb-text-signal: 700 40px/1.15 var(--asb-font-display);
 
   /* Gateway instrument numerals use mono; addresses use the shared code
      step so the complete loopback URL fits beside its copy action. */
@@ -94,9 +97,13 @@
      and proportional-agnostic spacing. Applied by .asb-num, never per value. */
   --asb-num-font-variant: tabular-nums;
 
-  /* Shape: all rectangular surfaces share one global corner radius.
-     Pills and circles remain semantic shapes rather than a second radius scale. */
+  /* Shape follows responsibility: controls, groups, navigation and panels. */
   --asb-radius: 12px;
+  --asb-radius-medium: 16px;
+  --asb-radius-navigation: 20px;
+  --asb-radius-group: 24px;
+  --asb-radius-panel: 28px;
+  --asb-radius-container: 32px;
   --asb-radius-pill: 999px;
 
   /* Scrollbar — ink-line bar (DESIGN.md §6): transparent track, slim ink
@@ -122,28 +129,21 @@
      1px-bordered rail: the atom minus the border. */
   --asb-space-concentric: calc(var(--asb-space-unit) - 1px);
 
-  /* Ambient field lights. Soft stops are painted directly: background layers
-     never sample or blur the pixels behind them. */
-  --asb-ambient-light-codex: rgba(10, 132, 255, 0.1);
-  --asb-ambient-light-claude: rgba(139, 124, 255, 0.09);
-
   /* Materials */
   --asb-shadow-modal: 0 12px 40px rgba(7, 23, 37, 0.18);
   --asb-inset-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.55);
 
-  /* Motion */  /* Motion */  /* Motion */
+  /* Motion */
   --asb-motion-press: 120ms;
   --asb-motion-fast: 180ms;
   --asb-motion-node: 220ms;
   --asb-motion-sheet: 240ms;
+  --asb-motion-navigation: 400ms;
   /* Ambient loops (skeleton pulse) — slower than any interaction motion. */
   --asb-motion-ambient: 1600ms;
   --asb-easing: cubic-bezier(0.4, 0, 0.2, 1);
   --asb-ease-out-back: cubic-bezier(0.34, 1.56, 0.64, 1);
 
-  /* Control energy — settings slider fill (user-directed Frosted Relay
-     replica, 2026-08-28). Second sanctioned gradient surface (DESIGN.md). */
-  --asb-gradient-energy: linear-gradient(96deg, #30d158 0%, #0a84ff 50%, #8b7cff 100%);
   --asb-slider-thumb-bg: #ffffff;
 
   /* Top connection cards flow: the active card carries the cool-to-warm
@@ -184,7 +184,10 @@
   --asb-control-height-compact: calc(var(--asb-control-height) - var(--asb-space-1));
   --asb-control-height-micro: calc(var(--asb-control-height) - var(--asb-space-2));
   --asb-touch-target: var(--asb-control-height);
-  --asb-sidebar-width: 64px;
+  --asb-sidebar-expanded-width: 224px;
+  --asb-sidebar-collapsed-width: 56px;
+  --asb-sidebar-width: var(--asb-sidebar-expanded-width);
+  --asb-titlebar-height: 64px;
   --asb-button-min-width: 72px;
   --asb-tooltip-max-width: 16rem;
   --asb-tooltip-padding-inline: 10px;
@@ -210,8 +213,6 @@
   --asb-provider-row-line-height: calc(
     var(--asb-control-height) + var(--asb-space-4) + var(--asb-space-unit)
   );
-  /* Two text actions plus the provider row's four compact icon actions. */
-  --asb-provider-row-action-width: 352px;
   /* The window-control / dense-row square: one number, because a title-bar
      button and a dense list row must agree on their height. */
   --asb-square-control-size: 44px;
@@ -231,17 +232,17 @@
 @media (prefers-color-scheme: dark) {
   :root:not([data-theme="light"]) {
     /* Semantic colors — dark mode (Deep Current, never pure black) */
-    --asb-canvas: var(--asb-current);
+    --asb-canvas: var(--asb-content);
     --asb-text: #edf0f7;
     --asb-text-muted: rgba(237, 240, 247, 0.6);
     --asb-hairline: rgba(237, 240, 247, 0.14);
     --asb-hairline-strong: rgba(237, 240, 247, 0.26);
      --asb-content: #0d2133;
      --asb-content-muted: #10293f;
-     --asb-surface-rail: #0b2236;
+     --asb-surface-rail: var(--asb-content-muted);
     --asb-sidebar-bg: #111e2b;
-     --asb-surface-menu: #10283d;
-     --asb-surface-sheet: #0e273b;
+     --asb-surface-menu: var(--asb-content);
+     --asb-surface-sheet: var(--asb-content);
     --asb-row-selected: color-mix(
       in srgb,
       var(--asb-action) 16%,
@@ -273,17 +274,17 @@
 
 :root[data-theme="dark"] {
     /* Semantic colors — dark mode (Deep Current, never pure black) */
-    --asb-canvas: var(--asb-current);
+    --asb-canvas: var(--asb-content);
     --asb-text: #edf0f7;
     --asb-text-muted: rgba(237, 240, 247, 0.6);
     --asb-hairline: rgba(237, 240, 247, 0.14);
     --asb-hairline-strong: rgba(237, 240, 247, 0.26);
     --asb-content: #0d2133;
     --asb-content-muted: #10293f;
-    --asb-surface-rail: #0b2236;
+    --asb-surface-rail: var(--asb-content-muted);
     --asb-sidebar-bg: #111e2b;
-    --asb-surface-menu: #10283d;
-    --asb-surface-sheet: #0e273b;
+    --asb-surface-menu: var(--asb-content);
+    --asb-surface-sheet: var(--asb-content);
     --asb-row-selected: color-mix(
       in srgb,
       var(--asb-action) 16%,
@@ -317,6 +318,7 @@
     --asb-motion-node: 0ms;
     --asb-motion-sheet: 0ms;
     --asb-motion-ambient: 0ms;
+    --asb-motion-navigation: 0ms;
   }
 }
 
@@ -326,4 +328,5 @@
   --asb-motion-node: 0ms;
   --asb-motion-sheet: 0ms;
   --asb-motion-ambient: 0ms;
+  --asb-motion-navigation: 0ms;
 }

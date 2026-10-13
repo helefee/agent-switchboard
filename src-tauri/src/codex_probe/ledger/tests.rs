@@ -17,7 +17,7 @@ fn batch(id: &str, started_at: &str, profile: Option<(&str, &str)>) -> NewProbeB
             text: "题目全文".to_string(),
             expected_answer: "45".to_string(),
         },
-        grading_version: "1".to_string(),
+        grading_version: crate::codex_probe::ProbeGrading::Integer,
         cli_version: Some("codex-cli 0.5.0".to_string()),
         config: ProbeConfigRecord {
             profile_id: profile.map(|(id, _)| id.to_string()),
@@ -77,6 +77,46 @@ fn batches_and_runs_round_trip_with_snapshots() {
     // The newest batch is the current one, finished or not.
     assert_eq!(ledger.current_batch().unwrap().expect("current").id, "b1");
     assert!(ledger.load_batch("missing").unwrap().is_none());
+}
+
+#[test]
+fn visual_answers_survive_reopening_and_share_history_deletion() {
+    use crate::codex_probe::{resolve_question, ProbeGrading};
+    for (question, raw) in [
+        (resolve_question("custom", Some("画一幅 SVG".into()), None, Some(ProbeGrading::SvgVisual)).unwrap(),
+            "```svg\n<svg xmlns=\"http://www.w3.org/2000/svg\"><circle r=\"10\"/></svg>\n```\n"),
+        (resolve_question("pelican-riding-bicycle", None, None, None).unwrap(),
+            "```html\n<html><head><style>svg{width:100%}</style></head><body><svg></svg><script>requestAnimationFrame(()=>{});</script></body></html>\n```\n"),
+    ] {
+        let (directory, ledger) = temp_ledger();
+        let grading = question.grading;
+        let mut visual = batch("visual", &rfc3339(0), None);
+        visual.question = ProbeQuestionSnapshot { id: question.id, label: question.label,
+            text: question.prompt, expected_answer: question.expected_answer };
+        visual.grading_version = grading;
+        ledger.insert_batch(&visual).unwrap();
+        ledger.start_run("visual", 1).unwrap();
+        ledger.finish_batch("visual", ProbeBatchStatus::Completed, None, &[ProbeRunRecord {
+            seq: 1, status: ProbeRunStatus::Undetermined, final_answer: Some(raw.into()),
+            total_tokens: Some(210), ..Default::default()
+        }]).unwrap();
+
+        let reopened = ProbeLedger::new(directory.path());
+        let cached = reopened.current_batch().unwrap().unwrap();
+        assert_eq!(cached.grading_version, grading);
+        assert_eq!(cached.question.text, visual.question.text);
+        assert!(cached.question.expected_answer.is_empty());
+        assert_eq!(reopened.load_runs("visual").unwrap()[0].final_answer.as_deref(), Some(raw));
+        let history = reopened.list_history(&ProbeHistoryQuery { offset: 0, limit: 20,
+            days: None, profile: ProbeProfileFilter::All, status: None }).unwrap();
+        assert_eq!(history.items[0].grading_version, grading);
+        assert_eq!(history.items[0].judged_count, 0);
+        assert_eq!(history.items[0].passed_count, 0);
+        assert_eq!(history.items[0].total_tokens, Some(210));
+        assert_eq!(reopened.delete_batches(&["visual".into()]).unwrap(), 1);
+        assert!(reopened.current_batch().unwrap().is_none());
+        assert!(reopened.load_runs("visual").unwrap().is_empty());
+    }
 }
 
 #[test]

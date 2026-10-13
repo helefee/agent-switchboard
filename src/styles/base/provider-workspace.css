@@ -11,6 +11,8 @@
   grid-column: 1 / -1;
 }
 
+.asb-provider-workspace > .asb-workspace-header { grid-column: 1 / -1; margin-bottom: 0; }
+
 /* Third-party enable precondition. */
 .asb-provider-login-notice {
   display: flex;

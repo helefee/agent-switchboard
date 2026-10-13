@@ -12,7 +12,7 @@ Status: implemented
 
 通知队列和错误状态仍由各自当前所有者持有，组件只派生展示数据，不建立消息副本或持久历史。删除独立 Toaster 挂载、工作区 OperationNotices、右下角 busy 及其废弃样式。通知内容翻译辅助函数保留在独立模块并更新全部直接消费者。
 
-检索命中的[导航笔记](2026-10-12-sidebar-navigation.md)只拥有外壳和侧栏，两篇互链；[导入导出文案笔记](../bug-fix/2026-09-24-provider-import-export-copy.md)仍拥有业务反馈含义，与本次展示位置无冲突。
+检索命中的[桌面工作区笔记](../architecture/2026-10-13-desktop-workspace-uiux.md)只拥有外壳和侧栏，两篇互链；[导入导出文案笔记](../bug-fix/2026-09-24-provider-import-export-copy.md)仍拥有业务反馈含义，与本次展示位置无冲突。
 
 ## Alternatives considered
 

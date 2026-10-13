@@ -27,10 +27,16 @@ export function ChartFrame({ children }: Props) {
         prev?.width === next?.width && prev?.height === next?.height ? prev : next,
       );
     };
-    measure();
     const observer = new ResizeObserver(measure);
-    observer.observe(host);
-    return () => observer.disconnect();
+    const visibility = new IntersectionObserver(([entry]) => {
+      observer.disconnect();
+      if (entry.isIntersecting) {
+        measure();
+        observer.observe(host);
+      } else setSize(null);
+    });
+    visibility.observe(host);
+    return () => { observer.disconnect(); visibility.disconnect(); };
   }, []);
 
   return (

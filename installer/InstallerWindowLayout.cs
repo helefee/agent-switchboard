@@ -17,29 +17,23 @@ namespace AgentSwitchboard.Installer
     {
         private FrameworkElement BuildLayout()
         {
-            var stage = new Grid { Width = 680, Height = 600 };
             var layout = new Grid { Margin = new Thickness(32, 8, 32, 28) };
             layout.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             layout.RowDefinitions.Add(new RowDefinition { Height = new GridLength(1, GridUnitType.Star) });
             layout.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
 
             layout.Children.Add(BuildHeader());
-            var body = BuildBody();
+            var body = new ScrollViewer {
+                Content = BuildBody(), VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+            };
             Grid.SetRow(body, 1);
             layout.Children.Add(body);
 
             var footer = BuildFooter();
-            footer.HorizontalAlignment = HorizontalAlignment.Center;
-            footer.Width = 536;
             Grid.SetRow(footer, 2);
             layout.Children.Add(footer);
-            stage.Children.Add(layout);
-            return new Viewbox
-            {
-                Stretch = Stretch.Uniform,
-                StretchDirection = StretchDirection.DownOnly,
-                Child = stage,
-            };
+            return layout;
         }
 
         private Grid BuildHeader()
@@ -92,8 +86,7 @@ namespace AgentSwitchboard.Installer
         {
             var body = new StackPanel
             {
-                Width = 536,
-                HorizontalAlignment = HorizontalAlignment.Center,
+                HorizontalAlignment = HorizontalAlignment.Stretch,
                 Margin = new Thickness(0, 22, 0, 20),
             };
             body.Children.Add(BuildHero());
@@ -189,6 +182,15 @@ namespace AgentSwitchboard.Installer
             diagnostic.Visibility = Visibility.Collapsed;
             diagnostic.Margin = new Thickness(0, 6, 0, 0);
             content.Children.Add(diagnostic);
+            copyDiagnostic = MakeButton(copy.CopyDiagnostic, false);
+            copyDiagnostic.Margin = new Thickness(0, 8, 0, 0);
+            copyDiagnostic.HorizontalAlignment = HorizontalAlignment.Left;
+            copyDiagnostic.SetBinding(UIElement.VisibilityProperty, new Binding("Visibility") { Source = diagnostic });
+            copyDiagnostic.Click += delegate {
+                try { Clipboard.SetText(diagnostic.Text); copyDiagnostic.Content = copy.CopiedDiagnostic; }
+                catch (Exception error) { Trace.TraceWarning("Copy diagnostic: " + error.Message); copyDiagnostic.Content = copy.CopyDiagnosticFailed; }
+            };
+            content.Children.Add(copyDiagnostic);
 
             launch = new CheckBox
             {
@@ -206,7 +208,6 @@ namespace AgentSwitchboard.Installer
             var footer = new Grid { Margin = new Thickness(0, 16, 0, 0) };
             footer.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
             footer.RowDefinitions.Add(new RowDefinition { Height = GridLength.Auto });
-            footer.Children.Add(new Border { Height = 1, Background = Brush("Line") });
 
             var actions = new StackPanel
             {

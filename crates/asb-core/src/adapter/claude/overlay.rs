@@ -151,6 +151,7 @@ pub(super) fn client_settings_overlay(
 pub(super) fn overlay(plan: &SwitchPlan) -> Vec<(String, OverlayEntry)> {
     let mut entries: Vec<_> = setting_specs(AppKind::Claude)
         .into_iter()
+        .filter(|spec| spec.owner != SettingOwner::Client || plan.writes_client_settings())
         .map(|spec| {
             let entry = match spec.owner {
                 SettingOwner::Provider if spec.control != SettingControl::None => {

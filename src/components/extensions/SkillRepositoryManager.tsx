@@ -6,6 +6,7 @@ import { Button } from "../Button";
 import { Checkbox } from "../Checkbox";
 import { Tooltip } from "../Tooltip";
 import { ModuleHeader } from "../WorkspaceHeader";
+import { useUnsavedChanges } from "../useUnsavedChanges";
 import { SkillRepositoryForm } from "./SkillRepositoryForm";
 import { SkillSourceLink } from "./SkillSourceCandidate";
 import { skillRepositoryName, skillSourceUrl } from "./skill-repository-model";
@@ -52,8 +53,10 @@ export function SkillRepositoryManager({ state, busy }: { state: SkillSourceStat
   const [editing, setEditing] = useState<SkillRepository | null>(null);
   const [formOpen, setFormOpen] = useState(state.repositories.ready && state.repositories.items.length === 0);
   const [removing, setRemoving] = useState<string | null>(null);
+  const [dirty, setDirty] = useState(false);
   const { repositories, catalog } = state;
   const disabled = busy || !repositories.ready || repositories.loading || state.loading || state.imports.busy;
+  const leave = useUnsavedChanges(formOpen && dirty, disabled);
   return (
     <section className="asb-skill-repository-manager" aria-label={t("extensions.repo.title")}>
       <ModuleHeader
@@ -65,10 +68,10 @@ export function SkillRepositoryManager({ state, busy }: { state: SkillSourceStat
         }
         primaryActions={
           <>
-            <Button variant="secondary" disabled={disabled} onClick={() => { setEditing(null); setFormOpen(true); }}>
+            <Button variant="secondary" disabled={disabled || formOpen} onClick={() => { setEditing(null); setFormOpen(true); }}>
               <Plus size={16} />{t("extensions.repo.add")}
             </Button>
-            <Button variant="secondary" disabled={repositories.loading} onClick={() => state.setManagerOpen(false)}>
+            <Button variant="secondary" disabled={disabled} onClick={() => leave.request(() => state.setManagerOpen(false))}>
               {t("extensions.repo.backToSearch")}
             </Button>
           </>
@@ -82,6 +85,7 @@ export function SkillRepositoryManager({ state, busy }: { state: SkillSourceStat
         </Button>
       </div>}
       {formOpen && <SkillRepositoryForm key={editing?.id ?? "new"} initial={editing} busy={disabled}
+        onDirtyChange={setDirty}
         onSave={repositories.save} onCancel={() => { setFormOpen(false); setEditing(null); }} />}
       {repositories.loading && <p className="asb-skill-source-count" role="status">{t("extensions.repo.loading")}</p>}
       {!repositories.loading && repositories.ready && repositories.items.length === 0 &&
@@ -90,11 +94,13 @@ export function SkillRepositoryManager({ state, busy }: { state: SkillSourceStat
         {repositories.items.map((repo) => <RepositoryRow key={repo.id} repo={repo} count={catalog.count(repo.id)}
           failed={catalog.result?.failures.some((failure) => failure.repositoryId === repo.id) ?? false}
           busy={disabled} removing={removing === repo.id}
-          onEdit={() => { setEditing(repo); setFormOpen(true); setRemoving(null); }}
+          onEdit={() => { if (formOpen && editing?.id === repo.id) return;
+            leave.request(() => { setEditing(repo); setFormOpen(true); setRemoving(null); }); }}
           onSave={(enabled) => void repositories.save({ ...repo, enabled })}
           onRemove={() => setRemoving(repo.id)} onCancel={() => setRemoving(null)}
           onConfirm={() => { void repositories.remove(repo.id).then((saved) => { if (saved) setRemoving(null); }); }} />)}
       </ul>
+      {leave.confirmation}
     </section>
   );
 }

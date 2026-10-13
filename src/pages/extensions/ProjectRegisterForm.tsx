@@ -5,6 +5,7 @@ import { useI18n } from "../../i18n";
 
 interface Props {
   busy: boolean;
+  formId: string;
   projectRoot: string;
   setProjectRoot: (value: string) => void;
   browseProject: () => void | Promise<void>;
@@ -14,6 +15,7 @@ interface Props {
 /** Registers one project directory as an extension deployment target. */
 export function ProjectRegisterForm({
   busy,
+  formId,
   projectRoot,
   setProjectRoot,
   browseProject,
@@ -22,10 +24,12 @@ export function ProjectRegisterForm({
   const { t } = useI18n();
   return (
     <form
+      id={formId}
       className="asb-form"
       aria-label={t("extensions.toolbar.registerProject")}
       onSubmit={(event) => {
         event.preventDefault();
+        if (busy) return;
         void submitProject();
       }}
     >
@@ -45,11 +49,6 @@ export function ProjectRegisterForm({
           </Button>
         </div>
       </label>
-      <div className="asb-form-actions">
-        <Button type="submit" variant="primary" disabled={busy}>
-          {t("extensions.project.submit")}
-        </Button>
-      </div>
     </form>
   );
 }

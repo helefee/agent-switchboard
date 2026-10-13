@@ -1,5 +1,5 @@
 import { uiMessage } from "../../../i18n/errors";
-import { useState } from "react";
+import { useRef, useState } from "react";
 import type { AppKind, ExtensionDraft } from "../../../api/client";
 import { materializeMcpDraft, validateMcpSource, type PutSecret } from "./mcp-draft";
 import { emptyServer, formatMcpJson, jsonServiceName, parseMcpJson, renameJsonService, type CreateSource } from "./mcp-json";
@@ -10,6 +10,7 @@ import { useMcpSubmission } from "./useMcpSubmission";
 
 export interface NewMcpFormProps {
   busy: boolean;
+  onCancel: () => void;
   existingNames?: string[];
   onBusyChange?: (busy: boolean) => void;
   onPutSecret: PutSecret;
@@ -35,6 +36,8 @@ export function useMcpForm(props: NewMcpFormProps) {
   const [document, setDocument] = useState(EMPTY_DOCUMENT);
   const [clients, setClients] = useState([...DEFAULT_CLIENTS]);
   const [metadata, setMetadata] = useState(metadataDraft);
+  const baseline = useRef(JSON.stringify({ document, clients, metadata }));
+  const dirty = baseline.current !== JSON.stringify({ document, clients, metadata });
   const [preset, setPreset] = useState("custom");
   const [wizard, setWizard] = useState<CreateSource | null>(null);
   const [focusJson, setFocusJson] = useState(false);
@@ -83,6 +86,6 @@ export function useMcpForm(props: NewMcpFormProps) {
     setClients((current) => DEFAULT_CLIENTS.filter((entry) => entry === client ? !current.includes(entry) : current.includes(entry)));
     setError(null);
   };
-  return { ...document, ...submission, clients, metadata, preset, wizard, focusJson,
+  return { ...document, ...submission, clients, metadata, preset, wizard, focusJson, dirty,
     changeJson, changeName, changeMetadata, selectPreset, openWizard, closeWizard, applyWizard, toggleClient };
 }

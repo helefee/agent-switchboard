@@ -1,7 +1,9 @@
 import { useMessageState } from "../../../i18n/use-message-state";
-import { useState } from "react";
+import { useId, useRef, useState } from "react";
 import { useI18n } from "../../../i18n";
 import { Button } from "../../Button";
+import { EditorFrame } from "../../EditorFrame";
+import { useUnsavedChanges } from "../../useUnsavedChanges";
 import { Input } from "../../Input";
 import { Select } from "../../Select";
 import { CheckIcon, CloseIcon } from "../../icons";
@@ -64,6 +66,10 @@ export function McpWizard({ initial, original, busy, onApply, onCancel }: Props)
   ];
   const [name, setName] = useState(initial.name);
   const [server, setServer] = useState(() => initializeWizard(initial.server));
+  const baseline = useRef(JSON.stringify({ name, server }));
+  const leave = useUnsavedChanges(baseline.current !== JSON.stringify({ name, server }), busy);
+  const id = useId();
+  const close = () => leave.request(onCancel);
   const [pendingType, setPendingType] = useState<McpType | null>(null);
   const [error, setError] = useMessageState();
   const update = (next: WizardServer) => { setServer(next); setError(null); };
@@ -81,10 +87,14 @@ export function McpWizard({ initial, original, busy, onApply, onCancel }: Props)
     } catch (caught) { setError(caught); }
   };
   return (
-    <form className="asb-form asb-mcp-create" aria-label={t("mcp.wizard.aria")} noValidate
+    <EditorFrame title={t("mcp.wizard.aria")} backLabel={t("mcp.action.cancel")} busy={busy} onBack={close}
+      footer={<><Button variant="secondary" disabled={busy} onClick={close}><CloseIcon />{t("mcp.action.cancel")}</Button>
+        <Button type="submit" form={id} variant="primary" disabled={busy || pendingType !== null}><CheckIcon />{t("mcp.wizard.apply")}</Button></>}>
+    <form id={id} className="asb-form asb-mcp-create" aria-label={t("mcp.wizard.aria")} noValidate
+      aria-describedby={error ? `${id}-error` : undefined}
       onSubmit={(event) => { event.preventDefault(); apply(); }}
       onKeyDown={(event) => {
-        if (event.key === "Escape" && !busy) { event.preventDefault(); event.stopPropagation(); onCancel(); }
+        if (event.key === "Escape" && !event.defaultPrevented && !busy) { event.preventDefault(); event.stopPropagation(); close(); }
       }}>
       <div className="asb-mcp-identity">
         <label className="asb-field"><span>{t("mcp.field.name")}</span>
@@ -104,11 +114,7 @@ export function McpWizard({ initial, original, busy, onApply, onCancel }: Props)
         }}>{t("mcp.wizard.changeTransport")}</Button>
       </div>}
       <ServerFields server={server} busy={busy || pendingType !== null} original={original} onChange={update} />
-      {error && <p className="asb-warn-text asb-mcp-error" role="alert">{error}</p>}
-      <div className="asb-mcp-actions">
-        <Button variant="secondary" disabled={busy} onClick={onCancel}><CloseIcon />{t("mcp.action.cancel")}</Button>
-        <Button type="submit" variant="primary" disabled={busy || pendingType !== null}><CheckIcon />{t("mcp.wizard.apply")}</Button>
-      </div>
-    </form>
+      {error && <p id={`${id}-error`} className="asb-warn-text asb-mcp-error" role="alert">{error}</p>}
+    </form>{leave.confirmation}</EditorFrame>
   );
 }

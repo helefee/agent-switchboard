@@ -8,7 +8,8 @@ import { officialQuotaReadings, formatTrayReading, usagePrimary, usageTone } fro
 // explicitly so the expectations below do not depend on the host locale.
 applyLanguagePreference("zh-CN");
 
-const reading: UsageReading = { remaining: null, used: null, total: null, unit: "USD" };
+const reading: UsageReading = { remaining: null, used: null, total: null, unit: "USD",
+  availability: { kind: "unknown" } };
 
 test("零余额与缺失余额明确区分，不从已用和总量虚构余额", () => {
   assert.deepEqual(usagePrimary({ ...reading, remaining: 0 }), { label: "余额", value: 0 });
@@ -28,10 +29,12 @@ test("官方各窗口保留自己的余额和重置时间", () => {
   assert.equal(formatTrayReading(rows[0]), "剩余 72%");
 });
 
-test("失效与耗尽使用明确状态，正常余额不加警告", () => {
-  assert.equal(formatTrayReading({ ...reading, remaining: 20, isValid: false }), "已失效");
-  assert.equal(usageTone({ ...reading, remaining: 0 }), "danger");
-  assert.equal(usageTone({ ...reading, remaining: 20 }), undefined);
+test("展示消费业务状态，不重新推断余额或套餐状态", () => {
+  assert.equal(formatTrayReading({ ...reading, remaining: 20, availability: { kind: "unavailable" } }), "不可用");
+  assert.equal(usageTone({ ...reading, remaining: 0, availability: { kind: "exhausted" } }), "danger");
+  assert.equal(usageTone({ ...reading, remaining: 20, availability: { kind: "available" } }), undefined);
+  assert.equal(usageTone({ ...reading, remaining: 0, availability: { kind: "unknown" } }), undefined);
+  assert.equal(formatTrayReading({ ...reading, availability: { kind: "unavailable", message: "套餐已过期" } }), "套餐已过期");
 });
 
 test("英文语言输出对应的英文标签", () => {
@@ -43,7 +46,7 @@ test("英文语言输出对应的英文标签", () => {
   const quota: CodexOfficialQuota = { status: "available", at: null, stale: false, lastReset: null,
     windows: [{ label: "5 小时", usedPercent: 28, resetsAt: null }] };
   assert.equal(formatTrayReading(officialQuotaReadings(quota)[0]), "remaining 72%");
-  assert.equal(formatTrayReading({ ...reading, remaining: 20, isValid: false }), "Invalid");
-  assert.equal(formatTrayReading({ ...reading, remaining: 0 }), "balance 0 USD · depleted");
+  assert.equal(formatTrayReading({ ...reading, remaining: 20, availability: { kind: "unavailable" } }), "Unavailable");
+  assert.equal(formatTrayReading({ ...reading, remaining: 0, availability: { kind: "exhausted" } }), "balance 0 USD · depleted");
   applyLanguagePreference("zh-CN");
 });

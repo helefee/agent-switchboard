@@ -133,19 +133,15 @@ export function SettingsPage(props: SettingsPageProps) {
         id={`${id}-application-panel`} labelledBy={`${id}-application-tab`}>
         <ApplicationSettings {...props} />
       </SettingsPanel>
-      {section === "client-management" && (
-        <div id={`${id}-client-management-panel`} role="tabpanel" aria-labelledby={`${id}-client-management-tab`}>
+        <div id={`${id}-client-management-panel`} role="tabpanel" aria-labelledby={`${id}-client-management-tab`} hidden={section !== "client-management"}>
           {props.clientManagement}
         </div>
-      )}
       <div id={`${id}-gateway-panel`} role="tabpanel" aria-labelledby={`${id}-gateway-tab`} hidden={section !== "gateway"}>
         {props.gateway}
       </div>
-      {section === "backups" && (
-        <div id={`${id}-backups-panel`} role="tabpanel" aria-labelledby={`${id}-backups-tab`}>
+        <div id={`${id}-backups-panel`} role="tabpanel" aria-labelledby={`${id}-backups-tab`} hidden={section !== "backups"}>
           {props.backups}
         </div>
-      )}
       <div id={`${id}-diagnostics-panel`} role="tabpanel" aria-labelledby={`${id}-diagnostics-tab`} hidden={section !== "diagnostics"}>
         {props.diagnostics}
       </div>

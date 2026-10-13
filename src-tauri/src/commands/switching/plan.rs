@@ -13,14 +13,12 @@ pub(in crate::commands) fn build_plan(
     gateway: &crate::gateway::GatewayController,
     profile_id: &str,
 ) -> Result<crate::gateway::GatewayProjection, CommandError> {
-    let configuration = state.configuration();
-    if let Ok(file) = configuration.find_codex_provider_file(profile_id) {
-        return build_codex_plan(state, gateway, file);
-    }
-    let profile = configuration
-        .find_provider(profile_id)
+    let saved = state.configuration().resolve_saved_provider(profile_id)
         .map_err(|error| operation_error("profile-not-found", error))?;
-    build_plan_for_profile(state, gateway, profile)
+    match saved {
+        crate::config_store::SavedProvider::Codex { file, .. } => build_codex_plan(state, gateway, file),
+        crate::config_store::SavedProvider::Client(record) => build_plan_for_profile(state, gateway, record.profile),
+    }
 }
 
 pub(super) fn build_codex_plan(

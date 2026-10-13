@@ -154,6 +154,9 @@ export const messages = {
   "providers.factPath.openFailed": ["无法打开所在位置：{detail}", "Cannot open the location: {detail}"],
 
   // Diff and code previews.
+  "providers.diff.column.key": ["配置项", "Setting"],
+  "providers.diff.column.before": ["变更前", "Before"],
+  "providers.diff.column.after": ["变更后", "After"],
   "providers.diff.none": ["（无）", "(none)"],
   "providers.diff.removed": ["移除", "removed"],
   "providers.code.previewAria": ["{target} 配置预览", "{target} configuration preview"],
@@ -203,8 +206,6 @@ export const messages = {
   "providers.editor.section.connectionTest": ["连接测试", "Connection test"],
   "providers.editor.section.advanced": ["高级设置", "Advanced"],
   "providers.editor.section.model": ["模型", "Model"],
-  "providers.editor.advanced.expand": ["展开高级选项", "Show advanced options"],
-  "providers.editor.advanced.onDemand": ["按需配置", "As needed"],
   "providers.editor.title.edit": ["编辑供应商", "Edit provider"],
   "providers.editor.backToEditor": ["返回编辑", "Back to editor"],
   "providers.editor.backToProviders": ["返回供应商", "Back to providers"],
@@ -222,8 +223,6 @@ export const messages = {
   "providers.editor.website": ["官网地址", "Website"],
   "providers.editor.optional": ["（可选）", "(optional)"],
   "providers.editor.notes": ["备注", "Notes"],
-  "providers.editor.notes.filled": ["已填写", "Filled"],
-  "providers.editor.notes.optional": ["可选", "Optional"],
   "providers.editor.notesPlaceholder": ["仅保存在本应用，便于区分供应商", "Stored only in this app to help tell providers apart"],
 
   // Editor: connection.

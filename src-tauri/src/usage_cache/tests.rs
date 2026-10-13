@@ -1,5 +1,5 @@
 use super::*;
-use asb_core::contracts::{AppKind, ProviderDraft, RouteMode, UpstreamProtocol, UsageReading};
+use asb_core::contracts::{AppKind, ProviderDraft, RouteMode, UpstreamProtocol, UsageAvailability, UsageReading};
 use std::fs;
 
 fn profile() -> ProviderProfile {
@@ -45,8 +45,7 @@ fn summary() -> UsageSummary {
             total: Some(100.0),
             unit: Some("%".to_string()),
             resets_at: None,
-            is_valid: None,
-            invalid_message: None,
+            availability: UsageAvailability::Available,
             extra: None,
         }],
         at: "2026-09-02T02:34:00Z".to_string(),
@@ -153,6 +152,44 @@ fn a_failed_first_attempt_displays_the_error_without_a_balance() {
     assert_eq!(get(&state, &profile), Ok(Some(UsageSnapshot {
         summary: None, error: Some("查询失败".into()),
     })));
+}
+
+#[test]
+fn an_exhausted_balance_replaces_stale_balance_and_clears_refresh_failure() {
+    let directory = tempfile::tempdir().unwrap();
+    let state = LocalState::from_root(directory.path().join("state"));
+    let profile = profile();
+    let started = attempt_time();
+    record_success(&state, &profile, summary(), started).unwrap();
+    record_failure(&state, &profile, started + chrono::Duration::seconds(1),
+        "用量查询脚本执行失败").unwrap();
+    let mut exhausted = summary();
+    exhausted.readings[0].remaining = Some(0.0);
+    exhausted.readings[0].availability = UsageAvailability::Exhausted;
+    exhausted.readings[0].used = Some(100.0);
+    exhausted.at = "2026-09-02T02:34:02Z".into();
+    record_success(&state, &profile, exhausted.clone(),
+        started + chrono::Duration::seconds(2)).unwrap();
+    assert_eq!(get(&state, &profile).unwrap(), Some(UsageSnapshot {
+        summary: Some(exhausted), error: None,
+    }));
+}
+
+#[test]
+fn previous_reading_contract_is_discarded_instead_of_compatibly_read() {
+    let directory = tempfile::tempdir().unwrap();
+    let root = directory.path().join("state");
+    let state = LocalState::from_root(root.clone());
+    let profile = profile();
+    record_success(&state, &profile, summary(), attempt_time()).unwrap();
+    let path = root.join("usage-cache.json");
+    let mut value: serde_json::Value = serde_json::from_str(&fs::read_to_string(&path).unwrap()).unwrap();
+    let reading = value["entries"][&profile.id]["snapshot"]["summary"]["readings"][0].as_object_mut().unwrap();
+    reading.remove("availability");
+    reading.insert("isValid".into(), serde_json::json!(true));
+    fs::write(&path, serde_json::to_string(&value).unwrap()).unwrap();
+    assert_eq!(get(&state, &profile).unwrap(), None);
+    assert!(!path.exists());
 }
 
 #[test]

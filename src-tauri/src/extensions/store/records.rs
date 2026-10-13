@@ -13,6 +13,9 @@ use asb_core::extensions::validate::validate_definition;
 use super::commit::save_lock;
 use super::*;
 
+#[cfg(test)]
+mod checks_tests;
+
 pub(super) fn require_current_schema(
     kind: &str,
     schema_version: u8,
@@ -355,9 +358,14 @@ impl ExtensionStore {
 
     // ---------------------------------------------------------------- checks
 
-    /// Stores the latest check result per (definition, target).
-    pub fn save_check(&self, result: &McpCheckResult) -> Result<(), ExtensionStoreError> {
+    /// Stores one current-revision result per target. A probe that outlives
+    /// its definition cannot overwrite a newer result or recreate deleted data.
+    pub fn save_check_if_current(&self, result: &McpCheckResult) -> Result<bool, ExtensionStoreError> {
         let _guard = save_lock();
+        if !self.get_definition(&result.definition_id)?
+            .is_some_and(|definition| definition.revision == result.definition_revision) {
+            return Ok(false);
+        }
         let path = self.path(&["checks", &format!("{}.json", result.definition_id)]);
         let mut existing: Vec<McpCheckResult> = if path.exists() {
             self.read_json(&path)?
@@ -367,8 +375,8 @@ impl ExtensionStore {
         existing.retain(|previous| previous.target != result.target);
         existing.push(result.clone());
         existing.sort_by(|a, b| b.checked_at.cmp(&a.checked_at));
-        existing.truncate(8);
-        self.write_json(&path, &existing)
+        self.write_json(&path, &existing)?;
+        Ok(true)
     }
 
     pub fn list_checks(&self) -> Result<Vec<McpCheckResult>, ExtensionStoreError> {

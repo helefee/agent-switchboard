@@ -60,11 +60,14 @@ export function PreviewInspector({
       )}
       {preview.changes.length === 0 && <p className="asb-empty">{t("providers.preview.noChanges")}</p>}
       <DiffView changes={preview.changes} label={t("providers.preview.changesLabel")} />
-      <CodePreview target={preview.target} content={filePreview.content} />
       <div className="asb-kv">
         <span className="asb-kv-label">{t("providers.preview.backupDir")}</span>
         <span className="asb-kv-value asb-code">{preview.backupDir}</span>
       </div>
+      <details>
+        <summary>{t("common.candidateFile")}</summary>
+        <CodePreview target={preview.target} content={filePreview.content} />
+      </details>
     </div>
   );
 }

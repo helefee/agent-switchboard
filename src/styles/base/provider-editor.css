@@ -70,8 +70,7 @@
   display: grid;
   gap: var(--asb-space-3);
   padding: var(--asb-space-3);
-  border: 1px solid var(--asb-hairline);
-  border-radius: var(--asb-radius);
+  border: 0;
 }
 .asb-provider-catalog-row-head { display: flex; align-items: flex-end; gap: var(--asb-space-2); }
 .asb-provider-catalog-row-head .asb-field { flex: 1; min-width: 0; }
@@ -118,6 +117,7 @@
 }
 
 .asb-provider-editor .asb-provider-disclosure-value,
+.asb-provider-editor .asb-provider-advanced-value,
 .asb-provider-editor .asb-provider-advanced-action span {
   font: var(--asb-text-caption);
   letter-spacing: -0.005em;

@@ -1,8 +1,8 @@
-import type { ReactNode } from "react";
+import { useEffect, useState } from "react";
 import type { ExtensionsDeps } from "../app/extensions/extension-ops";
 import { pickDirectory, pickFile } from "../api/client";
 import { useI18n } from "../i18n";
-import { EXTENSION_SECTIONS, type ExtensionSection } from "../app/navigation";
+import { EXTENSION_SECTIONS } from "../app/navigation";
 import { Button } from "../components/Button";
 import { SkillSourceBrowser } from "../components/extensions/SkillSourceBrowser";
 import { ExtensionLibraryPanel } from "./extensions/ExtensionLibraryPanel";
@@ -14,76 +14,36 @@ import { useExtensionWorkspace } from "./extensions/useExtensionWorkspace";
 
 type ExtensionsPageProps = ExtensionsDeps & ExtensionNavigation;
 
-function ExtensionContentPanel({ section, active, children }: {
-  section: ExtensionSection;
-  active: ExtensionSection;
-  children: ReactNode;
-}) {
-  return (
-    <div id={`ext-workspace-${section}-panel`} role="tabpanel"
-      aria-labelledby={`ext-workspace-${section}-tab`} hidden={section !== active}>
-      {children}
-    </div>
-  );
-}
-
-/** Discovery and source browsing are full-page editor frames that replace the
- * whole workspace, mirroring the provider editor's mounting pattern; only the
- * library keeps the toolbar-and-tabs workspace. */
+/** Keep the caller's source/search context behind full-page editors. */
 export function ExtensionsPage(props: ExtensionsPageProps) {
   const { t } = useI18n();
   const workspace = useExtensionWorkspace(props);
+  const nav = workspace.nav;
+  const [visited, setVisited] = useState({ discovery: false, sources: false });
+  useEffect(() => {
+    if (nav.discoveryOpen || nav.sourceBrowser) setVisited((current) => ({
+      discovery: current.discovery || nav.discoveryOpen, sources: current.sources || nav.sourceBrowser,
+    }));
+  }, [nav.discoveryOpen, nav.sourceBrowser]);
+  const editing = nav.dialog?.type === "skillEditor" || nav.dialog?.type === "mcpEditor" || nav.dialog?.type === "newMcp";
+  const discovery = nav.discoveryOpen;
+  const sources = nav.sourceBrowser && nav.kind === "skill";
   const recovery = workspace.ext.workspace?.recoveryRequired ?? [];
-  const section = workspace.nav.section;
-  const dialogs = <ExtensionWorkspaceDialogs workspace={workspace} />;
-  const recoveryBanner = recovery.length > 0 ? (
-    <div className="asb-banner asb-banner-error" role="alert" aria-label={t("extensions.recoveryBanner.aria")}>
-      <span>{t("extensions.recoveryBanner.text", { detail: recovery.join(t("extensions.join.semicolon")) })}</span>
-      <Button
-        variant="secondary"
-        disabled={workspace.busy}
-        onClick={() => void workspace.ext.recoverTransactions()}
-      >
-        {t("extensions.recoveryBanner.recover")}
-      </Button>
-    </div>
-  ) : null;
-  if (workspace.nav.discoveryOpen) {
-    return (
-      <div className="asb-editor-route">
-        <ExtensionDiscoveryView workspace={workspace} notice={recoveryBanner} />
-        {dialogs}
-      </div>
-    );
-  }
-  if (workspace.nav.sourceBrowser && workspace.nav.kind === "skill") {
-    return (
-      <div className="asb-editor-route">
-        <SkillSourceBrowser
-          busy={workspace.writeBlocked} items={workspace.items} onScanLocal={workspace.ext.scanLocal}
-          onImport={workspace.importCandidate} onPickDirectory={pickDirectory}
-          onPickZip={() => pickFile("ZIP archives", ["zip"])}
-          onBack={() => workspace.nav.setSourceBrowser(false)} notice={recoveryBanner} />
-        {dialogs}
-      </div>
-    );
-  }
-  return (
-    <section
-      className="asb-ext"
-      aria-label={t("nav.page.extensions")}
-      data-view={section}
-    >
-      <ExtensionToolbar workspace={workspace} />
-      {recoveryBanner}
-      {EXTENSION_SECTIONS.map(({ value }) => (
-        <ExtensionContentPanel key={value} section={value} active={section}>
-          {section === value ? (
-            <ExtensionLibraryPanel workspace={workspace} />
-          ) : null}
-        </ExtensionContentPanel>
-      ))}
-      {dialogs}
-    </section>
-  );
+  const notice = recovery.length > 0 ? <div className="asb-banner asb-banner-error" role="alert">
+    <span>{t("extensions.recoveryBanner.text", { detail: recovery.join(t("extensions.join.semicolon")) })}</span>
+    <Button variant="secondary" disabled={workspace.busy} onClick={() => void workspace.ext.recoverTransactions()}>
+      {t("extensions.recoveryBanner.recover")}</Button></div> : null;
+  return <>
+    <div className="asb-editor-route" hidden={editing || !discovery}>
+      {(visited.discovery || discovery) && <ExtensionDiscoveryView workspace={workspace} notice={notice} />}</div>
+    <div className="asb-editor-route" hidden={editing || !sources || discovery}>
+      {(visited.sources || sources) && <SkillSourceBrowser busy={workspace.writeBlocked} items={workspace.items}
+        onScanLocal={workspace.ext.scanLocal} onImport={workspace.importCandidate} onPickDirectory={pickDirectory}
+        onPickZip={() => pickFile("ZIP archives", ["zip"])} onBack={() => nav.setSourceBrowser(false)} notice={notice} />}</div>
+    <section className="asb-ext" aria-label={t("nav.page.extensions")} data-view={nav.section} hidden={editing || discovery || sources}>
+      <ExtensionToolbar workspace={workspace} />{notice}{EXTENSION_SECTIONS.map(({ value }) => <div key={value}
+        id={`ext-workspace-${value}-panel`} role="tabpanel" aria-labelledby={`ext-workspace-${value}-tab`} hidden={nav.section !== value}>
+        {nav.section === value && <ExtensionLibraryPanel workspace={workspace} />}</div>)}</section>
+    <div className={editing ? "asb-editor-route" : undefined}><ExtensionWorkspaceDialogs workspace={workspace} /></div>
+  </>;
 }

@@ -5,12 +5,14 @@ import type {
   ProjectRegistration,
   SkillUpdateReport,
 } from "../../api/client";
+import type { McpConnectionCheck } from "../../pages/extensions/useMcpConnectionCheck";
 
 export interface ExtensionManagementProps {
   item: ExtensionListItem;
   projects: ProjectRegistration[];
   capabilities: ClientCapabilityReport[];
   busy: boolean;
+  check: McpConnectionCheck;
   installTargets: string[];
   updateReport: SkillUpdateReport | null;
   projectNames: ReadonlyMap<string, string>;

@@ -32,6 +32,8 @@ export const messages = {
 
   "shell.devBadge": ["浏览器开发 · 本机后端", "Browser dev · local backend"],
   "shell.nav.aria": ["主导航", "Primary navigation"],
+  "shell.nav.expand": ["展开导航", "Expand navigation"],
+  "shell.nav.collapse": ["收起导航", "Collapse navigation"],
   "shell.busy": ["处理中", "Working"],
   "shell.information.aria": ["全局信息", "Global information"],
   "shell.information.show": ["查看全局信息（{count} 条）", "View global information ({count})"],
@@ -60,6 +62,17 @@ export const messages = {
   "common.operationFailed": ["操作失败", "Operation failed"],
 
   "confirm.cancel": ["取消", "Cancel"],
+  "common.copy": ["复制", "Copy"],
+  "common.copied": ["已复制", "Copied"],
+  "common.copyFailed": ["复制失败，请重试。", "Copy failed. Try again."],
+  "common.expandPreview": ["展开查看", "Expand preview"],
+  "common.collapsePreview": ["收起预览", "Collapse preview"],
+  "common.candidateFile": ["查看完整候选文件", "View complete candidate file"],
+  "common.unsavedTitle": ["有尚未保存的修改", "Unsaved changes"],
+  "common.unsavedBody": ["继续此操作将放弃当前未保存的修改。", "Continuing will discard your unsaved changes."],
+  "common.discardAndContinue": ["放弃修改并继续", "Discard and continue"],
+  "common.keepEditing": ["继续编辑", "Keep editing"],
+  "common.clearFilters": ["清除筛选", "Clear filters"],
 
   "pagination.aria": ["分页", "Pagination"],
   "pagination.prev": ["上一页", "Previous page"],
@@ -68,5 +81,6 @@ export const messages = {
 
   "recovery.aria": ["界面恢复", "Interface recovery"],
   "recovery.title": ["界面未能加载", "The interface failed to load"],
-  "recovery.body": ["可关闭窗口后从系统托盘重新打开应用。", "Close the window and reopen the app from the system tray."],
+  "recovery.body": ["重新加载界面可尝试恢复，尚未保存的编辑将丢失。已保存的配置不受影响。", "Reload the interface to try to recover. Unsaved edits will be lost. Saved configuration is preserved."],
+  "recovery.reload": ["重新加载界面", "Reload interface"],
 } as const satisfies Record<string, MessageEntry>;

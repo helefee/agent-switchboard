@@ -8,7 +8,7 @@ import { ProbeFeedback, useEndpointProbe } from "../EndpointProbe";
 import { ProviderRequestPanel } from "../ProviderRequestPanel";
 import { Tabs } from "../Tabs";
 import { ProviderDiagnosticReport } from "./ProviderDiagnosticReport";
-import { ProviderRepairPane } from "./ProviderRepairPane";
+import { ProviderRepairActions, ProviderRepairPane } from "./ProviderRepairPane";
 import { useProviderDiagnosis } from "./use-provider-diagnosis";
 import { useProviderRepair } from "./use-provider-repair";
 import "../../styles/base/provider-diagnostics.css";
@@ -38,7 +38,9 @@ export function ProviderDiagnosticsDialog({ profileId, name, onClose }: {
   const diagnosis = useProviderDiagnosis(profileId);
   const repair = useProviderRepair(profileId, diagnosis.refresh);
   const busy = diagnosis.busy || repair.busy;
-  return <AppDialog title={`${name} · ${t("doctor.title")}`} busy={repair.busy} onClose={onClose} wide>
+  return <AppDialog title={`${name} · ${t("doctor.title")}`} busy={repair.busy} onClose={onClose} wide
+    footer={view === "local" && <ProviderRepairActions repair={repair}
+      canRepair={diagnosis.report?.canRepair ?? false} disabled={busy} />}>
     <div className="asb-doctor-toolbar">
       <Tabs value={view} onChange={setView} scope="provider-doctor" label={t("doctor.tabs")} tabs={[
         { value: "local", label: t("doctor.local"), controls: "provider-doctor-local", disabled: repair.busy || !!repair.pending },
@@ -51,7 +53,7 @@ export function ProviderDiagnosticsDialog({ profileId, name, onClose }: {
     {diagnosis.error && <p className="asb-warn-text" role="alert">{diagnosis.error}</p>}
     <div id="provider-doctor-local" role="tabpanel" aria-labelledby="provider-doctor-local-tab" hidden={view !== "local"}>
       {diagnosis.report && <ProviderDiagnosticReport report={diagnosis.report} />}
-      <ProviderRepairPane repair={repair} canRepair={diagnosis.report?.canRepair ?? false} disabled={busy} />
+      <ProviderRepairPane repair={repair} />
     </div>
     <div id="provider-doctor-network" role="tabpanel" aria-labelledby="provider-doctor-network-tab" hidden={view !== "network"}>
       {view === "network" && diagnosis.report && <NetworkChecks report={diagnosis.report} />}

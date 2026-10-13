@@ -6,6 +6,7 @@ import { Button } from "../Button";
 import { Input } from "../Input";
 import { SessionTagInput } from "./SessionTagInput";
 import type { SessionOrganization } from "./use-session-organization";
+import { useUnsavedChanges } from "../useUnsavedChanges";
 
 export function SessionOrganizationEditor({ session, organization, disabled, onClose }: {
   session: SessionMeta; organization: SessionOrganization; disabled: boolean; onClose: () => void;
@@ -18,11 +19,12 @@ export function SessionOrganizationEditor({ session, organization, disabled, onC
   useEffect(() => setAlias(session.alias ?? ""), [session.alias]);
   useEffect(() => setTags(JSON.parse(savedTags) as string[]), [savedTags]);
   const busy = disabled || organization.busy;
+  const leave = useUnsavedChanges(alias.trim() !== (session.alias ?? "") || JSON.stringify(tags) !== savedTags, busy);
   const save = (change: SessionOrganizationChange) => {
     setSubmitted(true);
     void organization.save([session], change);
   };
-  return <AppDialog title={t("sessions.organize.heading")} busy={organization.busy} onClose={onClose}>
+  return <AppDialog title={t("sessions.organize.heading")} busy={organization.busy} onClose={() => leave.request(onClose)}>
     <p className="asb-scope-note">{t("sessions.organize.note")}</p>
     <p className="asb-session-original-title" title={session.title}>{t("sessions.organize.original", { title: session.title })}</p>
     <div className="asb-session-organization-fields">
@@ -36,5 +38,6 @@ export function SessionOrganizationEditor({ session, organization, disabled, onC
     </div>
     {submitted && organization.status && <p className="asb-scope-note" role="status">{organization.status}</p>}
     {submitted && organization.error && <p className="asb-warn-text" role="alert">{organization.error}</p>}
+    {leave.confirmation}
   </AppDialog>;
 }

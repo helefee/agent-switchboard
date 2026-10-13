@@ -11,6 +11,7 @@ import {
 } from "../api/client";
 import { useI18n } from "../i18n";
 import { Button } from "./Button";
+import { CopyButton } from "./CopyButton";
 
 const POLL_INTERVAL_MS = 3000;
 
@@ -164,9 +165,10 @@ export function OfficialLoginPanel({ app, onFinished }: Props) {
         <div className="asb-official-login-code" role="status">
           <span>{t("clientConfig.login.codeLabel")}</span>
           <code>{userCode}</code>
+          <CopyButton content={userCode} />
           <Button
             variant="secondary"
-            onClick={() => void openUrl(verificationUrl).catch(() => undefined)}
+            onClick={() => { setMessage(null); void openUrl(verificationUrl).catch(setMessage); }}
           >
             {t("clientConfig.login.openVerification")}
           </Button>

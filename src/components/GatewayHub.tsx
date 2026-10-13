@@ -21,13 +21,13 @@ interface Props {
   retrying: boolean;
   onRetry: () => void;
   onChangePort: () => void;
-  rows: number;
+  active: boolean;
 }
 
-export function GatewayHub({ status, failed, refreshedAt, retrying, onRetry, onChangePort, rows }: Props) {
+export function GatewayHub({ status, failed, refreshedAt, retrying, onRetry, onChangePort, active }: Props) {
   const { t } = useI18n();
   return (
-    <section data-gateway-node="hub" className={`asb-gateway-hub${failed ? " is-failure" : ""}`} style={{ gridRow: `1 / span ${rows}` }}>
+    <section className={`asb-gateway-hub is-summary${failed ? " is-failure" : ""}`}>
       <div className="asb-gateway-hub-identity">
         <GatewayDeviceArt kind="hub" />
         <div className="asb-gateway-hub-copy">
@@ -36,7 +36,7 @@ export function GatewayHub({ status, failed, refreshedAt, retrying, onRetry, onC
             <span className={`asb-gateway-lamp${failed ? " is-failure" : status.status === "running" ? " is-running" : ""}`} aria-hidden="true" />
             {t(STATUS_KEYS[status.status])}
           </p>
-          <GatewayUpdatedAgo at={refreshedAt} />
+          <GatewayUpdatedAgo at={refreshedAt} active={active} />
         </div>
       </div>
       <div className="asb-gateway-hub-address">
@@ -61,21 +61,21 @@ export function GatewayHub({ status, failed, refreshedAt, retrying, onRetry, onC
         {status.failure && (
           <Button variant="secondary" disabled={retrying} onClick={onRetry}>{t("gateway.retryListen")}</Button>
         )}
-        <Button variant="secondary" disabled={status.status === "recoveryBlocked"} onClick={onChangePort}>{t("gateway.changePort")}</Button>
+        <Button variant="secondary" disabled={retrying || status.status === "recoveryBlocked"} onClick={onChangePort}>{t("gateway.changePort")}</Button>
       </div>
     </section>
   );
 }
 
 /** Only the timestamp rerenders each second; the topology follows snapshots. */
-function GatewayUpdatedAgo({ at }: { at: number | null }) {
+function GatewayUpdatedAgo({ at, active }: { at: number | null; active: boolean }) {
   const { t } = useI18n();
   const [, setTick] = useState(0);
   useEffect(() => {
-    if (at === null) return;
+    if (at === null || !active) return;
     const timer = window.setInterval(() => setTick((value) => value + 1), 1000);
     return () => window.clearInterval(timer);
-  }, [at]);
+  }, [at, active]);
   if (at === null) return null;
   const seconds = Math.max(0, Math.round((Date.now() - at) / 1000));
   const text = seconds < 5

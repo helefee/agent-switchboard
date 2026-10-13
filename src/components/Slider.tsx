@@ -5,7 +5,6 @@ const MIN_TICK_COUNT = 2;
 const MAX_FULL_TICK_COUNT = 13;
 const CONDENSED_TICK_COUNT = 7;
 const FLOAT_COMPARISON_EPSILON = 1e-6;
-const ENERGY_PARTICLE_COUNT = 9;
 
 type SliderStyle = CSSProperties & {
   "--asb-slider-fill-width": string;
@@ -25,8 +24,7 @@ interface Props {
 }
 
 /**
- * Discrete-detent slider with a pill track, energy-gradient fill clipped to
- * the value, glimmer particles, ticks and a white thumb over a native range
+ * Discrete-detent slider with a pill track, action fill, ticks and a thumb over a native range
  * input. All visual values come from styles/tokens.css.
  */
 export function Slider({ value, min, max, step, ariaLabel, ariaValueText, disabled = false, onValueChange }: Props) {
@@ -45,11 +43,6 @@ export function Slider({ value, min, max, step, ariaLabel, ariaValueText, disabl
     <div className="asb-slider" data-disabled={disabled ? "true" : undefined} style={style}>
       <div className="asb-slider-track" aria-hidden="true">
         <div className="asb-slider-fill" />
-        <span className="asb-slider-particles" aria-hidden="true">
-          {Array.from({ length: ENERGY_PARTICLE_COUNT }, (_, index) => (
-            <span key={index} className="asb-slider-particle" />
-          ))}
-        </span>
         <span className="asb-slider-ticks" aria-hidden="true">
           {Array.from({ length: stepCount }, (_, index) => {
             const tickPercent = (index / (stepCount - 1)) * 100;

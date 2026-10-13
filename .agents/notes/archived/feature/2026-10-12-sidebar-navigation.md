@@ -1,6 +1,7 @@
 # Agent Note: 全局导航迁移至左侧纯图标轨
 
 Status: implemented
+Archived: 2026-10-13
 
 ## Problem
 

@@ -25,7 +25,7 @@ function rowDescription(item: ExtensionListItem): { tone: string | null; text: s
   const detail = item.transport === "stdio"
     ? tr("extensions.list.argsDetail", { command: item.command, count: item.argumentCount })
     : "";
-  const state = item.lastCheck ? MCP_CHECK_STATES[item.lastCheck.outcome.kind] : null;
+  const state = item.checks[0] ? MCP_CHECK_STATES[item.checks[0].outcome.kind] : null;
   return {
     tone: state?.tone ?? null,
     text: [state ? tr(state.key) : tr("extensions.list.neverChecked"), detail].filter(Boolean).join(" · "),
@@ -101,7 +101,7 @@ function ExtensionIdentity({ item, workspace }: { item: ExtensionListItem; works
       onClick={() => void workspace.edit(item)}
     >
       <span className="asb-ext-table-title">
-        <span className="asb-ext-table-name">{item.name}</span>
+        <span className="asb-ext-table-name" title={item.name}>{item.name}</span>
         <span className="asb-ext-table-meta">{meta}</span>
         {updatable && <span className="asb-ext-update-badge">{t("extensions.list.updatable")}</span>}
         {report?.error && <span className="asb-ext-table-error" title={report.error}>{t("extensions.list.checkError")}</span>}

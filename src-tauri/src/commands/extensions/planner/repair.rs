@@ -137,6 +137,7 @@ pub(crate) fn build_repair_operations(
                     ],
                     changes: Vec::new(),
                     adopts_native_entry: false,
+                    skip_reason: None,
                 }
             }
             PreparedRepair::McpEntry {
@@ -191,6 +192,7 @@ pub(crate) fn build_repair_operations(
                         after: Some(value),
                     }],
                     adopts_native_entry: false,
+                    skip_reason: None,
                 }
             }
         };

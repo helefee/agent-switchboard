@@ -128,6 +128,7 @@ pub async fn prepare_extension_restore(
                     warnings: vec!["恢复扩展库记录，不修改客户端文件".to_string()],
                     changes: Vec::new(),
                     adopts_native_entry: false,
+                    skip_reason: None,
                 });
             } else {
                 return Err(CommandError::keyed(

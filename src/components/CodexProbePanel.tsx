@@ -1,8 +1,10 @@
-import { CUSTOM_PROBE_QUESTION_ID, type CodexProbeBatch } from "../api/client";
+import { openUrl } from "@tauri-apps/plugin-opener";
+import { CUSTOM_PROBE_QUESTION_ID, type CodexProbeBatch, type CodexProbeGradingVersion } from "../api/client";
 import type { TFunction } from "../i18n";
 import { useI18n } from "../i18n";
 import { Button } from "./Button";
 import { Input } from "./Input";
+import { Select } from "./Select";
 import {
   ProbeRunsTable, configSummary, probeSummaryCards, summarizeRuns,
 } from "./probe-shared";
@@ -19,8 +21,10 @@ export interface CodexProbeFormState {
   questionId: string | null;
   customQuestion: string;
   customAnswer: string;
+  customGradingVersion: CodexProbeGradingVersion;
   onCustomQuestionChange: (value: string) => void;
   onCustomAnswerChange: (value: string) => void;
+  onCustomGradingChange: (value: CodexProbeGradingVersion) => void;
 }
 
 function progressLine(batch: CodexProbeBatch, t: TFunction): string {
@@ -33,7 +37,8 @@ function progressLine(batch: CodexProbeBatch, t: TFunction): string {
         })
         : t("codex.probe.finishing");
     case "completed":
-      return t("codex.probe.completedLine", { passed: summary.passedCount, judged: summary.judgedCount });
+      return batch.gradingVersion !== "1" ? t("codex.probe.visual.completed")
+        : t("codex.probe.completedLine", { passed: summary.passedCount, judged: summary.judgedCount });
     case "cancelled":
       return t("codex.probe.cancelledLine");
     case "failed":
@@ -50,13 +55,25 @@ function CustomQuestionForm({ form, disabled }: { form: CodexProbeFormState; dis
   if (form.questionId !== CUSTOM_PROBE_QUESTION_ID) return null;
   return (
     <div className="asb-codex-probe-custom">
+      <span>{t("codex.probe.visual.answerFormat")}</span>
+      <Select value={form.customGradingVersion} disabled={disabled}
+        ariaLabel={t("codex.probe.visual.answerFormat")} options={[
+          { value: "1", label: t("codex.probe.visual.integerFormat") },
+          { value: "svg-visual-v1", label: t("codex.probe.visual.svgFormat") },
+          { value: "html-visual-v1", label: t("codex.probe.visual.htmlFormat") },
+        ]} onChange={(value) => form.onCustomGradingChange(value as CodexProbeGradingVersion)} />
       <label htmlFor="codex-probe-custom-question">{t("codex.probe.customQuestion")}</label>
       <Textarea id="codex-probe-custom-question" rows={3} value={form.customQuestion}
-        placeholder={t("codex.probe.customQuestionPlaceholder")}
+        placeholder={t(form.customGradingVersion !== "1"
+          ? "codex.probe.visual.questionPlaceholder" : "codex.probe.customQuestionPlaceholder")}
         disabled={disabled} onChange={(event) => form.onCustomQuestionChange(event.target.value)} />
-      <label htmlFor="codex-probe-custom-answer">{t("codex.probe.expectedAnswer")}</label>
-      <Input id="codex-probe-custom-answer" placeholder={t("codex.probe.exampleAnswer")} value={form.customAnswer}
-        disabled={disabled} onChange={(event) => form.onCustomAnswerChange(event.target.value)} />
+      {form.customGradingVersion === "1" ? <>
+        <label htmlFor="codex-probe-custom-answer">{t("codex.probe.expectedAnswer")}</label>
+        <Input id="codex-probe-custom-answer" placeholder={t("codex.probe.exampleAnswer")} value={form.customAnswer}
+          disabled={disabled} onChange={(event) => form.onCustomAnswerChange(event.target.value)} />
+      </> : <p className="asb-codex-probe-note">{t("codex.probe.visual.note")}</p>}
+      {form.customGradingVersion === "html-visual-v1" &&
+        <p className="asb-codex-probe-note">{t("codex.probe.html.note")}</p>}
     </div>
   );
 }
@@ -70,6 +87,14 @@ function ProbeResults({ status, probe }: {
   const heading = status.status === "running" ? t("codex.probe.currentHeading") : t("codex.probe.lastHeading");
   return (
     <div className="asb-codex-probe-content">
+      <p className="asb-codex-probe-meta">
+        {heading} · {t("codex.probe.metaQuestion")}{status.question.label || "—"} · {t("codex.probe.startedAt")} <Time iso={status.startedAt} />
+        {status.finishedAt && <> · {t("codex.probe.finishedAt")} <Time iso={status.finishedAt} /></>}
+      </p>
+      <p className="asb-codex-probe-meta">
+        {t("codex.probe.configPrefix")}{configSummary(status, t)}
+        {status.cliVersion && ` · CLI ${status.cliVersion}`}
+      </p>
       <p className="asb-codex-probe-progress" role="status" aria-live="polite">{progressLine(status, t)}</p>
       {status.status !== "running" && status.statusError &&
         <p className="asb-warn-text" role="alert">{status.statusError}</p>}
@@ -91,14 +116,6 @@ function ProbeResults({ status, probe }: {
       {(status.status === "cancelled" || status.status === "interrupted") && <p className="asb-codex-probe-note">
         {t("codex.probe.cancelledNote")}
       </p>}
-      <p className="asb-codex-probe-meta">
-        {heading} · {t("codex.probe.metaQuestion")}{status.question.label || "—"} · {t("codex.probe.startedAt")} <Time iso={status.startedAt} />
-        {status.finishedAt && <> · {t("codex.probe.finishedAt")} <Time iso={status.finishedAt} /></>}
-      </p>
-      <p className="asb-codex-probe-meta">
-        {t("codex.probe.configPrefix")}{configSummary(status, t)}
-        {status.cliVersion && ` · CLI ${status.cliVersion}`}
-      </p>
     </div>
   );
 }
@@ -108,6 +125,7 @@ export function CodexProbePanel({ probe, form }: {
   form: CodexProbeFormState;
 }) {
   const { t } = useI18n();
+  const selected = probe.questions?.find((question) => question.id === form.questionId);
   return (
     <section className="asb-panel asb-codex-probe" aria-label={t("codex.probe.title")}>
       <ModuleHeader title={t("codex.probe.title")} />
@@ -122,6 +140,18 @@ export function CodexProbePanel({ probe, form }: {
       {probe.cancelError && <p className="asb-warn-text" role="alert">{t("codex.probe.cancelError", { error: probe.cancelError })}</p>}
       {probe.retryError && <p className="asb-warn-text" role="alert">{t("codex.probe.retryError", { error: probe.retryError })}</p>}
       <CustomQuestionForm form={form} disabled={probe.running || probe.starting} />
+      {selected && <div className="asb-codex-probe-custom">
+        <p className="asb-codex-probe-meta">{t("codex.probe.metaQuestion")}{selected.label}</p>
+        <p className="asb-probe-question-text">{selected.text}</p>
+        {selected.gradingVersion !== "1" &&
+          <p className="asb-codex-probe-note">{t("codex.probe.visual.note")}</p>}
+        {selected.gradingVersion === "html-visual-v1" &&
+          <p className="asb-codex-probe-note">{t("codex.probe.html.note")}</p>}
+        {selected.sourceUrl && <a href={selected.sourceUrl}
+          onClick={(event) => { event.preventDefault(); if (selected.sourceUrl) void openUrl(selected.sourceUrl); }}>
+          {t("codex.probe.visual.questionSource")}
+        </a>}
+      </div>}
       {probe.status ? <ProbeResults status={probe.status} probe={probe} /> : (
         <div className="asb-empty-state asb-codex-probe-empty">
           <span className="asb-empty-state-icon" aria-hidden="true"><UsageIcon /></span>

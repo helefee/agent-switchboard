@@ -20,6 +20,8 @@ Claude 网关模型角色的来源由核心适配器唯一解析，配置投影�
 
 ## Related decisions
 
+[供应商诊断与修复边界](../bug-fix/2026-10-13-provider-diagnostics-contract.md)部分重叠：沿用目录与片段声明，供应商修复保留实时公共设置与公共片段，片段写入对实时声明执行双向冲突校验。
+
 [供应商存储修复](2026-09-23-provider-store-repair.md)部分重叠：继续严格读契约，保留原数据与现有显式修复入口。修复入口清除供应商参数中退役且无值的 `effortLevel: automatic` 并补齐当前自动项，完整保留修复前副本；不增加运行时双读或兼容校验。其他活跃笔记没有同主题归属。
 
 ## Alternatives considered

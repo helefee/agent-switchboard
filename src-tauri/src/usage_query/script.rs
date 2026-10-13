@@ -1,5 +1,6 @@
 use super::declarative::is_http_url;
-use asb_core::contracts::{ProviderConnectionOptions, UsageReading, UsageSummary};
+use super::response::{normalize_readings, parse_response, validate_http_status};
+use asb_core::contracts::{ProviderConnectionOptions, UsageReadingInput, UsageSummary};
 use rquickjs::{Context, Runtime};
 use serde::Serialize;
 use std::collections::BTreeMap;
@@ -37,12 +38,12 @@ pub(super) struct ScriptRequest {
 #[derive(serde::Deserialize)]
 #[serde(untagged)]
 enum ScriptExtractOutput {
-    One(UsageReading),
-    Many(Vec<UsageReading>),
+    One(UsageReadingInput),
+    Many(Vec<UsageReadingInput>),
 }
 
 impl ScriptExtractOutput {
-    fn into_readings(self) -> Vec<UsageReading> {
+    fn into_readings(self) -> Vec<UsageReadingInput> {
         match self {
             Self::One(reading) => vec![reading],
             Self::Many(readings) => readings,
@@ -133,7 +134,12 @@ impl ScriptProgram {
                 ) {{
                     throw new TypeError("invalid usage query output");
                 }}
-                const json = JSON.stringify(output);
+                const json = JSON.stringify(output, (_key, value) => {{
+                    if (typeof value === "number" && !Number.isFinite(value)) {{
+                        throw new TypeError("non-finite usage query output");
+                    }}
+                    return value;
+                }});
                 if (json === undefined) {{
                     throw new TypeError("unserializable usage query output");
                 }}
@@ -171,6 +177,7 @@ impl ScriptProgram {
         status: u16,
         at: String,
     ) -> Result<UsageSummary, String> {
+        validate_http_status(status)?;
         let value = self.call_json(
             "extract",
             &ScriptExtractInput { body, status },
@@ -179,24 +186,7 @@ impl ScriptProgram {
         )?;
         let output: ScriptExtractOutput = serde_json::from_value(value)
             .map_err(|_| "用量查询脚本 extract 返回值无效".to_string())?;
-        let readings = output.into_readings();
-        if readings.is_empty()
-            || readings.iter().any(|reading| {
-                reading.is_valid != Some(false)
-                    && reading.remaining.is_none() && reading.used.is_none() && reading.total.is_none()
-            })
-        {
-            return Err("用量查询脚本 extract 的每组结果至少要返回一个数值".to_string());
-        }
-        for reading in &readings {
-            if reading.resets_at.as_ref().is_some_and(|at| chrono::DateTime::parse_from_rfc3339(at).is_err()) {
-                return Err("用量查询脚本 resetsAt 必须是含时区的 RFC 3339 时间".into());
-            }
-            if reading.invalid_message.is_some() && reading.is_valid != Some(false) {
-                return Err("用量查询脚本 invalidMessage 只能用于 isValid 为 false 的读数".into());
-            }
-        }
-        Ok(UsageSummary { readings, at })
+        normalize_readings(output.into_readings(), at)
     }
 }
 
@@ -301,8 +291,7 @@ pub(super) fn run_script_query(
         &body,
         connection,
     )?;
-    let response: serde_json::Value =
-        serde_json::from_str(&response_body).map_err(|_| "用量响应不是有效 JSON".to_string())?;
+    let response = parse_response(status, &response_body)?;
     let at = chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Millis, true);
     program.extract(&response, status, at)
 }

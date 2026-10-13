@@ -27,9 +27,6 @@
       };
     },
     extract(input) {
-      if (input.status < 200 || input.status >= 300) {
-        throw new TypeError("imported usage request was not successful");
-      }
       return {
         remaining: number(input.body.balance),
         used: null,

@@ -8,6 +8,7 @@ import { Table, type TableColumn } from "../components/Table";
 import { Time } from "../components/Time";
 import { ModuleHeader } from "../components/WorkspaceHeader";
 import { ScrollTextIcon } from "../components/icons";
+import { Button } from "../components/Button";
 import { useI18n, type MessageKey } from "../i18n";
 import { RUNTIME_LOG_PAGE_SIZE, levelLabel, useRuntimeLogs } from "./use-runtime-logs";
 
@@ -100,6 +101,7 @@ export function LogsPage({ logs }: { logs: ReturnType<typeof useRuntimeLogs> }) 
           <h3 className="asb-section-title">
             {filter === "all" ? t("backup.logs.empty") : t("backup.logs.emptyLevel", { level: levelLabel(filter) })}
           </h3>
+          {filter !== "all" && <Button variant="secondary" onClick={() => logs.setFilter("all")}>{t("common.clearFilters")}</Button>}
         </div>
       ) : (
         <>

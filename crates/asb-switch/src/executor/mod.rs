@@ -9,6 +9,8 @@
 mod preview;
 mod rendered;
 mod switch;
+#[cfg(test)]
+mod provider_repair_tests;
 
 pub(crate) use preview::read_current_or_empty;
 pub use preview::read_preview;

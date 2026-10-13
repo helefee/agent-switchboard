@@ -1,33 +1,14 @@
-import { uiMessage } from "../../i18n/errors";
-import { useMessageState } from "../../i18n/use-message-state";
-import { useEffect, useState } from "react";
-import {
-  cancelMcpCheck,
-  checkMcpConnection,
-  getMcpCheck,
-  type ExtensionTarget,
-  type McpCheckResult,
-} from "../../api/client";
+import { useState } from "react";
+import type { ExtensionManagementProps } from "./management-types";
+import type { McpCheckResult } from "../../api/client";
 import { useI18n } from "../../i18n";
 import { tr } from "../../i18n/current";
 import { Button } from "../Button";
-
-const STAGES = [
-  "extensions.check.stage.connect",
-  "extensions.check.stage.initialize",
-  "extensions.check.stage.tools",
-  "extensions.check.stage.done",
-] as const;
-const POLL_INTERVAL_MS = 300;
-const MAX_POLLS = 90;
-const STAGE_ADVANCE_MS = 1600;
-
-interface Props {
-  definitionId: string;
-  /** Target the probe runs against; absent until a target is chosen. */
-  target: ExtensionTarget | null;
-  busy: boolean;
-}
+import { Select } from "../Select";
+import { Time } from "../Time";
+import { Table } from "../Table";
+import { extensionTargetOptions } from "./targets";
+import { parseTargetValue, targetLabel, targetValue } from "./labels";
 
 function outcomeView(result: McpCheckResult): { badge: string; tone: string; text: string } {
   const outcome = result.outcome;
@@ -61,143 +42,65 @@ function outcomeView(result: McpCheckResult): { badge: string; tone: string; tex
       };
   }
 }
-
-/** One bounded MCP connection probe: starts the backend check, polls until a
- * result lands, and renders the stage stepper while waiting. */
-export function ExtensionCheckPanel({ definitionId, target, busy }: Props) {
+function CheckResults({ item, projectNames, check }: ExtensionManagementProps) {
   const { t } = useI18n();
-  const [checkId, setCheckId] = useState<string | null>(null);
-  const [result, setResult] = useState<McpCheckResult | null>(null);
-  const [stage, setStage] = useState(0);
-  const [failure, setFailure] = useMessageState();
+  if (item.checks.length === 0) return null;
+  const rows = item.checks.map((result) => ({ result, view: outcomeView(result) }));
+  return <div className="asb-ext-table-scroll" tabIndex={0} aria-live="polite" aria-busy={check.phase !== null}>
+    <Table rows={rows} rowKey={({ result }) => targetValue(result.target)}
+      ariaLabel={t("extensions.check.results")} className="asb-ext-management-table" columns={[
+        { key: "target", header: t("extensions.table.target"), render: ({ result }) => targetLabel(result.target, projectNames) },
+        { key: "result", header: t("extensions.table.result"), render: ({ result, view }) => (
+          <div className="asb-ext-table-cell-stack">
+            <span className="asb-pill-status">{view.badge}</span>
+            <span className={view.tone}>{view.text}{result.truncated ? t("extensions.check.truncated") : ""}</span>
+          </div>
+        ) },
+        { key: "time", header: t("extensions.table.checkedAt"), render: ({ result }) => <Time iso={result.checkedAt} /> },
+        { key: "duration", align: "end", header: t("extensions.table.duration"), render: ({ result }) => t("extensions.check.duration", { duration: result.durationMs }) },
+      ]} />
+  </div>;
+}
 
-  useEffect(() => {
-    setCheckId(null);
-    setResult(null);
-    setStage(0);
-    setFailure(null);
-  }, [definitionId, target]);
-
-  useEffect(() => {
-    if (!checkId) return;
-    let stopped = false;
-    let polls = 0;
-    let pollTimer = 0;
-    const tick = async () => {
-      polls += 1;
-      try {
-        const found = await getMcpCheck(checkId);
-        if (stopped) return;
-        if (found !== null) {
-          setResult(found);
-          setCheckId(null);
-          return;
-        }
-        if (polls >= MAX_POLLS) {
-          setFailure(uiMessage("extensions.check.timeout"));
-          setCheckId(null);
-          return;
-        }
-        pollTimer = window.setTimeout(() => void tick(), POLL_INTERVAL_MS);
-      } catch (caught) {
-        if (stopped) return;
-        setFailure(caught);
-        setCheckId(null);
-      }
-    };
-    pollTimer = window.setTimeout(() => void tick(), POLL_INTERVAL_MS);
-    // Bounded stage estimate: the backend reports only the final outcome, so
-    // the stepper advances on fixed intervals and caps before the last stage.
-    const advance = window.setInterval(() => {
-      setStage((current) => Math.min(current + 1, STAGES.length - 2));
-    }, STAGE_ADVANCE_MS);
-    return () => {
-      stopped = true;
-      window.clearTimeout(pollTimer);
-      window.clearInterval(advance);
-    };
-  }, [checkId]);
-
-  const running = checkId !== null;
-
-  const start = async () => {
-    if (!target || busy || running) return;
-    setFailure(null);
-    setResult(null);
-    setStage(0);
-    try {
-      const started = await checkMcpConnection(definitionId, target, true);
-      setCheckId(started.checkId);
-    } catch (caught) {
-      setFailure(caught);
-    }
-  };
-
-  const cancel = async () => {
-    const id = checkId;
-    if (!id) return;
-    setCheckId(null);
-    setStage(0);
-    try {
-      await cancelMcpCheck(id);
-    } catch (caught) {
-      setFailure(caught);
-    }
-  };
-
-  const finished = result !== null;
-  const activeStage = finished ? STAGES.length - 1 : stage;
-
+export function ExtensionCheckPanel(props: ExtensionManagementProps) {
+  const { t } = useI18n();
+  const { item, projects, busy, check } = props;
+  const options = extensionTargetOptions(item, projects);
+  const preferred = item.bindings.find((binding) => binding.desired === "enabled") ?? item.bindings[0];
+  const [chosen, setChosen] = useState<string | null>(() => preferred ? targetValue(preferred.target) : null);
+  const value = options.find((option) => option.value === chosen)?.value ?? options[0]?.value ?? null;
+  const target = value ? parseTargetValue(value) : null;
+  const ownRun = check.subject?.definitionId === item.id
+    && targetValue(check.subject.target) === value;
   return (
-    <div className="asb-ext-section" aria-label={t("extensions.check.title")}>
+    <section className="asb-ext-section" aria-label={t("extensions.check.title")}>
       <div className="asb-ext-section-heading">
         <h3 className="asb-section-title">{t("extensions.check.title")}</h3>
         <div className="asb-ext-actions">
-          <Button variant="secondary" disabled={busy || !target || running} onClick={() => void start()}>
+          <Button variant="secondary" disabled={busy || !target || check.phase !== null}
+            onClick={() => { if (target) void check.start({ definitionId: item.id, definitionRevision: item.revision, target }); }}>
             {t("extensions.check.run")}
           </Button>
-          {running && (
-            <Button variant="secondary" onClick={() => void cancel()}>
+          {ownRun && check.phase !== null && (
+            <Button variant="secondary" onClick={() => void check.cancel()}>
               {t("confirm.cancel")}
             </Button>
           )}
         </div>
       </div>
-      {(running || finished) && (
-        <ol className="asb-ext-stages" aria-label={t("extensions.check.stagesAria")}>
-          {STAGES.map((stageKey, index) => (
-            <li
-              key={stageKey}
-              className={[
-                "asb-ext-stage",
-                index < activeStage ? "is-done" : "",
-                index === activeStage && running ? "is-active" : "",
-                index === activeStage && finished ? "is-done" : "",
-              ]
-                .filter(Boolean)
-                .join(" ")}
-            >
-              {t(stageKey)}
-            </li>
-          ))}
-        </ol>
-      )}
-      {failure && (
-        <p className="asb-warn-text" role="alert">
-          {failure}
+      <div className="asb-ext-check-target">
+        <span className="asb-scope-note">{t("extensions.check.target")}</span>
+        <Select value={value} options={options} onChange={setChosen}
+          ariaLabel={t("extensions.check.target")} disabled={busy || check.phase !== null} />
+      </div>
+      <p className="asb-scope-note">{t("extensions.check.contextHint")}</p>
+      {ownRun && check.phase !== null && (
+        <p className="asb-scope-note" role="status" aria-live="polite">
+          {t(check.phase === "cancelling" ? "extensions.check.cancelling" : check.phase === "starting" ? "extensions.check.starting" : "extensions.check.running")}
         </p>
       )}
-      {result && (
-        <p className="asb-ext-check-result">
-          <span className="asb-pill-status">{outcomeView(result).badge}</span>{" "}
-          <span className={outcomeView(result).tone}>{outcomeView(result).text}</span>
-          <span className="asb-scope-note">
-            {" "}
-            {t("extensions.check.duration", { duration: result.durationMs })}
-            {result.truncated ? t("extensions.check.truncated") : ""}
-          </span>
-        </p>
-      )}
-    </div>
+      {ownRun && check.failure && <p className="asb-warn-text" role="alert">{check.failure}</p>}
+      <CheckResults {...props} />
+    </section>
   );
 }

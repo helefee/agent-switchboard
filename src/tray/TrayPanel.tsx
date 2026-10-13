@@ -156,7 +156,8 @@ function TrayPanelContent({ snapshot, readError, initialized, refresh }: {
         <img src={appIcon} alt="" className="tray-app-logo" aria-hidden="true" />
         <span className="tray-app-name">Agent Switchboard</span>
       </header>
-      {error && <div role="alert" className="tray-error">{error}</div>}
+      {error && <div role="alert" className="tray-error">{error}
+        <Button variant="secondary" disabled={busy} onClick={() => void run({ kind: "panel" }, refresh)}>{t("tray.retry")}</Button></div>}
       <div ref={list} className="tray-list">
         <div>
           {!snapshot && !readError && <p role="status" className="tray-loading">{t("tray.loading")}</p>}

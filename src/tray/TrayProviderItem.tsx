@@ -35,10 +35,11 @@ export function TrayProviderItem({ provider, busy, switchingId, onSwitch }: Prop
       className={cx("tray-provider", provider.active && "is-active", switchingId === provider.id && "is-switching")}
       disabled={busy || provider.active}
       aria-label={balance ? `${action}，${balance}` : action}
+      title={[provider.name, balance].filter(Boolean).join("\n")}
       onClick={onSwitch}
     >
       <span className="tray-provider-check">{provider.active && <Check size={18} aria-hidden="true" />}</span>
-      <span className="tray-provider-name">{provider.name}</span>
+      <span className="tray-provider-name" title={provider.name}>{provider.name}</span>
       <TrayUsage usage={provider.usage} />
       <span className="tray-provider-switch">
         {provider.active ? null : switchingId === provider.id ? t("tray.provider.switching") : t("tray.provider.switch")}

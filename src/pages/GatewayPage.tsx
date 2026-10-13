@@ -1,8 +1,9 @@
 import { useMessageState } from "../i18n/use-message-state";
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Button } from "../components/Button";
 import { ClientFilter, type ClientFilterValue } from "../components/ClientFilter";
-import { GatewayTopology } from "../components/GatewayTopology";
+import { GatewayGuidance, GatewayTopology } from "../components/GatewayTopology";
+import { GatewayHub } from "../components/GatewayHub";
 import { GatewayPortChangeSheet, type PortSheetState } from "../components/GatewayPortChangeSheet";
 import { GatewayTelemetry } from "../components/GatewayTelemetry";
 import { GatewayPanel } from "../components/GatewayPagePrimitives";
@@ -36,6 +37,12 @@ export function GatewayPage({ active, profiles }: Props) {
   const { t } = useI18n();
   const [focus, setFocus] = useState<ClientFilterValue>("all");
   const [portSheet, setPortSheet] = useState<PortSheetState | null>(null);
+  // The sheet is portaled over the whole window; leaving the gateway context
+  // (settings section or workspace) must close it so it never floats over an
+  // unrelated page. The flow hook releases any held preparation on unmount.
+  useEffect(() => {
+    if (!active) setPortSheet(null);
+  }, [active]);
   const { status, error, retrying, refreshedAt, refresh, retryBind, discardRecovery } = useGatewayRuntime(active);
   const profileNames = useMemo(() => {
     const names = new Map<string, string>();
@@ -43,20 +50,19 @@ export function GatewayPage({ active, profiles }: Props) {
     return names;
   }, [profiles]);
 
-  if (error) return <GatewayUnavailable error={error} onRetry={refresh} />;
+  if (error && !status) return <GatewayUnavailable error={error} onRetry={refresh} />;
   if (!status) return <GatewayLoading />;
 
   const failed = FAILURE_STATES.has(status.status);
   return (
     <GatewayPanel controls={<ClientFilter value={focus} onChange={setFocus} label={t("gateway.focusAriaLabel")} showLogos />}>
+      {error && <p className="asb-fail-text" role="alert">{error}</p>}
+      <GatewayHub status={status} failed={failed} refreshedAt={refreshedAt} retrying={retrying} active={active}
+        onRetry={retryBind} onChangePort={() => setPortSheet({ stage: "input" })} />
+      <GatewayGuidance status={status} busy={retrying} onDiscardRecovery={discardRecovery} />
       <GatewayTopology
         status={status}
         failed={failed}
-        refreshedAt={refreshedAt}
-        retrying={retrying}
-        onRetry={retryBind}
-        onChangePort={() => setPortSheet({ stage: "input" })}
-        onDiscardRecovery={discardRecovery}
         profileNames={profileNames}
         focus={focus}
         onFocus={(app) => setFocus((current) => current === app ? "all" : app)}
@@ -79,13 +85,19 @@ function useGatewayRuntime(active: boolean) {
   const [refreshedAt, setRefreshedAt] = useState<number | null>(null);
   const [error, setError] = useMessageState();
   const [retrying, setRetrying] = useState(false);
+  const mutation = useRef(false);
+  const generation = useRef(0);
   const refresh = useCallback(async () => {
+    if (mutation.current) return;
+    const request = ++generation.current;
     try {
-      setStatus(await getGatewayStatus());
+      const snapshot = await getGatewayStatus();
+      if (request !== generation.current) return;
+      setStatus(snapshot);
       setRefreshedAt(Date.now());
       setError(null);
     } catch (cause) {
-      setError(cause);
+      if (request === generation.current) setError(cause);
     }
   }, []);
 
@@ -96,30 +108,25 @@ function useGatewayRuntime(active: boolean) {
     return () => window.clearInterval(timer);
   }, [active, refresh]);
 
-  const retryBind = useCallback(async () => {
+  const mutate = useCallback(async (action: () => Promise<GatewayStatus>) => {
+    if (mutation.current) return;
+    mutation.current = true;
+    generation.current += 1;
     setRetrying(true);
     try {
-      setStatus(await retryGatewayBind());
+      setStatus(await action());
       setRefreshedAt(Date.now());
       setError(null);
     } catch (cause) {
       setError(cause);
     } finally {
+      mutation.current = false;
       setRetrying(false);
     }
   }, []);
 
-  const discardRecovery = useCallback(async () => {
-    try {
-      setStatus(await discardGatewayPortChange(true));
-      setRefreshedAt(Date.now());
-      setError(null);
-    } catch (cause) {
-      setError(cause);
-    }
-  }, []);
-
-  return { status, error, retrying, refreshedAt, refresh, retryBind, discardRecovery };
+  return { status, error, retrying, refreshedAt, refresh,
+    retryBind: () => mutate(retryGatewayBind), discardRecovery: () => mutate(() => discardGatewayPortChange(true)) };
 }
 
 function GatewayUnavailable({ error, onRetry }: { error: string; onRetry: () => void }) {

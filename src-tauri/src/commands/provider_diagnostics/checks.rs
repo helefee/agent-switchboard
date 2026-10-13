@@ -4,7 +4,7 @@ use crate::gateway::{GatewayObservation, GatewayStatusKind};
 use asb_core::contracts::{AppKind, ProviderProfile, RouteMode};
 
 pub(super) fn safe_endpoint(profile: &ProviderProfile) -> Option<String> {
-    let value = profile.base_url.as_deref()?;
+    let value = profile.upstream_base_url()?;
     if profile.connection.claude_native.is_some() { return None; }
     let parsed = reqwest::Url::parse(value).ok()?;
     (matches!(parsed.scheme(), "http" | "https") && parsed.username().is_empty()
@@ -29,7 +29,7 @@ fn address(profile: &ProviderProfile) -> ProviderDiagnosticCheck {
             "原生云 SDK 构造请求地址；普通 HTTP 地址测试不适用。",
             Some(("editNative", "检查原生云服务的区域、资源与模型权限。")));
     }
-    let valid = profile.base_url.as_deref().zip(profile.upstream_protocol)
+    let valid = profile.upstream_base_url().zip(profile.upstream_protocol)
         .is_some_and(|(base, protocol)| {
             if protocol == asb_core::UpstreamProtocol::GeminiGenerateContent {
                 asb_core::claude_gemini::request_preview(base, profile.connection.is_full_url, None).is_ok()
@@ -121,14 +121,15 @@ pub(super) fn configuration(status: &ConfigFileStatus, active: bool, preview: Re
     }
 }
 
-pub(super) fn route(profile: &ProviderProfile, active: bool, observation: GatewayObservation, projection: Result<&crate::gateway::GatewayProjection, &CommandError>) -> ProviderDiagnosticCheck {
-    let projection = match projection { Ok(projection) => projection, Err(error) => return error_check("route", error) };
+pub(super) fn route(profile: &ProviderProfile, status: &ConfigFileStatus, active: bool, observation: GatewayObservation) -> ProviderDiagnosticCheck {
     if !active { return check("route", "unknown", "inactiveRoute", "此供应商未激活；没有活动路由是正常状态。", None); }
-    if !projection.plan.is_gateway() {
+    let served = observation.routes.iter().any(|route| route.app == profile.app && route.profile_id == profile.id);
+    if !profile.requires_gateway() && status.gateway_port.is_none() {
         return check("route", "pass", "directRoute", "此供应商使用客户端直连，无需本地协议网关。", None);
     }
-    let served = observation.routes.iter().any(|route| route.app == profile.app && route.profile_id == profile.id);
-    if matches!(observation.status, GatewayStatusKind::Running) && served && observation.listening_port == Some(observation.configured_port) {
+    if matches!(observation.status, GatewayStatusKind::Running) && served
+        && observation.listening_port == Some(observation.configured_port)
+        && status.gateway_port == observation.listening_port {
         check("route", "pass", "gatewayReady", "本地网关正在监听，且当前供应商路由已加载。", None)
     } else {
         let mut item = check("route", "error", "gatewayUnavailable", "当前供应商需要本地网关，但监听器或路由尚未就绪。",
@@ -138,6 +139,7 @@ pub(super) fn route(profile: &ProviderProfile, active: bool, observation: Gatewa
             .or(observation.repair_reason);
         item.message = message("gatewayFacts", serde_json::json!({
             "configuredPort": observation.configured_port,
+            "clientPort": status.gateway_port.map(|port| port.to_string()).unwrap_or_else(|| "—".into()),
             "listeningPort": observation.listening_port.map(|port| port.to_string()).unwrap_or_else(|| "—".into()),
             "routeKey": if served { "providerDiagnostics.backend.routePresent" } else { "providerDiagnostics.backend.routeMissing" },
             "stateKey": gateway_state_key(observation.status),
@@ -168,14 +170,4 @@ fn error_check(category: &'static str, error: &CommandError) -> ProviderDiagnost
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn environment_reports_names_and_process_scope_only() {
-        let result = environment_for(vec!["OPENAI_API_KEY", "HTTPS_PROXY"]);
-        assert_eq!(result.status, "warning");
-        assert_eq!(result.message.params.unwrap()["names"], "OPENAI_API_KEY, HTTPS_PROXY");
-        assert_eq!(environment_for(vec![]).status, "unknown");
-    }
-}
+mod tests;

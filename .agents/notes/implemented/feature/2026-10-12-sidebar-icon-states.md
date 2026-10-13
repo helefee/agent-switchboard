@@ -8,9 +8,9 @@ Status: implemented
 
 ## Decision
 
-导航图标使用 `@phosphor-icons/react` 的同语义 `regular` / `fill` 配对图形。共享 `src/components/icons.tsx` 直接导出六个语义绑定，按图标模块路径导入；`SideNav` 通过现有 `active` 值同时生成 `aria-current` 与图标 `weight`，不增加状态。非当前页使用灰色线框和透明底，悬停只改变底色与颜色，当前页使用主文字色实心图形与常驻淡色圆角底；键盘焦点继续由共享按钮与 Tooltip 承载。图标隐藏于可访问树，按钮名称仍由本地化页名提供。
+导航图标使用 `@phosphor-icons/react` 的同语义 `regular` / `fill` 配对图形。共享 `src/components/icons.tsx` 直接导出六个语义绑定，按图标模块路径导入；`SideNav` 通过现有 `active` 值同时生成 `aria-current` 与图标 `weight`，不增加状态。非当前页使用灰色线框和透明底，悬停只改变底色与颜色，当前页使用行动蓝实心图形与常驻淡蓝圆角底；键盘焦点继续由共享按钮与 Tooltip 承载。图标隐藏于可访问树，按钮名称仍由本地化页名提供。
 
-六个语义绑定对应 `ArrowsLeftRightIcon`、`SlidersHorizontalIcon`、`PuzzlePieceIcon`、`ChatsIcon`、`ChartBarIcon`、`GearSixIcon`。原有侧栏布局、对齐与滚动归[侧栏导航](2026-10-12-sidebar-navigation.md)所有，其他按钮图标继续使用既有 Lucide 绑定。新增依赖只为提供完整的线框与实心家族，不引入自绘路径或通用图标注册层；导航专用旧 Lucide 绑定删除，其他用量按钮仍使用原有 `UsageIcon`，导航使用支持配对形态的 `UsageNavigationIcon`。
+六个语义绑定对应 `ArrowsLeftRightIcon`、`SlidersHorizontalIcon`、`PuzzlePieceIcon`、`ChatsIcon`、`ChartBarIcon`、`GearSixIcon`。原有侧栏布局、对齐与滚动归[桌面工作区](../architecture/2026-10-13-desktop-workspace-uiux.md)所有，其他按钮图标继续使用既有 Lucide 绑定。新增依赖只为提供完整的线框与实心家族，不引入自绘路径或通用图标注册层；导航专用旧 Lucide 绑定删除，其他用量按钮仍使用原有 `UsageIcon`，导航使用支持配对形态的 `UsageNavigationIcon`。
 
 ## Alternatives considered
 
@@ -20,7 +20,7 @@ Status: implemented
 
 ## Consequences
 
-- 当前页在颜色、图形和底色三个层次可辨，深色主题同样显示实心浅色图形，状态只有一个当前页来源；无需维护手绘实心路径。
+- 当前页在颜色、图形和底色三个层次可辨，深色主题同样使用全局行动蓝变量与实心图形，状态只有一个当前页来源；无需维护手绘实心路径。
 - 增加一个图标依赖，清单与锁文件同步；用按图标模块导入避免根入口预处理整个图标目录。普通控件与导航分属 Lucide 与 Phosphor 两个既定视觉用途。
-- 隔离静态预览使用实际侧栏样式与库组件，展示六个入口的线框／实心对照，并人工切换深色设置与短窗口用量入口。默认按钮为 40px 方形、中心位于轨道 32px 处，125% 缩放后为 50px 方形、中心位于 40px 处。
+- 隔离静态预览使用实际侧栏样式与库组件，展示六个入口的线框／实心对照，并人工切换深色设置与短窗口用量入口。该预览对应旧固定轨；当前几何由桌面工作区笔记拥有：224px/56px 展开收起，收起按钮 40px，中心 28px。新几何的实机缩放与 Tooltip 行为尚待运行验证。
 - 静态预览不证明 Tauri 桌面运行时和真实 Tooltip 行为。差异、引用和笔记结构按窄范围检查，编译、类型检查及自动化测试遵循仓库的显式授权规则。

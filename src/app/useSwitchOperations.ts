@@ -168,7 +168,6 @@ export function useSwitchOperations({
   const runUndo = useCallback(async () => {
     if (busy || !undoPending || undoDiff.state !== "ready") return;
     const target = undoPending;
-    cancelUndo();
     invalidateCandidates();
     setBusy(true);
     clearError();
@@ -184,6 +183,7 @@ export function useSwitchOperations({
     } catch (caught) {
       onError(caught as CommandError);
     } finally {
+      cancelUndo();
       setBusy(false);
     }
   }, [
@@ -204,7 +204,6 @@ export function useSwitchOperations({
   const runRecoverStaleLock = useCallback(async () => {
     if (busy || !recoverLockPending) return;
     const target = recoverLockPending;
-    setRecoverLockPending(null);
     setBusy(true);
     clearError();
     try {
@@ -213,6 +212,7 @@ export function useSwitchOperations({
     } catch (caught) {
       onError(caught as CommandError);
     } finally {
+      setRecoverLockPending(null);
       setBusy(false);
     }
   }, [busy, clearError, onError, recoverLockPending, refresh, setBusy]);

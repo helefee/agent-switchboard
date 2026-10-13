@@ -25,9 +25,11 @@ import { messages as operations } from "./messages/operations.ts";
 import { messages as ownership } from "./messages/ownership.ts";
 import { messages as protocols } from "./messages/protocols.ts";
 import { messages as providers } from "./messages/providers.ts";
+import { messages as probeVisual } from "./messages/probe-visual.ts";
 import { messages as providerDiagnostics } from "./messages/provider-diagnostics.ts";
 import { messages as providerDiagnosticsBackend } from "./messages/provider-diagnostics-backend.ts";
 import { messages as sessions } from "./messages/sessions.ts";
+import { messages as skillWorkbench } from "./messages/skill-workbench.ts";
 import { messages as settings } from "./messages/settings.ts";
 import { messages as tray } from "./messages/tray.ts";
 import { messages as usage } from "./messages/usage.ts";
@@ -53,10 +55,12 @@ export const messages = Object.freeze({
   ...ownership,
   ...protocols,
   ...providers,
+  ...probeVisual,
   ...providerDiagnostics,
   ...providerDiagnosticsBackend,
   ...sessions,
   ...settings,
+  ...skillWorkbench,
   ...tray,
   ...usage,
 } as const);

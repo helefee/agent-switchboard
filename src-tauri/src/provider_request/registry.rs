@@ -25,7 +25,7 @@ pub(super) struct PreparedProvider {
 pub(super) enum PreparedSource {
     Saved {
         profile_id: String,
-        file_hash: String,
+        revision: String,
     },
     Draft(ProviderRequestConnection),
 }

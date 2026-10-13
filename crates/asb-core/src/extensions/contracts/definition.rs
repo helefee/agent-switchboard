@@ -78,7 +78,8 @@ pub struct ExtensionBinding {
     /// follows the definition's current digest.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub locked_digest: Option<String>,
-    /// Definition revision covered by the last successful apply.
+    /// Definition revision covered by the last content deployment. Skips,
+    /// visibility-only changes, and deployment of pinned older bytes keep it.
     #[serde(default, skip_serializing_if = "Option::is_none")]
     pub last_applied_revision: Option<u64>,
     pub updated_at: String,

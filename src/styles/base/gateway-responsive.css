@@ -1,8 +1,8 @@
 /* Breakpoints use the gateway content width, including app zoom and rail. */
 @container gateway (max-width: 920px) {
   .asb-gateway-map-canvas {
-    grid-template-columns: minmax(0, 1fr) minmax(18rem, 1.35fr) minmax(0, 1fr);
-    column-gap: var(--asb-space-4);
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    column-gap: var(--asb-space-3);
     padding-inline: 0;
   }
 
@@ -31,3 +31,20 @@
   .asb-gateway-unavailable > .asb-btn { margin-left: 0; }
   .asb-gateway-hub .asb-gateway-device { width: 72px; height: 60px; }
 }
+
+.asb-gateway-hub.is-summary {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+  gap: var(--asb-space-3);
+  align-self: stretch;
+  align-items: center;
+  padding: var(--asb-space-3);
+  border-radius: var(--asb-radius-group);
+  background: var(--asb-content-muted);
+}
+.asb-gateway-hub.is-summary .asb-gateway-device { display: none; }
+.asb-gateway-hub.is-summary .asb-gateway-hub-identity { align-items: flex-start; }
+.asb-gateway-hub.is-summary .asb-gateway-hub-copy { justify-items: start; }
+.asb-gateway-hub.is-summary .asb-gateway-hub-failure { grid-column: 1 / -1; }
+.asb-gateway-hub.is-topology { align-items: center; gap: var(--asb-space-1); text-align: center; overflow-wrap: anywhere; }
+.asb-gateway-hub.is-topology .asb-gateway-device { width: 96px; height: 80px; }

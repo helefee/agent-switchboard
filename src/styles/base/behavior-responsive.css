@@ -10,13 +10,8 @@
 
   .asb-slider-tick,
   .asb-slider-thumb,
-  .asb-slider-fill,
-  .asb-slider-particles {
+  .asb-slider-fill {
     transition: none;
-  }
-
-  .asb-slider-particle {
-    animation: none;
   }
 
   .asb-usage-ratio-meter-fill {
@@ -82,11 +77,6 @@
 
   .asb-codex-reset-summary {
     padding: var(--asb-space-4);
-  }
-
-  .asb-codex-reset-fact + .asb-codex-reset-fact {
-    border-top: 1px solid var(--asb-hairline);
-    border-left: 0;
   }
 
   .asb-session-detail-head { grid-template-columns: 1fr; }

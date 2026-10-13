@@ -1,126 +1,132 @@
-//! The stdio MCP check: spawn, JSON-RPC negotiation, capped line
-//! reading, and process-tree termination.
-
-use super::{
-    CheckDeadline, CheckError, CheckErrorKind, McpCheckOutcome, ProbeOutcome, DISCOVERY_DEADLINE,
-    LEGACY_REQUESTED_PROTOCOL_VERSION, MAX_OUTPUT_BYTES, MAX_PAGES, MODERN_PROTOCOL_VERSION,
-    SUPPORTED_PROTOCOL_VERSIONS,
-};
-use super::{MAX_LINE_BYTES, RECEIVE_POLL};
-use crate::process_control::terminate_process_tree;
+//! stdio transport with bounded reads/writes and process-tree cleanup.
 use std::collections::BTreeMap;
 use std::io::{BufRead, BufReader, Write};
+use std::path::{Path, PathBuf};
 use std::process::{Child, Command, Stdio};
-use std::sync::mpsc::{self, SyncSender};
+use std::sync::mpsc::{self, Receiver, SyncSender};
 use std::time::Duration;
+use serde_json::Value;
+use super::protocol::{self, Connection};
+use super::{CheckDeadline, CheckError, ProbeOutcome, MAX_OUTPUT_BYTES, RECEIVE_POLL};
+use crate::process_control::terminate_process_tree;
 
-pub(super) struct RpcConnection {
-    send: Box<dyn FnMut(&serde_json::Value) -> Result<(), CheckError>>,
-    receive: Box<dyn FnMut(Duration) -> Result<Option<ReaderMessage>, CheckError>>,
-    bytes_read: u64,
+type WriteReply = SyncSender<Result<(), CheckError>>;
+struct WriteRequest { bytes: Vec<u8>, reply: WriteReply }
+enum ReaderMessage { Line(Vec<u8>), Closed, Error(CheckError) }
+struct StdioConnection {
+    writer: SyncSender<WriteRequest>,
+    reader: Receiver<ReaderMessage>,
+    bytes_read: usize,
 }
 
-enum ReaderMessage {
-    Line(String),
-    Closed,
-    Error,
-}
-
-impl RpcConnection {
-    fn call(
-        &mut self,
-        request: &serde_json::Value,
-        deadline: &CheckDeadline,
-    ) -> Result<serde_json::Value, CheckError> {
+impl StdioConnection {
+    fn send(&self, value: &Value, deadline: &CheckDeadline) -> Result<(), CheckError> {
         deadline.remaining()?;
-        (self.send)(request)?;
+        let mut bytes = serde_json::to_vec(value).map_err(|_| CheckError::protocol("请求无法编码"))?;
+        bytes.push(b'\n');
+        let (reply, receiver) = mpsc::sync_channel(1);
+        self.writer.try_send(WriteRequest { bytes, reply })
+            .map_err(|_| CheckError::transport("无法写入检测命令"))?;
         loop {
-            let wait = deadline.remaining()?.min(RECEIVE_POLL);
-            match (self.receive)(wait)? {
-                Some(ReaderMessage::Line(line)) => {
-                    self.bytes_read = self
-                        .bytes_read
-                        .checked_add(line.len() as u64)
-                        .ok_or_else(CheckError::output_limit)?;
-                    if self.bytes_read > MAX_OUTPUT_BYTES {
-                        return Err(CheckError::output_limit());
-                    }
-                    if let Ok(value) = serde_json::from_str::<serde_json::Value>(&line) {
-                        if value.get("id").is_some_and(|id| *id == request["id"]) {
-                            return Ok(value);
-                        }
-                    }
-                }
-                Some(ReaderMessage::Closed) => return Err(CheckError::closed()),
-                Some(ReaderMessage::Error) => {
-                    return Err(CheckError::transport("服务输出无法读取"));
-                }
-                None => {}
+            match receiver.recv_timeout(deadline.remaining()?.min(RECEIVE_POLL)) {
+                Ok(result) => return result,
+                Err(mpsc::RecvTimeoutError::Timeout) => {}
+                Err(mpsc::RecvTimeoutError::Disconnected) => return Err(CheckError::closed()),
             }
         }
     }
 }
 
-pub(super) fn check_stdio(
-    command: &str,
-    args: &[String],
-    env: &BTreeMap<String, String>,
-    deadline: &CheckDeadline,
-) -> ProbeOutcome {
-    if let Err(error) = deadline.remaining() {
-        return probe_for_error(None, &error);
+impl Connection for StdioConnection {
+    fn request(&mut self, request: &Value, deadline: &CheckDeadline) -> Result<Value, CheckError> {
+        self.send(request, deadline)?;
+        loop {
+            match self.reader.recv_timeout(deadline.remaining()?.min(RECEIVE_POLL)) {
+                Ok(ReaderMessage::Line(line)) => {
+                    self.bytes_read = self.bytes_read.saturating_add(line.len() + 1);
+                    if self.bytes_read > MAX_OUTPUT_BYTES { return Err(CheckError::output_limit()); }
+                    let value: Value = serde_json::from_slice(&line)
+                        .map_err(|_| CheckError::protocol("服务标准输出不是有效的 JSON-RPC 消息"))?;
+                    if protocol::is_response(&value, &request["id"]) { return Ok(value); }
+                    if let Some(reply) = protocol::server_request_reply(&value) {
+                        self.send(&reply, deadline)?;
+                    }
+                }
+                Ok(ReaderMessage::Closed) | Err(mpsc::RecvTimeoutError::Disconnected) =>
+                    return Err(CheckError::closed()),
+                Ok(ReaderMessage::Error(error)) => return Err(error),
+                Err(mpsc::RecvTimeoutError::Timeout) => {}
+            }
+        }
     }
-    let mut builder = Command::new(command);
-    builder
-        .args(args)
-        .envs(env)
-        .stdin(Stdio::piped())
-        .stdout(Stdio::piped())
-        .stderr(Stdio::null());
+
+    fn notify(&mut self, notification: &Value, deadline: &CheckDeadline) -> Result<(), CheckError> {
+        self.send(notification, deadline)
+    }
+
+    fn set_protocol_version(&mut self, _version: &str) {}
+}
+
+pub(super) fn check_stdio(
+    command: &str, args: &[String], env: &BTreeMap<String, String>,
+    working_dir: &Path, deadline: &CheckDeadline, initialize_timeout: Duration,
+) -> ProbeOutcome {
+    if let Err(error) = deadline.remaining() { return ProbeOutcome::for_error(None, error); }
+    let program = match program_path(command, env, working_dir) {
+        Ok(program) => program,
+        Err(error) => return ProbeOutcome::failed("spawn", error.message),
+    };
+    let mut builder = Command::new(program);
+    builder.args(args).envs(env).current_dir(working_dir)
+        .stdin(Stdio::piped()).stdout(Stdio::piped()).stderr(Stdio::null());
     crate::process_control::suppress_window(&mut builder);
     let mut child = match builder.spawn() {
         Ok(child) => child,
-        Err(_) => return ProbeOutcome::failed("spawn", "无法启动检测命令"),
+        Err(error) => return ProbeOutcome::failed("spawn",
+            format!("无法启动检测命令（{:?}）", error.kind())),
     };
-    drive_stdio_check(&mut child, deadline)
+    drive_stdio_check(&mut child, deadline, initialize_timeout)
 }
 
-pub(super) fn drive_stdio_check(child: &mut Child, deadline: &CheckDeadline) -> ProbeOutcome {
-    let Some(stdin) = child.stdin.take() else {
+fn drive_stdio_check(child: &mut Child, deadline: &CheckDeadline, initialize_timeout: Duration) -> ProbeOutcome {
+    let (Some(mut stdin), Some(stdout)) = (child.stdin.take(), child.stdout.take()) else {
         terminate_process_tree(child);
-        return ProbeOutcome::failed("spawn", "检测命令未提供标准输入");
+        return ProbeOutcome::failed("spawn", "检测命令未提供标准输入和输出");
     };
-    let Some(stdout) = child.stdout.take() else {
-        terminate_process_tree(child);
-        return ProbeOutcome::failed("spawn", "检测命令未提供标准输出");
+    let (write_tx, write_rx) = mpsc::sync_channel::<WriteRequest>(1);
+    let writer = std::thread::Builder::new().name("mcp-stdin".into()).spawn(move || {
+        while let Ok(request) = write_rx.recv() {
+            let result = stdin.write_all(&request.bytes).and_then(|()| stdin.flush())
+                .map_err(|_| CheckError::transport("无法写入检测命令"));
+            let failed = result.is_err();
+            let _ = request.reply.send(result);
+            if failed { break; }
+        }
+    });
+    let writer = match writer {
+        Ok(writer) => writer,
+        Err(_) => {
+            terminate_process_tree(child);
+            return ProbeOutcome::failed("spawn", "无法启动检测输入线程");
+        }
     };
-    let (sender, receiver) = mpsc::sync_channel::<ReaderMessage>(32);
-    let reader = std::thread::spawn(move || read_stdio_lines(stdout, sender));
-    let mut stdin = stdin;
-    let mut connection = RpcConnection {
-        send: Box::new(move |value| {
-            let mut line =
-                serde_json::to_string(value).map_err(|_| CheckError::protocol("请求无法编码"))?;
-            line.push('\n');
-            stdin
-                .write_all(line.as_bytes())
-                .map_err(|_| CheckError::transport("无法写入检测命令"))?;
-            stdin
-                .flush()
-                .map_err(|_| CheckError::transport("无法写入检测命令"))
-        }),
-        receive: Box::new(move |wait| match receiver.recv_timeout(wait) {
-            Ok(message) => Ok(Some(message)),
-            Err(mpsc::RecvTimeoutError::Timeout) => Ok(None),
-            Err(mpsc::RecvTimeoutError::Disconnected) => Ok(Some(ReaderMessage::Closed)),
-        }),
-        bytes_read: 0,
+    let (read_tx, read_rx) = mpsc::sync_channel(4);
+    let reader = std::thread::Builder::new().name("mcp-stdout".into())
+        .spawn(move || read_stdio_lines(stdout, read_tx));
+    let reader = match reader {
+        Ok(reader) => reader,
+        Err(_) => {
+            drop(write_tx);
+            terminate_process_tree(child);
+            let _ = writer.join();
+            return ProbeOutcome::failed("spawn", "无法启动检测输出线程");
+        }
     };
-    let probe = negotiate_stdio(&mut connection, deadline);
-    // Releasing stdin and the receiver unblocks the bounded reader before
-    // waiting for a long-running MCP process to terminate.
+    let mut connection = StdioConnection { writer: write_tx, reader: read_rx, bytes_read: 0 };
+    let probe = protocol::probe(&mut connection, deadline, initialize_timeout);
     drop(connection);
     terminate_process_tree(child);
+    let _ = writer.join();
     let _ = reader.join();
     probe
 }
@@ -128,27 +134,51 @@ pub(super) fn drive_stdio_check(child: &mut Child, deadline: &CheckDeadline) -> 
 fn read_stdio_lines(stdout: std::process::ChildStdout, sender: SyncSender<ReaderMessage>) {
     let mut reader = BufReader::new(stdout);
     loop {
-        match read_line_capped(&mut reader, MAX_LINE_BYTES) {
-            Ok(Some(bytes)) => match String::from_utf8(bytes) {
-                Ok(line) => {
-                    if sender.send(ReaderMessage::Line(line)).is_err() {
-                        break;
-                    }
-                }
-                Err(_) => {
-                    let _ = sender.send(ReaderMessage::Error);
-                    break;
-                }
-            },
-            Ok(None) => break,
-            Err(_) => {
-                let _ = sender.send(ReaderMessage::Error);
-                break;
+        let message = match read_line_capped(&mut reader, MAX_OUTPUT_BYTES) {
+            Ok(Some(bytes)) => ReaderMessage::Line(bytes),
+            Ok(None) => ReaderMessage::Closed,
+            Err(error) => ReaderMessage::Error(if error.kind() == std::io::ErrorKind::InvalidData {
+                CheckError::output_limit()
+            } else { CheckError::transport("服务输出无法读取") }),
+        };
+        let done = !matches!(message, ReaderMessage::Line(_));
+        if sender.send(message).is_err() || done { break; }
+    }
+}
+
+fn program_path(command: &str, env: &BTreeMap<String, String>, working_dir: &Path) -> Result<PathBuf, CheckError> {
+    let path = Path::new(command);
+    if path.is_absolute() { return Ok(path.to_path_buf()); }
+    if command.contains('/') || command.contains('\\') { return Ok(working_dir.join(path)); }
+    #[cfg(windows)]
+    {
+        if command.eq_ignore_ascii_case("cmd") || command.eq_ignore_ascii_case("cmd.exe") {
+            let root = std::env::var_os("SystemRoot")
+                .ok_or_else(|| CheckError::transport("无法定位 Windows 命令解释器"))?;
+            return Ok(PathBuf::from(root).join("System32").join("cmd.exe"));
+        }
+        let path_value = env.iter().find(|(key, _)| key.eq_ignore_ascii_case("PATH"))
+            .map(|(_, value)| std::ffi::OsString::from(value.as_str()))
+            .or_else(|| std::env::var_os("PATH")).unwrap_or_default();
+        let extensions = env.iter().find(|(key, _)| key.eq_ignore_ascii_case("PATHEXT"))
+            .map(|(_, value)| value.clone()).or_else(|| std::env::var("PATHEXT").ok())
+            .unwrap_or_else(|| ".COM;.EXE;.BAT;.CMD".into());
+        for directory in std::env::split_paths(&path_value) {
+            let directory = working_dir.join(directory);
+            for candidate in std::iter::once(directory.join(command)).chain(
+                extensions.split(';').map(|extension| directory.join(format!("{command}{extension}"))),
+            ) {
+                if candidate.is_file() { return Ok(candidate); }
             }
         }
+        return Err(CheckError::transport("检测命令未在目标环境的 PATH 中找到"));
     }
-    let _ = sender.send(ReaderMessage::Closed);
+    #[cfg(not(windows))]
+    { let _ = env; Ok(path.to_path_buf()) }
 }
+
+#[cfg(test)]
+mod tests;
 
 pub(super) fn read_line_capped<R: BufRead>(
     reader: &mut R,
@@ -189,277 +219,5 @@ pub(super) fn read_line_capped<R: BufRead>(
         }
         line.extend_from_slice(buffer);
         reader.consume(length);
-    }
-}
-
-pub(super) fn negotiate_stdio(
-    connection: &mut RpcConnection,
-    deadline: &CheckDeadline,
-) -> ProbeOutcome {
-    let discovery_deadline = deadline.limited(DISCOVERY_DEADLINE);
-    let discovery = rpc_request(1, "server/discover", None, true);
-    match connection.call(&discovery, &discovery_deadline) {
-        Ok(response) => match modern_supported(&response) {
-            Ok(true) => return list_stdio(connection, MODERN_PROTOCOL_VERSION, true, deadline),
-            Ok(false) => {}
-            Err(error) => return probe_for_error(None, &error),
-        },
-        Err(error)
-            if matches!(error.kind, CheckErrorKind::TimedOut)
-                && !deadline.cancelled()
-                && deadline.remaining().is_ok() => {}
-        Err(error) => return probe_for_error(None, &error),
-    }
-    negotiate_legacy_stdio(connection, deadline)
-}
-
-pub(super) fn negotiate_legacy_stdio(
-    connection: &mut RpcConnection,
-    deadline: &CheckDeadline,
-) -> ProbeOutcome {
-    let initialize = serde_json::json!({
-        "jsonrpc": "2.0",
-        "id": 2,
-        "method": "initialize",
-        "params": {
-            "protocolVersion": LEGACY_REQUESTED_PROTOCOL_VERSION,
-            "capabilities": {},
-            "clientInfo": {"name": "agent-switchboard", "version": env!("CARGO_PKG_VERSION")},
-        }
-    });
-    let response = match connection.call(&initialize, deadline) {
-        Ok(response) => response,
-        Err(error) => return probe_for_error(None, &error),
-    };
-    let Some(result) = response.get("result") else {
-        return ProbeOutcome::failed("protocol", "服务端拒绝 initialize 请求");
-    };
-    let Some(protocol_version) = result
-        .get("protocolVersion")
-        .and_then(|value| value.as_str())
-        .map(str::to_string)
-    else {
-        return ProbeOutcome::failed("protocol", "服务端未返回协议版本");
-    };
-    if !SUPPORTED_PROTOCOL_VERSIONS.contains(&protocol_version.as_str())
-        || protocol_version == MODERN_PROTOCOL_VERSION
-    {
-        return ProbeOutcome {
-            outcome: McpCheckOutcome::Failed {
-                classification: "version".to_string(),
-                error: format!("服务端协议版本 {protocol_version} 不在本检测支持范围内"),
-            },
-            protocol_version: Some(protocol_version),
-            truncated: false,
-        };
-    }
-    let notification = serde_json::json!({
-        "jsonrpc": "2.0",
-        "method": "notifications/initialized"
-    });
-    if let Err(error) = deadline
-        .remaining()
-        .and_then(|_| (connection.send)(&notification))
-    {
-        return ProbeOutcome::partial(Some(protocol_version), error.message, false);
-    }
-    list_stdio(connection, &protocol_version, false, deadline)
-}
-
-pub(super) fn list_stdio(
-    connection: &mut RpcConnection,
-    protocol_version: &str,
-    modern: bool,
-    deadline: &CheckDeadline,
-) -> ProbeOutcome {
-    list_directories(
-        protocol_version,
-        modern,
-        deadline,
-        |request, request_deadline| connection.call(request, request_deadline),
-    )
-}
-
-pub(super) fn modern_supported(response: &serde_json::Value) -> Result<bool, CheckError> {
-    if let Some(result) = response.get("result") {
-        let Some(versions) = result
-            .get("supportedVersions")
-            .and_then(|value| value.as_array())
-        else {
-            return Err(CheckError::protocol("server/discover 未返回支持的协议版本"));
-        };
-        return Ok(versions
-            .iter()
-            .filter_map(|value| value.as_str())
-            .any(|version| version == MODERN_PROTOCOL_VERSION));
-    }
-    if response_error_code(response) == Some(-32601) {
-        return Ok(false);
-    }
-    Err(CheckError::protocol("服务端拒绝 server/discover 请求"))
-}
-
-pub(super) fn list_directories(
-    protocol_version: &str,
-    modern: bool,
-    deadline: &CheckDeadline,
-    mut call: impl FnMut(&serde_json::Value, &CheckDeadline) -> Result<serde_json::Value, CheckError>,
-) -> ProbeOutcome {
-    let mut counts = (0u64, 0u64, 0u64);
-    for (index, method) in ["tools/list", "resources/list", "prompts/list"]
-        .into_iter()
-        .enumerate()
-    {
-        let mut cursor: Option<String> = None;
-        for page in 0..MAX_PAGES {
-            let request = rpc_request(
-                100 + (index as u64 * MAX_PAGES as u64) + page as u64,
-                method,
-                cursor.as_deref(),
-                modern,
-            );
-            let response = match call(&request, deadline) {
-                Ok(response) => response,
-                Err(error) if matches!(error.kind, CheckErrorKind::Cancelled) => {
-                    return ProbeOutcome::cancelled(Some(protocol_version.to_string()))
-                }
-                Err(error) => {
-                    return ProbeOutcome::partial(
-                        Some(protocol_version.to_string()),
-                        error.message,
-                        matches!(error.kind, CheckErrorKind::OutputLimit),
-                    )
-                }
-            };
-            let Some(result) = response.get("result") else {
-                if response_error_code(&response) == Some(-32601) {
-                    break;
-                }
-                return ProbeOutcome::partial(
-                    Some(protocol_version.to_string()),
-                    "服务端拒绝目录请求",
-                    false,
-                );
-            };
-            let items = result
-                .get(match method {
-                    "tools/list" => "tools",
-                    "resources/list" => "resources",
-                    _ => "prompts",
-                })
-                .and_then(|value| value.as_array())
-                .map(|items| items.len() as u64)
-                .unwrap_or(0);
-            counts = match index {
-                0 => (counts.0 + items, counts.1, counts.2),
-                1 => (counts.0, counts.1 + items, counts.2),
-                _ => (counts.0, counts.1, counts.2 + items),
-            };
-            cursor = result
-                .get("nextCursor")
-                .and_then(|value| value.as_str())
-                .map(str::to_string);
-            if cursor.is_none() {
-                break;
-            }
-            if page + 1 == MAX_PAGES {
-                return ProbeOutcome::partial(
-                    Some(protocol_version.to_string()),
-                    "目录分页超过上限，结果已截断",
-                    true,
-                );
-            }
-        }
-    }
-    ProbeOutcome {
-        outcome: McpCheckOutcome::Passed {
-            tools: counts.0,
-            resources: counts.1,
-            prompts: counts.2,
-        },
-        protocol_version: Some(protocol_version.to_string()),
-        truncated: false,
-    }
-}
-
-pub(super) fn rpc_request(
-    id: u64,
-    method: &str,
-    cursor: Option<&str>,
-    modern: bool,
-) -> serde_json::Value {
-    let mut params = serde_json::Map::new();
-    if let Some(cursor) = cursor {
-        params.insert(
-            "cursor".to_string(),
-            serde_json::Value::String(cursor.to_string()),
-        );
-    }
-    if modern {
-        params.insert(
-            "_meta".to_string(),
-            serde_json::json!({
-                "io.modelcontextprotocol/protocolVersion": MODERN_PROTOCOL_VERSION,
-                "io.modelcontextprotocol/clientInfo": {
-                    "name": "agent-switchboard",
-                    "version": env!("CARGO_PKG_VERSION"),
-                },
-                "io.modelcontextprotocol/clientCapabilities": {},
-            }),
-        );
-    }
-    serde_json::json!({
-        "jsonrpc": "2.0",
-        "id": id,
-        "method": method,
-        "params": params,
-    })
-}
-
-pub(super) fn response_error_code(response: &serde_json::Value) -> Option<i64> {
-    response
-        .get("error")
-        .and_then(|error| error.get("code"))
-        .and_then(|code| code.as_i64())
-}
-
-pub(super) fn probe_for_error(
-    protocol_version: Option<String>,
-    error: &CheckError,
-) -> ProbeOutcome {
-    match error.kind {
-        CheckErrorKind::Cancelled => ProbeOutcome::cancelled(protocol_version),
-        CheckErrorKind::TimedOut => ProbeOutcome {
-            outcome: McpCheckOutcome::Failed {
-                classification: "timeout".to_string(),
-                error: error.message.clone(),
-            },
-            protocol_version,
-            truncated: false,
-        },
-        CheckErrorKind::OutputLimit => ProbeOutcome {
-            outcome: McpCheckOutcome::Failed {
-                classification: "output".to_string(),
-                error: error.message.clone(),
-            },
-            protocol_version,
-            truncated: true,
-        },
-        CheckErrorKind::Transport => ProbeOutcome {
-            outcome: McpCheckOutcome::Failed {
-                classification: "network".to_string(),
-                error: error.message.clone(),
-            },
-            protocol_version,
-            truncated: false,
-        },
-        CheckErrorKind::Closed | CheckErrorKind::Protocol => ProbeOutcome {
-            outcome: McpCheckOutcome::Failed {
-                classification: "protocol".to_string(),
-                error: error.message.clone(),
-            },
-            protocol_version,
-            truncated: false,
-        },
     }
 }

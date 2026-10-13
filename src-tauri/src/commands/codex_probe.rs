@@ -8,7 +8,7 @@ use tauri::{AppHandle, Manager};
 
 use crate::codex_probe::{
     self, ProbeBatchStatus, ProbeBatchView, ProbeHistoryPage, ProbeHistoryProfile,
-    ProbeProfileFilter, ProbeRegistry, MAX_RUN_COUNT,
+    ProbeGrading, ProbeProfileFilter, ProbeRegistry, MAX_RUN_COUNT,
 };
 use crate::commands::error::{blocking, state, CommandError};
 
@@ -17,6 +17,9 @@ use crate::commands::error::{blocking, state, CommandError};
 pub struct CodexProbeQuestionDto<'a> {
     id: &'a str,
     label: &'a str,
+    text: &'a str,
+    grading_version: ProbeGrading,
+    source_url: Option<&'a str>,
 }
 
 #[tauri::command]
@@ -26,6 +29,9 @@ pub async fn list_codex_probe_questions() -> Result<Vec<CodexProbeQuestionDto<'s
         .map(|question| CodexProbeQuestionDto {
             id: question.id,
             label: question.label,
+            text: question.prompt,
+            grading_version: question.grading,
+            source_url: question.source_url,
         })
         .collect())
 }
@@ -38,6 +44,7 @@ pub struct StartCodexProbeRequest {
     question_id: String,
     custom_question: Option<String>,
     custom_answer: Option<String>,
+    custom_grading_version: Option<ProbeGrading>,
 }
 
 #[tauri::command]
@@ -57,6 +64,7 @@ pub async fn start_codex_probe(
         &request.question_id,
         request.custom_question,
         request.custom_answer,
+        request.custom_grading_version,
     )
     .map_err(|message| CommandError::new("codex-probe-invalid-question", message))?;
     let local = state(&app)?;

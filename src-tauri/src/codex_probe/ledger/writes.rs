@@ -21,7 +21,7 @@ impl ProbeLedger {
                     batch.question.label,
                     batch.question.text,
                     batch.question.expected_answer,
-                    batch.grading_version,
+                    batch.grading_version.as_str(),
                     batch.cli_version,
                     batch.config.profile_id,
                     batch.config.profile_name,

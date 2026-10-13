@@ -207,6 +207,15 @@ impl ProviderProfile {
         }
     }
 
+    /// Managed xAI credentials are only sent to their fixed API origin.
+    pub fn upstream_base_url(&self) -> Option<&str> {
+        if self.app == AppKind::Codex && self.connection.provider_type.as_deref() == Some("xai_oauth") {
+            Some(crate::contracts::XAI_API_BASE_URL)
+        } else {
+            self.base_url.as_deref()
+        }
+    }
+
     /// Whether the selected protocol or request shape needs the local gateway.
     pub fn requires_gateway(&self) -> bool {
         if self.route_mode != RouteMode::Custom || self.connection.claude_native.is_some() {

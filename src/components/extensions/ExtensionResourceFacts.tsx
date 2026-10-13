@@ -2,6 +2,7 @@ import type { ReactNode } from "react";
 import type { ExtensionListItem, SecretValueView as CredentialView } from "../../api/client";
 import { useI18n } from "../../i18n";
 import { clientName } from "../../lib/client-name";
+import { Table } from "../Table";
 import { TRANSPORT_LABELS } from "./labels";
 
 function Facts({ rows }: { rows: Array<[string, ReactNode]> }) {
@@ -38,15 +39,12 @@ function SecretMap({ title, values }: { title: string; values: Record<string, Cr
   return (
     <div className="asb-ext-section">
       <h4 className="asb-group-title">{title}</h4>
-      <ul className="asb-ext-secret-list">
-        {Object.entries(values).map(([key, value]) => (
-          <li key={key}>
-            <span className="asb-code">{key}</span>
-            {t("extensions.facts.entrySeparator")}
-            <SecretValue value={value} />
-          </li>
-        ))}
-      </ul>
+      <div className="asb-ext-table-scroll" tabIndex={0}>
+        <Table rows={Object.entries(values)} rowKey={([key]) => key} ariaLabel={title} columns={[
+          { key: "name", header: t("extensions.table.name"), render: ([key]) => <span className="asb-code">{key}</span> },
+          { key: "value", header: t("extensions.table.value"), render: ([, value]) => <SecretValue value={value} /> },
+        ]} />
+      </div>
     </div>
   );
 }
@@ -95,16 +93,13 @@ function SkillFacts({ item }: { item: Extract<ExtensionListItem, { kind: "skill"
         {item.dependencyStates.length === 0 ? (
           <p className="asb-empty">{t("extensions.facts.noDependencies")}</p>
         ) : (
-          <ul className="asb-ext-secret-list">
-            {item.dependencyStates.map((dependency) => (
-              <li key={dependency.name}>
-                {t("extensions.facts.dependencyLine", {
-                  name: dependency.name,
-                  state: dependencyLabels[dependency.state],
-                })}
-              </li>
-            ))}
-          </ul>
+          <div className="asb-ext-table-scroll" tabIndex={0}>
+            <Table rows={item.dependencyStates} rowKey={(dependency) => dependency.name}
+              ariaLabel={t("extensions.facts.dependencies")} columns={[
+                { key: "name", header: t("extensions.table.name"), render: (dependency) => dependency.name },
+                { key: "status", header: t("extensions.table.status"), render: (dependency) => dependencyLabels[dependency.state] },
+              ]} />
+          </div>
         )}
       </div>
     </>

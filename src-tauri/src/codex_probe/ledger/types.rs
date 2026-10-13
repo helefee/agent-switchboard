@@ -39,9 +39,8 @@ impl ProbeBatchStatus {
     }
 }
 
-/// One finished run's grading outcome. Execution failures, cancellation, and
-/// interruption never grade — they stay `Undetermined`, separate from a wrong
-/// answer (`Failed`).
+/// Automatic verdict only. Visual answers, execution failures, cancellation
+/// and interruption stay `Undetermined`, separate from a wrong integer answer.
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq, serde::Serialize)]
 #[serde(rename_all = "kebab-case")]
 pub(crate) enum ProbeRunStatus {
@@ -80,6 +79,7 @@ pub(crate) struct ProbeQuestionSnapshot {
     pub id: String,
     pub label: String,
     pub text: String,
+    /// Empty for a visual question, which has no reference answer.
     pub expected_answer: String,
 }
 
@@ -107,7 +107,7 @@ pub(crate) struct ProbeBatchRecord {
     pub status: ProbeBatchStatus,
     pub planned_runs: u32,
     pub question: ProbeQuestionSnapshot,
-    pub grading_version: String,
+    pub grading_version: crate::codex_probe::ProbeGrading,
     pub cli_version: Option<String>,
     pub config: ProbeConfigRecord,
     pub status_error: Option<String>,
@@ -137,7 +137,7 @@ pub(crate) struct NewProbeBatch {
     pub started_at: String,
     pub planned_runs: u32,
     pub question: ProbeQuestionSnapshot,
-    pub grading_version: String,
+    pub grading_version: crate::codex_probe::ProbeGrading,
     pub cli_version: Option<String>,
     pub config: ProbeConfigRecord,
 }
@@ -167,6 +167,7 @@ pub(crate) struct ProbeHistoryItem {
     pub finished_at: Option<String>,
     pub status: ProbeBatchStatus,
     pub question_label: String,
+    pub grading_version: crate::codex_probe::ProbeGrading,
     pub profile_id: Option<String>,
     pub profile_name: Option<String>,
     pub run_count: u32,

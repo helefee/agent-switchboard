@@ -5,8 +5,8 @@ import { DiffView } from "../DiffView";
 import { PreviewInspector } from "../PreviewInspector";
 import type { ProviderRepairState } from "./use-provider-repair";
 
-export function ProviderRepairPane({ repair, canRepair, disabled }: {
-  repair: ProviderRepairState; canRepair: boolean; disabled: boolean;
+export function ProviderRepairPane({ repair }: {
+  repair: ProviderRepairState;
 }) {
   const { t } = useI18n();
   const pending = repair.pending;
@@ -21,7 +21,15 @@ export function ProviderRepairPane({ repair, canRepair, disabled }: {
     {repair.receipt && !repair.receipt.canUndo && <p className="asb-scope-note">{t("doctor.catalogOnly")}</p>}
     {pending?.kind === "repair" && <PreviewInspector filePreview={pending.preview.file} userConfigModel={null} userConfigWarnings={[]} />}
     {pending?.kind === "undo" && <DiffView changes={pending.preview.changes} label={t("doctor.undo")} />}
-    <div className="asb-panel-actions">
+  </section>;
+}
+
+export function ProviderRepairActions({ repair, canRepair, disabled }: {
+  repair: ProviderRepairState; canRepair: boolean; disabled: boolean;
+}) {
+  const { t } = useI18n();
+  const pending = repair.pending;
+  return <div className="asb-panel-actions">
       {pending ? <>
         <Button variant="secondary" disabled={disabled} onClick={() => void repair.cancel()}>{t("doctor.cancelPreview")}</Button>
         <Button variant="primary" disabled={disabled} onClick={() => void repair.confirm()}>
@@ -32,6 +40,5 @@ export function ProviderRepairPane({ repair, canRepair, disabled }: {
         {repair.receipt?.canUndo && <Button variant="secondary" disabled={disabled}
           onClick={() => void repair.preview("undo")}>{t("doctor.undo")}</Button>}
       </>}
-    </div>
-  </section>;
+    </div>;
 }

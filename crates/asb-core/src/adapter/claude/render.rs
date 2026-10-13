@@ -12,6 +12,11 @@ pub(crate) fn render(current: &str, plan: &SwitchPlan) -> Result<String, Adapter
         message,
         line: None,
     };
+    if !plan.writes_client_settings() {
+        let profile = super::model_preferences::projected_profile(plan)?;
+        return crate::claude_common::apply_profile(&rendered, &profile)
+            .map_err(fragment_error);
+    }
     let (shared, profile) = super::model_preferences::projected(plan)?;
     // Remove the old profile before the shared overlay can claim its leaves.
     let rendered = crate::claude_common::apply_profile(&rendered, &Default::default())

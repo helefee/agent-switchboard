@@ -1,5 +1,5 @@
 import { useMessageState } from "../i18n/use-message-state";
-import { useEffect, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 
 import {
   commitClientConfigurationRepair,
@@ -75,31 +75,37 @@ function CurrentConfigurationRepair({ app, busy, source, onApplied }: Pick<Props
 function useCurrentConfigurationEdit({ app, busy, editorState, source, subagentDraft, onApplied }: Props) {
   const [editing, setEditing] = useState(false);
   const [draft, setDraft] = useState(source.content);
+  const baseline = useRef(source);
   const [preview, setPreview] = useState<ClientConfigurationApplyPreview | null>(null);
   const [working, setWorking] = useState(false);
   const [error, setError] = useMessageState();
   const settings = currentSettings({ app, editorState });
-  const canWrite = !!settings && (app !== "codex" || !!subagentDraft);
+  const stale = editing && baseline.current.contentHash !== source.contentHash;
+  const canWrite = !stale && !!settings && (app !== "codex" || !!subagentDraft);
   useEffect(() => {
-    setDraft(source.content); setEditing(false); setPreview(null); setError(null);
-  }, [source.content, source.contentHash]);
+    setPreview(null);
+    if (editing) return;
+    baseline.current = source;
+    setDraft(source.content); setError(null);
+  }, [source.content, source.contentHash, editing]);
+  const startEditing = () => { baseline.current = source; setEditing(true); };
   const changeDraft = (content: string) => { setDraft(content); setPreview(null); setError(null); };
   const prepare = () => {
-    if (!settings || busy || working) return;
+    if (!settings || !canWrite || busy || working) return;
     setWorking(true); setError(null); setPreview(null);
     void previewManualClientConfiguration(app, source.contentHash, draft, settings, subagentDraft).then(setPreview)
       .catch((caught: { message?: string }) => setError(caught))
       .finally(() => setWorking(false));
   };
   const commit = () => {
-    if (!settings || !preview || busy || working) return;
+    if (!settings || !canWrite || !preview || busy || working) return;
     setWorking(true); setError(null);
     void commitManualClientConfiguration(app, source.contentHash, preview.file.renderedHash, preview.settingsHash,
-      preview.targetExisted, draft, settings, subagentDraft).then(() => { setPreview(null); onApplied(); })
+      preview.targetExisted, draft, settings, subagentDraft).then(() => { setEditing(false); setPreview(null); onApplied(); })
       .catch((caught: { message?: string }) => setError(caught))
       .finally(() => setWorking(false));
   };
-  return { canWrite, changeDraft, commit, draft, editing, error, prepare, preview, setEditing, setPreview, setDraft, setError, working };
+  return { canWrite, changeDraft, commit, draft, editing, error, prepare, preview, startEditing, stale, setEditing, setPreview, setDraft, setError, working };
 }
 
 /** The configuration-review file module: one surface reviews the redacted
@@ -119,7 +125,7 @@ export function CurrentConfigurationEditor(props: Props) {
       {icon}
     </div>
   );
-  if (!source.syntaxOk) {
+  if (!source.syntaxOk && !edit.editing) {
     return (
       <section className="asb-client-configuration-file" aria-label={t("clientConfig.repair.sectionAria")}>
         {heading(t("clientConfig.repair.help"))}
@@ -130,10 +136,11 @@ export function CurrentConfigurationEditor(props: Props) {
   return (
     <section className="asb-client-configuration-file" aria-label={t("clientConfig.editor.title")}>
       {heading(edit.editing || edit.preview ? t("clientConfig.editor.editHelp") : t("clientConfig.editor.reviewHelp"), !edit.editing && !edit.preview ? (
-        <Button variant="icon" aria-label={t("clientConfig.editor.editAria")} disabled={busy} onClick={() => edit.setEditing(true)}>
+        <Button variant="icon" aria-label={t("clientConfig.editor.editAria")} disabled={busy} onClick={edit.startEditing}>
           <EditIcon />
         </Button>
       ) : undefined)}
+      {edit.stale && <p className="asb-field-error" role="alert">{t("clientConfig.editor.sourceChanged")}</p>}
       {edit.preview ? <>
         <CodePreview target={t("clientConfig.editor.manualCandidateTarget", { target: edit.preview.file.preview.target })} content={edit.preview.file.content} />
         <div className="asb-client-configuration-file-actions">

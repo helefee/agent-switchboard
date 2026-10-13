@@ -47,9 +47,8 @@ export function ClientManagementPage({ onChanged }: ClientManagementPageProps) {
       <div id={contentId} role="tabpanel" aria-labelledby={`client-management-client-${client}-tab`}>
         {operations.error && <p role="alert" className="asb-field-error">{operations.error}</p>}
         {operations.notice && <p role="status" className="asb-scope-note">{operations.notice}</p>}
-        {client === "codex"
-          ? <ProjectPlansPane operations={codex} />
-          : <IntegrationPane operations={claude} />}
+        <div hidden={client !== "codex"}><ProjectPlansPane operations={codex} /></div>
+        <div hidden={client !== "claude"}><IntegrationPane operations={claude} /></div>
       </div>
     </section>
   );

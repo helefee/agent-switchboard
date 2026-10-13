@@ -8,6 +8,7 @@ export interface TableColumn<T> {
   /** Renders one row's cell content; cell semantics stay caller-owned. */
   render: (row: T) => ReactNode;
   cellClassName?: string;
+  align?: "start" | "end";
 }
 
 interface Props<T> {
@@ -39,7 +40,7 @@ export function Table<T>({ columns, rows, rowKey, ariaLabel, className, onRowCli
       <thead>
         <tr>
           {columns.map((column) => (
-            <th key={column.key} scope="col" className="asb-table-cell">
+            <th key={column.key} scope="col" className={cx("asb-table-cell", column.align === "end" && "is-numeric")}>
               {column.header}
             </th>
           ))}
@@ -53,7 +54,7 @@ export function Table<T>({ columns, rows, rowKey, ariaLabel, className, onRowCli
             onClick={onRowClick ? () => onRowClick(row) : undefined}
           >
             {columns.map((column) => (
-              <td key={column.key} className={cx("asb-table-cell", column.cellClassName)}>
+              <td key={column.key} className={cx("asb-table-cell", column.cellClassName, column.align === "end" && "is-numeric")}>
                 {column.render(row)}
               </td>
             ))}

@@ -24,7 +24,8 @@ mod server;
 mod transform;
 mod usage_metadata;
 
-use metrics::{GatewayMetrics, GatewayMetricsSnapshot};
+use metrics::GatewayMetrics;
+pub(crate) use metrics::GatewayMetricsSnapshot;
 
 use crate::local_state::LocalState;
 use asb_core::adapter;
@@ -67,6 +68,7 @@ mod state_repair;
 use health_state::ClaudeHealthStore;
 use identity::*;
 pub(crate) use identity::{codex_catalog_file_name, codex_route_fingerprint};
+pub(crate) use routing::client_gateway_port;
 pub(crate) use provider_health::{
     is_retryable_http_status, ProviderHealth, ProviderHealthConfig, ProviderHealthState,
 };

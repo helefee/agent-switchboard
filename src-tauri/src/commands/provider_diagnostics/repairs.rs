@@ -36,6 +36,12 @@ fn ensure_active(local: &crate::local_state::LocalState, gateway: &crate::gatewa
     Ok(())
 }
 
+pub(super) fn build_plan(local: &crate::local_state::LocalState, gateway: &crate::gateway::GatewayController, id: &str) -> Result<crate::gateway::GatewayProjection, CommandError> {
+    let mut projection = switching::plan::build_plan(local, gateway, id)?;
+    projection.plan = projection.plan.for_provider_repair();
+    Ok(projection)
+}
+
 pub(super) fn repair_file(local: &crate::local_state::LocalState, gateway: &crate::gateway::GatewayController, projection: &crate::gateway::GatewayProjection) -> Result<FilePreview, CommandError> {
     let mut file = switching::plan::preview_projection(local, projection)?;
     if file.auth_hash != file.auth_rendered_hash || file.auth_existed != file.auth_rendered_existed {
@@ -71,7 +77,7 @@ pub async fn prepare_provider_repair(app: AppHandle, profile_id: String) -> Resu
     blocking(move || {
         let kind = saved_provider(&local, &profile_id)?.profile.app;
         ensure_active(&local, &gateway, kind, &profile_id)?;
-        let projection = switching::plan::build_plan(&local, &gateway, &profile_id)?;
+        let projection = build_plan(&local, &gateway, &profile_id)?;
         let before = snapshot::capture(&local, kind, &profile_id, &projection)?;
         let file = repair_file(&local, &gateway, &projection)?;
         if !differs(&file) { return Err(failed("providerDiagnostics.backend.noChanges", "当前供应商配置已一致，无需修复")); }
@@ -94,7 +100,7 @@ pub async fn commit_provider_repair(app: AppHandle, preparation_id: String, conf
         switching::ensure_profile_save_recovered(&app)?;
         ensure_active(&local, &gateway, kind, &profile_id)?;
         snapshot::unchanged(&local, kind, &profile_id, &before)?;
-        let projection = switching::plan::build_plan(&local, &gateway, &profile_id)?;
+        let projection = build_plan(&local, &gateway, &profile_id)?;
         let latest = repair_file(&local, &gateway, &projection)?;
         if !same_preview(&latest, &file) { return Err(snapshot::stale()); }
         let outcome = switching::plan::execute_projection_with_auth(&local, &gateway, &projection,

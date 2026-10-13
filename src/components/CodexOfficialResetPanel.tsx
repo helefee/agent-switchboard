@@ -26,7 +26,9 @@ export function CodexOfficialResetPanel({ read }: { read: ReturnType<typeof useC
     <section className="asb-panel asb-official-reset" aria-labelledby="codex-official-reset-heading">
       <ModuleHeader id="codex-official-reset-heading" title={t("codex.officialReset.title")} />
       {cacheLoading && quota === null && (
-        <p className="asb-empty" role="status">{t("codex.reset.loadingCache")}</p>
+        <div className="asb-quota-loading" role="status" aria-label={t("codex.reset.loadingCache")}>
+          <span className="asb-skeleton" aria-hidden="true" /><span className="asb-skeleton" aria-hidden="true" />
+        </div>
       )}
       {quota === null && !cacheLoading && !cacheError && !statusNotice && !readError && (
         <div className="asb-empty-state">

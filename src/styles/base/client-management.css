@@ -66,7 +66,6 @@
  * or an independent client marker; it is not a second work surface. */
 .asb-client-management-group {
   padding-top: var(--asb-space-3);
-  border-top: 1px solid var(--asb-hairline);
 }
 
 /* A marker row leads with its state pill; the title rides beside it and the
@@ -117,10 +116,6 @@
   cursor: pointer;
 }
 
-.asb-client-management-option + .asb-client-management-option {
-  border-top: 1px solid var(--asb-hairline);
-}
-
 .asb-client-management-option:hover {
   background: var(--asb-content-muted);
 }
@@ -166,8 +161,7 @@
   color: var(--asb-text-muted);
 }
 
-/* Codex keeps its high-impact action clear by giving apply a full row, then
- * places reversible maintenance controls in a compact two-column grid. */
+/* Record maintenance is separate from the restore/preview action. */
 .asb-project-plan-action-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
@@ -176,10 +170,6 @@
 
 .asb-project-plan-action-grid > .asb-btn {
   width: 100%;
-}
-
-.asb-project-plan-apply-action {
-  grid-column: 1 / -1;
 }
 
 .asb-project-plan-delete-confirmation {
@@ -194,10 +184,6 @@
 @media (max-width: 560px) {
   .asb-project-plan-action-grid {
     grid-template-columns: minmax(0, 1fr);
-  }
-
-  .asb-project-plan-apply-action {
-    grid-column: auto;
   }
 
   .asb-project-plan-delete-confirmation .asb-form-actions {

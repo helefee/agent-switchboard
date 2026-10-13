@@ -72,7 +72,9 @@ export function TrayUsage({ usage }: { usage: Usage | null }) {
     {stale && <span className="tray-usage-state">{t("tray.state.stale")}</span>}</>;
   return <span ref={host} className="tray-provider-balance">
     {readings.slice(0, visible).map((reading, index) => <Reading key={index} reading={reading} />)}
-    {readings.length > visible && <span className="tray-usage-more">+{readings.length - visible}</span>}
+    {readings.length > visible && <span className="tray-usage-more" title={readings.slice(visible)
+      .map((reading) => `${reading.planName ?? ""} ${formatTrayReading(reading)}`.trim()).join("\n")}>
+      +{readings.length - visible}</span>}
     {states}
     <span ref={measure} className="tray-usage-measure" aria-hidden="true">
       {readings.slice(0, 2).map((reading, index) => <span key={index} data-measure="reading"><Reading reading={reading} /></span>)}

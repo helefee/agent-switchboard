@@ -1,6 +1,6 @@
 use super::output::{diagnostic, parse_events, read_usage};
 use super::questions::answer_matches;
-use super::{ProbeRunOutcome, ProbeRunResult, ResolvedQuestion};
+use super::{ProbeGrading, ProbeRunOutcome, ProbeRunResult, ResolvedQuestion};
 use crate::process_control::terminate_process_tree;
 use std::io::{Read, Write};
 use std::path::{Path, PathBuf};
@@ -65,7 +65,7 @@ pub(super) fn run_once(
     let stdout = drain_pipe(child.stdout.take().expect("piped stdout"), Arc::clone(on_session_id));
     let stderr = drain_pipe(child.stderr.take().expect("piped stderr"), noop);
     let mut stdin = child.stdin.take().expect("piped stdin");
-    let prompt = format!("{}\n只输出最终的非负整数答案，不要解释或使用 Markdown。", question.prompt);
+    let prompt = question.execution_prompt();
     // Stdin preserves multiline custom questions through Windows .cmd launchers.
     let input = std::thread::spawn(move || stdin.write_all(prompt.as_bytes()));
     let outcome = wait_for_exit(&mut child, cancel, started + PER_RUN_TIMEOUT, check_config);
@@ -162,9 +162,8 @@ fn collect_result(
     if error.is_none() && answer.as_ref().map_or(true, |answer| answer.trim().is_empty()) {
         error = Some("Codex 未写入最终回答".to_string());
     }
-    // Execution failures never grade: they stay Undetermined, apart from a
-    // decided wrong answer.
-    let outcome = if error.is_some() {
+    // Visual answers and execution failures never receive an automatic verdict.
+    let outcome = if error.is_some() || question.grading != ProbeGrading::Integer {
         ProbeRunOutcome::Undetermined
     } else if answer.as_ref()
         .is_ok_and(|answer| answer_matches(answer, &question.expected_answer))
@@ -173,9 +172,11 @@ fn collect_result(
     } else {
         ProbeRunOutcome::Failed
     };
-    let final_answer = answer.ok()
-        .map(|text| text.trim().to_string())
-        .filter(|text| !text.is_empty());
+    let final_answer = answer.ok().filter(|text| !text.trim().is_empty())
+        .map(|text| match question.grading {
+            ProbeGrading::Integer => text.trim().to_string(),
+            ProbeGrading::SvgVisual | ProbeGrading::HtmlVisual => text,
+        });
     let session_id = events.as_ref().ok().map(|events| events.session_id.clone())
         .or_else(|| early_session.map(str::to_string));
     let usage = events.as_ref().map_err(Clone::clone)

@@ -3,13 +3,14 @@ import { useI18n } from "../../i18n";
 import { Button } from "../Button";
 import { ExportIcon, PreviewIcon, TrashIcon, UpdateIcon } from "../icons";
 import { Time } from "../Time";
+import { Table } from "../Table";
 import { Tooltip } from "../Tooltip";
 import { CapabilityPanel } from "./CapabilityPanel";
 import { ExtensionBindings, ExtensionInstallTargets } from "./ExtensionBindings";
 import { ExtensionCheckPanel } from "./ExtensionCheckPanel";
 import { ExtensionResourceFacts } from "./ExtensionResourceFacts";
 import type { ExtensionManagementProps } from "./management-types";
-import { SKILL_CHANGE_LABELS, parseTargetValue } from "./labels";
+import { SKILL_CHANGE_LABELS } from "./labels";
 
 function ManagementAction({ label, disabled, danger = false, onClick, children }: {
   label: string;
@@ -90,13 +91,13 @@ function SkillUpdateManagement({ item, updateReport: report, busy, onApplyUpdate
         )}
       </div>
       {!current && report.changedFiles.length > 0 && (
-        <ul className="asb-ext-file-list">
-          {report.changedFiles.map((file) => (
-            <li key={`${file.action}-${file.relativePath}`}>
-              {t(SKILL_CHANGE_LABELS[file.action])} {file.relativePath}
-            </li>
-          ))}
-        </ul>
+        <div className="asb-ext-table-scroll" tabIndex={0}>
+          <Table rows={report.changedFiles} rowKey={(file) => `${file.action}:${file.relativePath}`}
+            ariaLabel={t("extensions.management.sourceUpdates")} columns={[
+              { key: "file", header: t("extensions.table.file"), render: (file) => <span className="asb-code">{file.relativePath}</span> },
+              { key: "change", header: t("extensions.table.change"), render: (file) => t(SKILL_CHANGE_LABELS[file.action]) },
+            ]} />
+        </div>
       )}
     </div>
   );
@@ -104,8 +105,7 @@ function SkillUpdateManagement({ item, updateReport: report, busy, onApplyUpdate
 
 export function ExtensionManagement(props: ExtensionManagementProps) {
   const { t } = useI18n();
-  const { item, installTargets, busy, capabilities } = props;
-  const checkTarget = installTargets.length > 0 ? parseTargetValue(installTargets[0]) : null;
+  const { item, capabilities } = props;
   return (
     <section className="asb-ext-management" aria-label={t("extensions.management.aria", { name: item.name })}>
       <header className="asb-ext-management-head">
@@ -115,15 +115,17 @@ export function ExtensionManagement(props: ExtensionManagementProps) {
         <ManagementActions {...props} />
       </header>
       <div className="asb-ext-management-main">
-        <ExtensionResourceFacts item={item} />
-        <SkillUpdateManagement {...props} />
-        {item.kind === "mcp" && (
-          <ExtensionCheckPanel definitionId={item.id} target={checkTarget} busy={busy} />
-        )}
         <ExtensionBindings {...props} />
         <ExtensionInstallTargets {...props} />
+        {item.kind === "mcp" && (
+          <ExtensionCheckPanel {...props} />
+        )}
+        <SkillUpdateManagement {...props} />
+        <details><summary>{t("extensions.management.details")}</summary>
+          <ExtensionResourceFacts item={item} />
+          <CapabilityPanel reports={capabilities} />
+        </details>
       </div>
-      <CapabilityPanel reports={capabilities} />
     </section>
   );
 }

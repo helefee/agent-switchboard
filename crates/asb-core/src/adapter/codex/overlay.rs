@@ -78,7 +78,7 @@ fn effective_parameter_entry(
 pub(super) fn client_settings_overlay(
     client_settings: &SettingsValues,
 ) -> Vec<(String, OverlayEntry)> {
-    setting_specs(AppKind::Codex)
+    let mut entries: Vec<_> = setting_specs(AppKind::Codex)
         .into_iter()
         .filter(|spec| spec.owner == SettingOwner::Client)
         .map(|spec| {
@@ -87,15 +87,18 @@ pub(super) fn client_settings_overlay(
                 .expect("client-settings validation guarantees every catalog key");
             (spec.key.to_string(), setting_entry(value))
         })
-        .collect()
+        .collect();
+    entries.push((super::subagents::RETIRED_MAX_THREADS_KEY.into(), OverlayEntry::RemoveIfPresent));
+    entries
 }
 
 /// Derives all changes by iterating the ownership directory. The only literal
 /// names below map declared slots to plan data; no second managed-key list
 /// exists in the adapter.
 pub(super) fn overlay(plan: &SwitchPlan) -> Vec<(String, OverlayEntry)> {
-    let entries: Vec<(String, OverlayEntry)> = setting_specs(AppKind::Codex)
+    let mut entries: Vec<(String, OverlayEntry)> = setting_specs(AppKind::Codex)
         .into_iter()
+        .filter(|spec| spec.owner != SettingOwner::Client || plan.writes_client_settings())
         .map(|spec| {
             let entry = match spec.owner {
                 SettingOwner::Provider if spec.control != SettingControl::None => {
@@ -121,5 +124,8 @@ pub(super) fn overlay(plan: &SwitchPlan) -> Vec<(String, OverlayEntry)> {
             (spec.key.to_string(), entry)
         })
         .collect();
+    if plan.writes_client_settings() {
+        entries.push((super::subagents::RETIRED_MAX_THREADS_KEY.into(), OverlayEntry::RemoveIfPresent));
+    }
     entries
 }

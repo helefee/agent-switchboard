@@ -186,6 +186,7 @@ mod tests {
         assert!(!value.to_string().contains("private-test-key"));
         assert!(!value.to_string().contains("example.invalid"));
         let status = ConfigFileStatus {
+            gateway_port: None,
             app: AppKind::Claude,
             path: String::new(),
             exists: true,

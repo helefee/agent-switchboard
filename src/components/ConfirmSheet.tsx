@@ -1,12 +1,15 @@
-import { useEffect, useRef, type ReactNode } from "react";
+import type { ReactNode } from "react";
 
 import { useI18n } from "../i18n";
 import { Button } from "./Button";
+import { AppDialog } from "./AppDialog";
 
 interface Props {
   title: string;
   children: ReactNode;
   confirmLabel: string;
+  cancelLabel?: string;
+  busy?: boolean;
   confirmDisabled?: boolean;
   destructive?: boolean;
   onConfirm: () => void;
@@ -21,69 +24,28 @@ export function ConfirmSheet({
   title,
   children,
   confirmLabel,
+  cancelLabel,
+  busy = false,
   confirmDisabled = false,
   destructive = false,
   onConfirm,
   onCancel,
 }: Props) {
-  const cancelRef = useRef<HTMLButtonElement>(null);
-  const sheetRef = useRef<HTMLDivElement>(null);
   const { t } = useI18n();
-
-  useEffect(() => {
-    cancelRef.current?.focus();
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        onCancel();
-        return;
-      }
-      if (event.key !== "Tab") return;
-
-      const controls = sheetRef.current?.querySelectorAll<HTMLButtonElement>("button:not(:disabled)");
-      if (!controls || controls.length === 0) return;
-      const first = controls[0];
-      const last = controls[controls.length - 1];
-      if (event.shiftKey && document.activeElement === first) {
-        event.preventDefault();
-        last.focus();
-      } else if (!event.shiftKey && document.activeElement === last) {
-        event.preventDefault();
-        first.focus();
-      }
-    };
-    window.addEventListener("keydown", onKey);
-    return () => window.removeEventListener("keydown", onKey);
-  }, [onCancel]);
-
   return (
-    <div
-      className="asb-dialog-backdrop is-inline"
-      onClick={(event) => event.target === event.currentTarget && onCancel()}
-    >
-      <div
-        ref={sheetRef}
-        className="asb-dialog is-narrow"
-        role="dialog"
-        aria-modal="true"
-        aria-label={title}
-      >
-        <header className="asb-dialog-heading">
-          <h2 className="asb-dialog-title">{title}</h2>
-        </header>
-        <div className="asb-dialog-body">{children}</div>
-        <div className="asb-dialog-footer">
-          <Button ref={cancelRef} variant="secondary" onClick={onCancel}>
-            {t("confirm.cancel")}
+    <AppDialog title={title} busy={busy} narrow onClose={onCancel} footer={
+      <>
+          <Button autoFocus variant="secondary" disabled={busy} onClick={onCancel}>
+            {cancelLabel ?? t("confirm.cancel")}
           </Button>
           <Button
             variant={destructive ? "danger" : "primary"}
-            disabled={confirmDisabled}
+            disabled={busy || confirmDisabled}
             onClick={onConfirm}
           >
-            {confirmLabel}
+            {busy ? t("shell.busy") : confirmLabel}
           </Button>
-        </div>
-      </div>
-    </div>
+      </>
+    }>{children}</AppDialog>
   );
 }

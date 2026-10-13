@@ -3,6 +3,7 @@ import type { AppKind, CodexProviderDraft, ProviderDraft, ProviderRecord, Locali
 import type { CodexEditorSource } from "../../app/useProviders";
 import { useI18n } from "../../i18n";
 import { Button } from "../Button";
+import { useUnsavedChanges } from "../useUnsavedChanges";
 import { ProviderConnectionTest } from "../provider-editor/ProviderConnectionTest";
 import { ProviderDiagnosticsEntry } from "../provider-diagnostics/ProviderDiagnosticsEntry";
 import { ProviderEditorFrame } from "../provider-editor/ProviderEditorFrame";
@@ -87,17 +88,24 @@ function CodexProviderForm({ editor, formId, ...props }: Props & { editor: Codex
 function CodexProviderEditorSession(props: Props) {
   const { t } = useI18n();
   const editor = useCodexProviderEditor(props.source, props.busy);
+  const leave = useUnsavedChanges(editor.dirty, props.busy);
+  const close = () => leave.request(props.onCancel);
+  const safeProps = { ...props,
+    onSwitchClient: (app: AppKind) => leave.request(() => props.onSwitchClient(app)),
+    onSwitchAccessMode: (official: boolean, existing: ProviderRecord | null) =>
+      leave.request(() => props.onSwitchAccessMode(official, existing)),
+  };
   const formId = useId();
   const parametersOpen = editor.parametersOpen;
   const editing = props.source?.kind === "record";
   const title = parametersOpen ? t("codex.editor.runtimeParams")
     : editing ? t("codex.editor.editTitle") : t("codex.editor.newTitle");
   const backLabel = parametersOpen ? t("codex.editor.backToEdit") : t("codex.editor.backToProviders");
-  const goBack = () => parametersOpen ? editor.setParametersOpen(false) : props.onCancel();
+  const goBack = () => parametersOpen ? editor.setParametersOpen(false) : close();
   return <ProviderEditorFrame title={title} titleRef={editor.headingRef} backLabel={backLabel}
-    busy={props.busy} onBack={goBack} onCancel={props.onCancel} formId={formId} canSave={editor.canSave}>
+    busy={props.busy} onBack={goBack} onCancel={close} formId={formId} canSave={editor.canSave}>
     <div hidden={parametersOpen}>
-      <CodexProviderForm {...props} editor={editor} formId={formId} />
+      <CodexProviderForm {...safeProps} editor={editor} formId={formId} />
       {props.source?.kind === "record" && <ProviderDiagnosticsEntry profileId={props.source.record.profile.id}
         name={props.source.record.profile.name} active={props.active && !parametersOpen} disabled={props.busy} />}
     </div>
@@ -105,6 +113,7 @@ function CodexProviderEditorSession(props: Props) {
       baselineValues={props.source?.kind === "record" ? props.source.record.parameters.settings : undefined}
       baselineRoute={props.source?.kind === "record" ? props.source.record.profile.subagentRoute ?? null : null}
       selfId={props.source?.kind === "record" ? props.source.record.profile.id : undefined} />}
+    {leave.confirmation}
   </ProviderEditorFrame>;
 }
 
@@ -112,24 +121,27 @@ function CodexOfficialSession(props: OfficialProps) {
   const { t } = useI18n();
   const record = props.source.record;
   const editor = useCodexOfficialEditor(record?.profile ?? null, props.busy);
+  const leave = useUnsavedChanges(editor.dirty, props.busy);
+  const close = () => leave.request(props.onCancel);
   const formId = useId();
   const { parametersOpen } = editor;
   const title = parametersOpen ? t("codex.editor.runtimeParams")
     : record ? t("codex.official.editTitle") : t("codex.official.newTitle");
   const backLabel = parametersOpen ? t("codex.editor.backToEdit") : t("codex.editor.backToProviders");
-  const goBack = () => parametersOpen ? editor.setParametersOpen(false) : props.onCancel();
+  const goBack = () => parametersOpen ? editor.setParametersOpen(false) : close();
   return <ProviderEditorFrame title={title} titleRef={editor.headingRef} backLabel={backLabel} busy={props.busy}
-    onBack={goBack} onCancel={props.onCancel} formId={formId} canSave={editor.canSave}>
+    onBack={goBack} onCancel={close} formId={formId} canSave={editor.canSave}>
     <div hidden={parametersOpen}>
       <CodexOfficialProviderForm formId={formId} busy={props.busy} editing={Boolean(record)} editor={editor}
         onSubmit={() => editor.save(props.onSaveOfficial)}
-        onSwitchAccessMode={() => props.onSwitchAccessMode(false, record)} />
+        onSwitchAccessMode={() => leave.request(() => props.onSwitchAccessMode(false, record))} />
       {record && <ProviderDiagnosticsEntry profileId={record.profile.id} name={record.profile.name}
         active={props.active && !parametersOpen} disabled={props.busy} />}
     </div>
     {parametersOpen && <ProviderParametersPage value={editor.draft.parameters} parameters={editor.parameters}
       onChange={(parameters) => editor.setDraft((current) => ({ ...current, parameters }))} busy={props.busy}
       baselineValues={record?.profile.parameters.settings} />}
+    {leave.confirmation}
   </ProviderEditorFrame>;
 }
 

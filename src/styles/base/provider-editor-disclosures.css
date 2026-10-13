@@ -4,7 +4,6 @@
   display: grid;
   grid-template-rows: auto 0fr;
   min-width: 0;
-  border-bottom: 1px solid var(--asb-hairline);
   transition: grid-template-rows var(--asb-motion-node) var(--asb-easing);
 }
 
@@ -69,12 +68,8 @@
   padding-bottom: var(--asb-space-4);
 }
 
-.asb-editor-section-fields > .asb-provider-disclosure { border-bottom: 0; }
 .asb-editor-section-fields > .asb-provider-disclosure > .asb-provider-disclosure-body { padding-bottom: 0; }
 
-/* The editor starts with the facts needed to connect. Optional protocol and
-   profile controls live behind one explicit disclosure instead of extending
-   the first-save path. */
 .asb-provider-identity-value {
   display: flex;
   align-items: center;
@@ -85,46 +80,11 @@
   font: var(--asb-text-body);
 }
 
-/* Advanced settings is one top-level disclosure. Once open, each independent
-   concern remains a separate shallow module rather than a continuous list. */
-.asb-provider-advanced > .asb-editor-section-fields > .asb-provider-disclosure {
-  border-bottom: 0;
-}
-
-.asb-provider-advanced > .asb-editor-section-fields > .asb-provider-disclosure > summary {
-  min-height: var(--asb-control-height);
-  padding-top: 0;
-}
-
-.asb-provider-advanced-content {
-  display: grid;
-  gap: var(--asb-space-3);
-}
-
-.asb-provider-advanced-content > .asb-provider-disclosure {
-  border: 1px solid var(--asb-hairline);
-  border-radius: var(--asb-radius);
-  background: var(--asb-content);
-}
-
-.asb-provider-advanced-content > .asb-provider-disclosure > summary {
-  padding: var(--asb-space-3);
-}
-
-.asb-provider-advanced-content > .asb-provider-disclosure > .asb-provider-disclosure-body {
-  padding-inline: var(--asb-space-3);
-}
-
-.asb-provider-advanced-content > .asb-provider-disclosure[open] > .asb-provider-disclosure-body {
-  padding-bottom: var(--asb-space-3);
-}
-
 .asb-provider-advanced-content > .asb-provider-advanced-action,
 .asb-provider-advanced-content > .asb-provider-advanced-group {
-  padding: var(--asb-space-3);
-  border: 1px solid var(--asb-hairline);
-  border-radius: var(--asb-radius);
-  background: var(--asb-content);
+  padding: var(--asb-space-2) 0;
+  border: 0;
+  background: transparent;
 }
 
 .asb-provider-advanced-content > .asb-field-error {
@@ -151,7 +111,17 @@
 
 .asb-provider-advanced-action strong { font: var(--asb-text-label); font-weight: 600; }
 .asb-provider-advanced-action span { color: var(--asb-text-muted); font: var(--asb-text-label); }
-.asb-provider-advanced-group { display: grid; gap: var(--asb-space-2); }
+.asb-provider-advanced-group { display: grid; gap: var(--asb-space-2); min-width: 0; }
+.asb-provider-advanced-heading {
+  display: flex;
+  align-items: baseline;
+  flex-wrap: wrap;
+  gap: var(--asb-space-2);
+  margin: 0;
+  font: var(--asb-text-label);
+  font-weight: 600;
+}
+.asb-provider-advanced-value { color: var(--asb-text-muted); font-weight: 400; overflow-wrap: anywhere; }
 
 .asb-provider-test-disclosure {
   display: grid;

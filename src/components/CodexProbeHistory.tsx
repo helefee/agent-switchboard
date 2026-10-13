@@ -1,5 +1,5 @@
 import { useMemo, useState } from "react";
-import type { CodexProbeHistoryItem } from "../api/client";
+import type { CodexProbeGradingVersion, CodexProbeHistoryItem, CodexProbeQuestionSnapshot } from "../api/client";
 import type { MessageKey, TFunction } from "../i18n";
 import { useI18n } from "../i18n";
 import { Button } from "./Button";
@@ -26,7 +26,7 @@ interface Props {
   onClose: () => void;
   /** Fills the radar form with this question; the user starts it against
    * the current configuration. */
-  onReuseQuestion: (question: { id: string; text: string; expectedAnswer: string }, runCount: number) => void;
+  onReuseQuestion: (question: CodexProbeQuestionSnapshot, runCount: number, grading: CodexProbeGradingVersion) => void;
   /** Notifies the radar panel that history changed (e.g. deletions). */
   onChanged: () => void;
 }
@@ -91,7 +91,8 @@ function historyColumns(history: ReturnType<typeof useCodexProbeHistory>, t: TFu
     {
       key: "passed",
       header: t("codex.history.colPassed"),
-      render: (row) => `${row.passedCount}/${row.judgedCount}`,
+      render: (row) => row.gradingVersion !== "1" ? t("codex.probe.visual.manualReview")
+        : `${row.passedCount}/${row.judgedCount}`,
     },
     {
       key: "tokens",
@@ -161,7 +162,8 @@ function HistoryList({ history, onRequestDelete }: {
               ? t("codex.history.emptyAll")
               : t("codex.history.emptyFiltered")}
           </p>
-          {history.total > 0 && <Button variant="secondary" onClick={history.clearFilters}>{t("codex.history.clearFilters")}</Button>}
+          {(history.range !== "all" || history.profileFilter !== "all" || history.statusFilter !== "all") &&
+            <Button variant="secondary" onClick={history.clearFilters}>{t("codex.history.clearFilters")}</Button>}
         </div>
       )}
     </div>
@@ -184,7 +186,6 @@ function HistoryDetail({ history, onReuseQuestion }: {
               onClick={() => history.detailId && history.openDetail(history.detailId)}>
               {t("codex.history.refresh")}
             </Button>}
-          <Button variant="secondary" onClick={history.closeDetail}>{t("codex.history.backToList")}</Button>
         </>
       } />
       {history.detailLoading && <p className="asb-codex-probe-meta" role="status">{t("codex.history.detailLoading")}</p>}
@@ -204,13 +205,13 @@ function HistoryDetail({ history, onReuseQuestion }: {
         </p>
         <div className="asb-codex-probe-custom">
           <p className="asb-codex-probe-meta">
-            {t("codex.history.questionMeta", {
+            {t(batch.gradingVersion !== "1" ? "codex.probe.visual.questionMeta" : "codex.history.questionMeta", {
               label: batch.question.label,
               version: batch.gradingVersion,
               answer: batch.question.expectedAnswer,
             })}
           </p>
-          <p>{batch.question.text}</p>
+          <p className="asb-probe-question-text">{batch.question.text}</p>
         </div>
         {summary && summary.runCount > 0 && <>
           <div role="group" aria-label={t("codex.probe.summaryAria")}><StatCards stats={probeSummaryCards(batch, t)} /></div>
@@ -222,7 +223,7 @@ function HistoryDetail({ history, onReuseQuestion }: {
         {summary && summary.runCount === 0 && !history.detailLoading &&
           <p className="asb-codex-probe-meta">{t("codex.history.noRuns")}</p>}
         <div className="asb-model-usage-controls">
-          <Button variant="primary" onClick={() => onReuseQuestion(batch.question, batch.plannedRuns)}>
+          <Button variant="primary" onClick={() => onReuseQuestion(batch.question, batch.plannedRuns, batch.gradingVersion)}>
             {t("codex.history.reuseQuestion")}
           </Button>
         </div>
@@ -250,9 +251,9 @@ export function CodexProbeHistory({ active, probe, onClose, onReuseQuestion, onC
   const running = probe.running && probe.status;
   const confirmDelete = async () => {
     const batchIds = pendingDelete ?? [];
-    setPendingDelete(null);
     const deleted = await history.deleteSelected(batchIds);
     if (deleted) {
+      setPendingDelete(null);
       onChanged();
       if (history.detailId && batchIds.includes(history.detailId)) {
         history.closeDetail();
@@ -262,13 +263,12 @@ export function CodexProbeHistory({ active, probe, onClose, onReuseQuestion, onC
   return (
     <EditorFrame
       title={t("codex.history.title")}
-      backLabel={t("codex.history.backToRadar")}
-      onBack={onClose}
+      backLabel={t(history.detailId === null ? "codex.history.backToRadar" : "codex.history.backToList")}
+      onBack={history.detailId === null ? onClose : history.closeDetail}
+      busy={history.deleting}
       primary={running ? (
         <span className="asb-header-status" role="status">
           {t("codex.history.runningBadge", { done: running.completedRuns, total: running.plannedRuns })}
-          {" "}
-          <Button variant="secondary" onClick={onClose}>{t("codex.history.backToView")}</Button>
         </span>
       ) : undefined}
     >
@@ -281,10 +281,12 @@ export function CodexProbeHistory({ active, probe, onClose, onReuseQuestion, onC
           confirmLabel={t("codex.history.confirmDelete")}
           destructive
           confirmDisabled={history.deleting}
+          busy={history.deleting}
           onConfirm={() => void confirmDelete()}
           onCancel={() => setPendingDelete(null)}
         >
           <ul className="asb-dialog-details">
+            {history.deleteError && <li className="asb-warn-text" role="alert">{history.deleteError}</li>}
             <li>{t("codex.history.deleteCount", { count: pendingItems.length })}</li>
             <li>{t("codex.history.timeRangeLabel")} <Time iso={pendingItems.map((item) => item.startedAt).sort()[0]} />
               {" "}{t("codex.history.timeRangeTo")} <Time iso={

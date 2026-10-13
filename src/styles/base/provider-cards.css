@@ -212,23 +212,6 @@
   border-color: var(--asb-action);
 }
 
-.asb-row-item .asb-iconcluster {
-  opacity: 0;
-  visibility: hidden;
-  pointer-events: none;
-  transition:
-    opacity var(--asb-motion-press) var(--asb-easing),
-    visibility 0s linear var(--asb-motion-press);
-}
-
-.asb-row-item:hover .asb-iconcluster,
-:root[data-focus-source="key"] .asb-row-item:focus-within .asb-iconcluster {
-  opacity: 1;
-  visibility: visible;
-  pointer-events: auto;
-  transition-delay: 0s;
-}
-
 /* The primary CTA carries the list's only action emphasis. */
 .asb-row-item .asb-btn-primary {
   min-width: 0;

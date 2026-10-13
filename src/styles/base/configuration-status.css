@@ -13,7 +13,6 @@
 .asb-client-status + .asb-client-status {
   margin-top: var(--asb-space-4);
   padding-top: var(--asb-space-4);
-  border-top: 1px solid var(--asb-hairline);
 }
 
 .asb-client-status-head {
@@ -127,6 +126,8 @@
   letter-spacing: -0.06em;
 }
 
+.asb-codex-reset-daily-data { max-height: 18rem; overflow: auto; margin-top: var(--asb-space-2); }
+
 /* A pending forecast reads as the monitor's own amber warning; the absent
    answer stays muted instead of looking like a failure. */
 .asb-codex-reset-answer.is-forecast {
@@ -181,10 +182,6 @@
   padding: var(--asb-space-3);
 }
 
-.asb-codex-reset-fact + .asb-codex-reset-fact {
-  border-top: 1px solid var(--asb-hairline);
-}
-
 .asb-codex-reset-fact dt,
 .asb-codex-reset-label {
   margin: 0;
@@ -231,7 +228,6 @@
   gap: var(--asb-space-2);
   margin-top: var(--asb-space-3);
   padding-top: var(--asb-space-3);
-  border-top: 1px solid var(--asb-hairline);
 }
 
 .asb-codex-reset-post-actions {
@@ -280,7 +276,6 @@
 .asb-codex-reset-heatmap {
   margin-top: var(--asb-space-4);
   padding-top: var(--asb-space-3);
-  border-top: 1px solid var(--asb-hairline);
 }
 
 .asb-codex-reset-heatmap-head {

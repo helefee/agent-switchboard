@@ -3,8 +3,17 @@ import { CodexSubagentSettingsPanel } from "../components/CodexSubagentSettingsP
 import { GlobalPromptManager } from "../components/GlobalPromptManager";
 import { useI18n } from "../i18n";
 import type { SwitchboardModel } from "./useSwitchboardModel";
+import type { AppKind } from "../api/client";
 
 export function ClientConfigurationWorkspace({ model }: { model: SwitchboardModel }) {
+  return <>{(["codex", "claude"] as const).map((app) => (
+    <div key={app} hidden={model.appFilter !== app}>
+      <ClientConfigurationPanel model={model} app={app} />
+    </div>
+  ))}</>;
+}
+
+function ClientConfigurationPanel({ model, app }: { model: SwitchboardModel; app: AppKind }) {
   const { t } = useI18n();
   const {
     clientSettings: settings,
@@ -12,19 +21,17 @@ export function ClientConfigurationWorkspace({ model }: { model: SwitchboardMode
     promptDocuments: prompts,
     snapshot,
     busy,
-    appFilter: app,
   } = model;
   const promptDocument = prompts.documents[app];
   return (
     <section className="asb-panel" aria-label={t("clientConfig.title")}>
       <ClientSettingsPanel
-        key={app}
         app={app}
         onSelectApp={model.providers.selectApp}
-        editorState={settings.editorState}
+        editorState={settings.states[app]}
         busy={busy}
         configStatus={snapshot.statuses?.find((status) => status.app === app)}
-        hasUnsavedConfigurationDraft={settings.editorState.phase === "dirty" ||
+        hasUnsavedConfigurationDraft={settings.states[app].phase === "dirty" ||
           (app === "codex" && codexSubagentSettings.editorState.phase === "dirty")}
         onValueChange={settings.changeValue}
         onApplied={() => {

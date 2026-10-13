@@ -1,5 +1,6 @@
 import { Component, type ErrorInfo, type ReactNode } from "react";
 import { useI18n } from "../i18n";
+import { Button } from "./Button";
 
 interface Props {
   children: ReactNode;
@@ -37,6 +38,7 @@ function RecoveryMessage() {
     <section className="asb-panel asb-recovery-panel" role="alert" aria-label={t("recovery.aria")}>
       <h2 className="asb-recovery-title">{t("recovery.title")}</h2>
       <p className="asb-scope-note">{t("recovery.body")}</p>
+      <Button variant="primary" onClick={() => window.location.reload()}>{t("recovery.reload")}</Button>
     </section>
   );
 }

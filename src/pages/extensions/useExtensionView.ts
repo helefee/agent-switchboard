@@ -19,15 +19,11 @@ export function useExtensionView({ section, onSectionChange }: ExtensionNavigati
   const [discoveryOpen, setDiscoveryOpen] = useState(false);
   const [dialog, setDialog] = useState<ExtensionDialogView | null>(null);
   const openManagement = (id: string, nextKind: ExtensionKind) => {
-    onSectionChange(nextKind);
-    setSourceBrowser(false);
-    setDiscoveryOpen(false);
+    if (!sourceBrowser && !discoveryOpen) onSectionChange(nextKind);
     setDialog({ type: "management", definitionId: id });
   };
   const openSkillEditor = (id: string) => {
-    onSectionChange("skill");
-    setSourceBrowser(false);
-    setDiscoveryOpen(false);
+    if (!sourceBrowser && !discoveryOpen) onSectionChange("skill");
     setDialog({ type: "skillEditor", definitionId: id });
   };
   const changeSection = (nextSection: ExtensionSection) => {

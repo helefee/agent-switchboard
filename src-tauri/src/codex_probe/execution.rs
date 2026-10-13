@@ -37,7 +37,7 @@ pub(crate) fn spawn_probe(
             text: question.prompt.clone(),
             expected_answer: question.expected_answer.clone(),
         },
-        grading_version: questions::GRADING_VERSION.to_string(),
+        grading_version: question.grading,
         cli_version: cli_version(),
         config: match snapshot::capture(local, gateway) {
             Ok(config) => config,

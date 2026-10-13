@@ -3,14 +3,13 @@
   display: flex;
   justify-content: space-between;
   align-items: center;
+  flex-wrap: wrap;
   gap: var(--asb-space-3);
   min-height: var(--asb-touch-target);
   padding: var(--asb-space-2) var(--asb-space-3);
-  border-radius: var(--asb-radius);
+  border-radius: var(--asb-radius-group);
+  background: var(--asb-content-muted);
   font: var(--asb-text-body);
-  /* Elevated floating status: near-solid backdrop + modal shadow keep the
-     text readable over scrolling content. */
-  box-shadow: var(--asb-shadow-modal);
 }
 
 .asb-banner-error {
@@ -52,10 +51,10 @@
 /* ---------------------------------------------------------------------------
  * The one modal skeleton (DESIGN.md §8).
  *
- * Every modal in the app — confirmation sheet, editor, plan preview, source
- * browser, history — is this structure and nothing else: an h2-only heading
- * with a hairline under it, one scrolling body, an optional footer with a
- * hairline above it. Width is one of three tiers. There is no second modal
+ * Short forms, confirmations, plan previews and history share a title,
+ * one scrolling body and an optional fixed footer, grouped with space.
+ * Complex editors use EditorFrame. Modal width is one of three tiers;
+ * there is no second modal
  * anatomy, so a dialog can never drift into its own padding rhythm or invent
  * a fourth width.
  * ------------------------------------------------------------------------- */
@@ -66,7 +65,7 @@
   display: grid;
   place-items: center;
   padding: var(--asb-space-4);
-  background: var(--asb-surface-sheet);
+  background: var(--asb-overlay-backdrop);
 }
 
 /* Keep the previous dialog mounted while a confirmation replaces it. This
@@ -74,13 +73,6 @@
 .asb-dialog-backdrop.is-suspended {
   visibility: hidden;
   pointer-events: none;
-}
-
-/* An inline sheet is scoped to the workspace instead of the viewport, so the
-   top rail and its navigation stay reachable while the sheet is open. */
-.asb-dialog-backdrop.is-inline {
-  position: absolute;
-  z-index: 10;
 }
 
 /* Standard is the default tier; narrow is a yes/no confirmation, wide is a
@@ -93,7 +85,7 @@
   min-height: 0;
   overflow: hidden;
   border: 1px solid var(--asb-hairline);
-  border-radius: var(--asb-radius);
+  border-radius: var(--asb-radius-group);
   background: var(--asb-content);
   box-shadow: var(--asb-shadow-modal), var(--asb-inset-highlight);
 }
@@ -124,7 +116,6 @@
   justify-content: space-between;
   gap: var(--asb-space-3);
   padding: var(--asb-space-3) var(--asb-space-4);
-  border-bottom: 1px solid var(--asb-hairline);
 }
 
 /* The dialog's single title step. Inside a dialog the page-title class is not
@@ -157,7 +148,6 @@
   flex-wrap: wrap;
   gap: var(--asb-space-2);
   padding: var(--asb-space-3) var(--asb-space-4);
-  border-top: 1px solid var(--asb-hairline);
 }
 
 /* A confirmation's subject list: one line per fact. The body owns scrolling,

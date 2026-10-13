@@ -48,14 +48,8 @@
       };
     },
     extract(input) {
-      if (input.status < 200 || input.status >= 300) {
-        throw new TypeError("imported usage request was not successful");
-      }
       const body = input.body;
       if (provider === "deepseek") {
-        if (body.is_available === false) {
-          throw new TypeError("余额不可用（insufficient balance）");
-        }
         const infos = Array.isArray(body.balance_infos) ? body.balance_infos : [];
         if (infos.length === 0) {
           throw new TypeError("invalid imported usage result");
@@ -92,9 +86,6 @@
         const total = number(data.total_credits);
         const used = number(data.total_usage);
         const remaining = total !== null && used !== null ? total - used : null;
-        if (remaining !== null && remaining <= 0) {
-          throw new TypeError("没有剩余额度（no credits remaining）");
-        }
         return { planName: "OpenRouter", remaining, used, total, unit: "USD" };
       }
       // Novita amounts are denominated in 0.0001 USD.

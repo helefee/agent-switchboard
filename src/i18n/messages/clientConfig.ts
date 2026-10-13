@@ -3,6 +3,9 @@ import type { MessageEntry } from "../types";
 /** Domain dictionary for clientConfig (zh-CN / en-US pairs). Keys are prefixed with
  * "clientConfig." and must never collide with another domain file. */
 export const messages = {
+  "clientConfig.directory.search": ["搜索设置名称或路径", "Search settings or paths"],
+  "clientConfig.directory.noMatches": ["没有匹配的设置", "No matching settings"],
+  "clientConfig.editor.sourceChanged": ["文件已在外部变化，当前草稿已保留。请复制需要的内容，再放弃草稿以读取最新文件。", "The file changed externally. Your draft is preserved. Copy anything you need, then discard the draft to load the latest file."],
   // Panel shell, toolbar, shared controls.
   "clientConfig.settings.eventList": ["指定事件", "Selected events"],
   "clientConfig.settings.eventName": ["通知事件 {index}", "Notification event {index}"],

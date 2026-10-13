@@ -25,8 +25,7 @@ pub(crate) fn codex_route_from_file(
         client_token: route_token(identity, AppKind::Codex, &file.profile.id, &fingerprint),
         continuation_key: codex_continuation_key(identity, &file.profile.id, &fingerprint),
         fingerprint,
-        upstream_base_url: super::routing::xai_pinned_upstream(&file.profile)
-            .unwrap_or_else(|| file.profile.endpoint.0.clone()),
+        upstream_base_url: projection.upstream_base_url().expect("validated Codex endpoint").to_string(),
         connection: file.profile.connection.clone(),
         upstream_protocol: file.profile.upstream.protocol(),
         responses_options: projection.responses_options,

@@ -15,7 +15,7 @@ import { cx } from "@/utils/cx";
 interface Props {
   records: BackupRecord[];
   busy: boolean;
-  onRestore: (backupId: string) => void;
+  onRestore: (backupId: string) => void | Promise<void>;
 }
 
 /** The backup table's page size, matching the codebase's page-size convention. */
@@ -215,9 +215,9 @@ export function BackupHistory({ records, busy, onRestore }: Props) {
         <ConfirmSheet
           title={t("backup.history.confirmTitle")}
           confirmLabel={t("backup.confirmRestore")}
+          busy={busy}
           onConfirm={() => {
-            onRestore(pending.id);
-            setPending(null);
+            void Promise.resolve(onRestore(pending.id)).finally(() => setPending(null));
           }}
           onCancel={() => setPending(null)}
         >
@@ -227,6 +227,7 @@ export function BackupHistory({ records, busy, onRestore }: Props) {
             <li>{t("backup.col.hash")} {pending.contentHash.slice(0, 12)}</li>
             <li>{t("backup.history.confirmBackupFirst")}</li>
             <li>{t("backup.history.confirmRestoreSettings")}</li>
+            <li><BackupDiff record={pending} /></li>
           </ul>
         </ConfirmSheet>
       )}

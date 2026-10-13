@@ -72,26 +72,31 @@ function usageColumns(t: TFunction): Array<TableColumn<ModelUsageGroup>> {
     },
     {
       key: "input",
+      align: "end",
       header: t("usage.column.input"),
       render: (group) => formatTokenCount(group.inputTokens),
     },
     {
       key: "cache",
+      align: "end",
       header: t("usage.column.cache"),
       render: (group) => formatTokenCount(cachedTokenCount(group)),
     },
     {
       key: "output",
+      align: "end",
       header: t("usage.column.output"),
       render: (group) => formatTokenCount(group.outputTokens),
     },
     {
       key: "total",
+      align: "end",
       header: t("usage.column.totalTokens"),
       render: (group) => formatTokenCount(group.totalTokens),
     },
     {
       key: "sessions",
+      align: "end",
       header: t("usage.column.sessions"),
       render: (group) => formatTokenCount(group.sessionCount),
     },
@@ -129,9 +134,10 @@ export function UsagePage({ usage }: {
         </ul>
       ) : null}
       {loading && report === null ? (
-        <p className="asb-empty asb-model-usage-empty" role="status">
-          {t("usage.loading")}
-        </p>
+        <div className="asb-model-usage-loading" role="status" aria-label={t("usage.loading")}>
+          <div className="asb-usage-stat-band">{[0, 1, 2, 3].map((key) => <div key={key} className="asb-skeleton" />)}</div>
+          <div className="asb-skeleton asb-model-usage-loading-chart" />
+        </div>
       ) : report?.groups.length ? (
         <div className="asb-model-usage-content">
           <div className="asb-model-usage-summary">

@@ -9,21 +9,19 @@
 .asb-app-settings-group {
   display: flex;
   flex-direction: column;
-  gap: 0;
+  gap: var(--asb-space-2);
+  padding: var(--asb-space-4);
+  border-radius: var(--asb-radius-group);
+  background: var(--asb-content-muted);
 }
 
 .asb-app-settings-group + .asb-app-settings-group {
-  padding-top: var(--asb-space-3);
-  border-top: 1px solid var(--asb-hairline);
+  margin-top: 0;
 }
 
 .asb-app-settings-group > .asb-section-title {
   padding-bottom: var(--asb-space-2);
   letter-spacing: -0.015em;
-}
-
-.asb-app-settings-group > .asb-app-setting-row + .asb-app-setting-row {
-  border-top: 1px solid var(--asb-hairline);
 }
 
 .asb-app-setting-row {

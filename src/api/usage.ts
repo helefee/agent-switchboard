@@ -1,6 +1,8 @@
 import { invoke } from "./client";
 import type { AppKind, UpstreamProtocol } from "./shared";
 import type { ProviderConnectionOptions } from "./providers";
+import type { UsageReading } from "./usage-reading";
+export type { UsageReading, UsageAvailability } from "./usage-reading";
 
 /** One declarative usage-balance query: a GET against the provider endpoint
  * with `{{baseUrl}}` / `{{apiKey}}` placeholders plus JSON Pointer paths. */
@@ -18,7 +20,7 @@ export interface DeclarativeUsageQuery {
 }
 
 /** A self-authored JavaScript query. The source evaluates to `{ request,
- * extract }`; it is executed in the backend's restricted runtime. */
+ * extract }`; the backend normalizes extracted facts into availability states. */
 export interface ScriptUsageQuery {
   kind: "script";
   source: string;
@@ -30,19 +32,6 @@ export interface ScriptUsageQuery {
 /** The only persisted usage-query contract. `null` on a profile means the
  * optional feature is not configured. */
 export type UsageQuery = DeclarativeUsageQuery | ScriptUsageQuery;
-
-/** One named or unnamed usage reading. */
-export interface UsageReading {
-  planName?: string;
-  remaining: number | null;
-  used: number | null;
-  total: number | null;
-  unit: string | null;
-  resetsAt?: string;
-  isValid?: boolean;
-  invalidMessage?: string;
-  extra?: string;
-}
 
 /** Complete result of one usage-query response. */
 export interface UsageSummary {
@@ -324,16 +313,21 @@ export function getUsageHistory(request: UsageHistoryRequest): Promise<UsageHist
 /** `questionId` that selects the user-authored question. */
 export const CUSTOM_PROBE_QUESTION_ID = "custom";
 
+export type CodexProbeGradingVersion = "1" | "svg-visual-v1" | "html-visual-v1";
+
 /** One selectable probe question from the backend-owned catalog. */
 export interface CodexProbeQuestion {
   id: string;
   label: string;
+  text: string;
+  gradingVersion: CodexProbeGradingVersion;
+  sourceUrl: string | null;
 }
 
 export type CodexProbeBatchStatus =
   | "running" | "completed" | "cancelled" | "failed" | "interrupted" | "config-changed";
 
-/** Grading outcome of one run; execution failures never grade. */
+/** Automatic verdict; visual answers and execution failures stay undetermined. */
 export type CodexProbeRunStatus = "running" | "passed" | "failed" | "undetermined";
 
 /** One run row as persisted: the session id is saved the moment the CLI
@@ -380,7 +374,7 @@ export interface CodexProbeBatch {
   plannedRuns: number;
   completedRuns: number;
   question: CodexProbeQuestionSnapshot;
-  gradingVersion: string;
+  gradingVersion: CodexProbeGradingVersion;
   cliVersion: string | null;
   config: CodexProbeConfigSnapshot;
   statusError: string | null;
@@ -392,10 +386,11 @@ export interface CodexProbeBatch {
 
 export interface CodexProbeRequest {
   runCount: number;
-  /** A built-in catalog id, or `custom` with the question and answer. */
+  /** A catalog id, or `custom` with an explicit format and integer answer when needed. */
   questionId: string;
   customQuestion?: string;
   customAnswer?: string;
+  customGradingVersion?: CodexProbeGradingVersion;
 }
 
 /** The built-in question catalog; the backend owns the bank. */
@@ -448,6 +443,7 @@ export interface CodexProbeHistoryItem {
   finishedAt: string | null;
   status: CodexProbeBatchStatus;
   questionLabel: string;
+  gradingVersion: CodexProbeGradingVersion;
   profileId: string | null;
   profileName: string | null;
   runCount: number;

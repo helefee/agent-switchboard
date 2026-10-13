@@ -70,24 +70,24 @@ export function ProviderImportPage(props: ProviderImportPageProps) {
             resolves; inactive content unmounts inside its hidden panel. */}
         <div id="provider-import-local-panel" role="tabpanel" aria-labelledby="provider-import-local-tab"
           hidden={source !== "local"}>
-          {source === "local" && <LocalConfigImport app={props.appFilter} discovery={props.discovery} busy={props.busy}
-            onScan={props.onScanLocal} onImport={() => void importLocal()} />}
+          <LocalConfigImport app={props.appFilter} discovery={props.discovery} busy={props.busy}
+            onScan={props.onScanLocal} onImport={() => void importLocal()} />
         </div>
         <div id="provider-import-ccswitch-panel" role="tabpanel" aria-labelledby="provider-import-ccswitch-tab"
           hidden={source !== "ccswitch"}>
-          {source === "ccswitch" && <CcSwitchImport scan={props.ccScan} selected={props.ccSelected} result={props.ccResult}
+          <CcSwitchImport scan={props.ccScan} selected={props.ccSelected} result={props.ccResult}
             busy={props.busy} directory={props.ccDirectory} onScan={props.onScanCc} onSelect={props.onSelectCc}
-            onDirectoryChange={props.onCcDirectory} onImport={() => void importCc()} />}
+            onDirectoryChange={props.onCcDirectory} onImport={() => void importCc()} />
         </div>
         <div id="provider-import-sql-panel" role="tabpanel" aria-labelledby="provider-import-sql-tab"
           hidden={source !== "sql"}>
-          {source === "sql" && <SqlFileImport scan={props.sqlScan} selected={props.sqlSelected} result={props.sqlResult}
+          <SqlFileImport scan={props.sqlScan} selected={props.sqlSelected} result={props.sqlResult}
             busy={props.busy} onApply={props.onApplySql} onSelect={props.onSelectSql}
-            onImport={() => void importSql()} />}
+            onImport={() => void importSql()} />
         </div>
         <div id="provider-import-export-panel" role="tabpanel" aria-labelledby="provider-import-export-tab"
           hidden={source !== "export"}>
-          {source === "export" && <SqlExport busy={props.busy} onError={props.onError} />}
+          <SqlExport busy={props.busy} onError={props.onError} />
         </div>
       </div>
     </EditorFrame>

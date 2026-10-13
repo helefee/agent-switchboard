@@ -10,6 +10,8 @@ import {
   SessionsIcon,
   SettingsIcon,
   UsageNavigationIcon,
+  CollapseNavigationIcon,
+  ExpandNavigationIcon,
 } from "../components/icons";
 import appIcon from "../assets/app-icon.svg";
 
@@ -30,20 +32,23 @@ const WORKSPACE_PAGES = PAGES.filter((page) => page !== "settings");
 interface SideNavProps {
   page: Page;
   onPageChange: (page: Page) => void;
+  collapsed: boolean;
+  onToggle: () => void;
 }
 
-/** Left navigation rail, icon-only (Codex desktop style): the brand mark tops
- * the drag region, the workspace group scrolls, the settings entry stays
- * pinned above the bottom edge. Names live in each button's accessible name
- * and surface as right-side tooltips on hover and keyboard focus. */
-export function SideNav({ page, onPageChange }: SideNavProps) {
+/** Navigation stays mounted across width changes; its group scrolls independently. */
+export function SideNav({ page, onPageChange, collapsed, onToggle }: SideNavProps) {
   const { t } = useI18n();
   return (
     <aside className="asb-sidebar">
       <div className="asb-sidebar-top" data-tauri-drag-region>
         <img className="asb-sidebar-icon" src={appIcon} alt="" data-tauri-drag-region />
+        <Button variant="icon" aria-label={t(collapsed ? "shell.nav.expand" : "shell.nav.collapse")}
+          aria-expanded={!collapsed} aria-controls="asb-primary-navigation" onClick={onToggle}>
+          {collapsed ? <ExpandNavigationIcon /> : <CollapseNavigationIcon />}
+        </Button>
       </div>
-      <nav className="asb-sidenav" aria-label={t("shell.nav.aria")}>
+      <nav id="asb-primary-navigation" className="asb-sidenav" aria-label={t("shell.nav.aria")}>
         <ul className="asb-sidenav-group">
           {WORKSPACE_PAGES.map((item) => (
             <li key={item}>
@@ -81,6 +86,7 @@ function SideNavItem({ page, active, onSelect }: {
         onClick={onSelect}
       >
         <Icon size={24} weight={active ? "fill" : "regular"} aria-hidden="true" focusable="false" />
+        <span className="asb-sidenav-label" aria-hidden="true">{label}</span>
       </Button>
     </Tooltip>
   );

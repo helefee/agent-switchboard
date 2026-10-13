@@ -7,7 +7,7 @@ mod tickets;
 pub use repairs::*;
 pub(crate) use tickets::ProviderRepairPreparations;
 
-use super::error::{blocking, operation_error, state, store_error, CommandError};
+use super::error::{blocking, operation_error, state, CommandError};
 use asb_core::contracts::{AppKind, LocalizedMessage, ProviderProfile, RouteMode};
 use serde::Serialize;
 use tauri::{AppHandle, Manager};
@@ -40,16 +40,9 @@ struct SavedProvider {
 }
 
 fn saved_provider(state: &crate::local_state::LocalState, id: &str) -> Result<SavedProvider, CommandError> {
-    let store = state.configuration();
-    if let Some(record) = store.list_codex_providers().map_err(store_error)?
-        .into_iter().find(|record| record.profile.id == id)
-    {
-        let (file, revision) = store.find_codex_provider_with_revision(&record.profile.id).map_err(store_error)?;
-        return Ok(SavedProvider { profile: file.client_projection().into_profile(AppKind::Codex), revision });
-    }
-    let record = store.find_provider_record(id)
+    let saved = state.configuration().resolve_saved_provider(id)
         .map_err(|error| operation_error("profile-not-found", error))?;
-    Ok(SavedProvider { profile: record.profile, revision: record.file_hash })
+    Ok(SavedProvider { profile: saved.profile(), revision: saved.revision().to_string() })
 }
 
 fn message(key: &str, params: serde_json::Value, text: &str) -> LocalizedMessage {
@@ -83,13 +76,13 @@ fn diagnose(local: &crate::local_state::LocalState, gateway: &crate::gateway::Ga
     let active = status.active_profile_id.as_deref() == Some(id);
     let mut checks = checks::profile_checks(profile);
     checks.push(checks::environment(profile.app));
-    let projection = super::switching::plan::build_plan(local, gateway, id);
+    let projection = repairs::build_plan(local, gateway, id);
     let preview = match &projection {
         Ok(projection) => repairs::repair_file(local, gateway, projection),
         Err(error) => Err(error.clone()),
     };
     checks.push(checks::configuration(&status, active, preview.as_ref()));
-    checks.push(checks::route(profile, active, gateway.observe(local), projection.as_ref()));
+    checks.push(checks::route(profile, &status, active, gateway.observe(local)));
     let can_repair = active && status.syntax_ok && status.read_error.is_none()
         && status.recovery_issue.is_none() && status.client_settings_error.is_none()
         && preview.as_ref().is_ok_and(|file| repairs::differs(file));

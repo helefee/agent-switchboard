@@ -37,10 +37,22 @@ pub(super) fn matching_profile(
             .active_profile_id(AppKind::Codex, text)
             .map_err(error)?
         {
-            let file = state
-                .configuration()
-                .find_codex_provider_file(&id)
-                .map_err(store_error)?;
+            let saved = state.configuration().resolve_saved_provider(&id)
+                .map_err(|error| crate::commands::error::operation_error("codex-state-unavailable", error))?;
+            let file = match saved {
+                crate::config_store::SavedProvider::Codex { file, .. } => file,
+                crate::config_store::SavedProvider::Client(record) => {
+                    if record.profile.app != AppKind::Codex || record.profile.route_mode != asb_core::RouteMode::Official {
+                        return Err(error("Codex 活动网关档案类型无效".into()));
+                    }
+                    if !account_matches(state, &id)? { return Ok(None); }
+                    let plan = attach_fragment(state, &id,
+                        SwitchPlan::direct(record.profile.clone(), settings(state, &id)?))?;
+                    return Ok(gateway.active_codex_official_projection(&plan).map_err(error)?
+                        .filter(|plan| super::report::projection_matches(text, plan))
+                        .map(|_| record.profile));
+                }
+            };
             let plan = gateway
                 .active_codex_projection(&file, settings(state, &id)?)
                 .map_err(error)?;

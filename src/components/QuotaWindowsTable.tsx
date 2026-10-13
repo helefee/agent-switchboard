@@ -13,7 +13,7 @@ function percent(usedPercent: number): string {
 function windowColumns(t: TFunction): Array<TableColumn<CodexOfficialQuotaWindow>> {
   return [
     { key: "label", header: t("usage.windows.column.window"), render: (window) => officialQuotaWindowName(window.label) },
-    { key: "used", header: t("usage.column.used"), render: (window) => percent(window.usedPercent) },
+    { key: "used", align: "end", header: t("usage.column.used"), render: (window) => percent(window.usedPercent) },
     {
       key: "reset",
       header: t("usage.windows.column.reset"),

@@ -5,41 +5,33 @@
   gap: var(--asb-space-3);
 }
 
-.asb-diff {
-  display: flex;
-  flex-direction: column;
-  gap: var(--asb-space-1);
-  margin: 0;
-  padding: 0;
-  list-style: none;
-}
-
-.asb-diff-row {
-  display: flex;
-  flex-direction: column;
-  gap: var(--asb-space-hairline);
-  padding: var(--asb-space-2);
-  border: 1px solid var(--asb-hairline);
-  border-radius: var(--asb-radius);
+.asb-table.asb-diff {
+  table-layout: fixed;
   background: var(--asb-code-bg);
 }
 
-.asb-diff-key {
+.asb-diff th:first-child { width: 28%; }
+.asb-diff th:nth-child(2),
+.asb-diff th:nth-child(3) { width: 36%; }
+
+.asb-diff td {
+  vertical-align: top;
   font: var(--asb-text-code);
+  white-space: pre-wrap;
+}
+
+.asb-diff-key {
   color: var(--asb-text-muted);
 }
 
 .asb-diff-value {
-  font: var(--asb-text-code);
   color: var(--asb-text);
-  overflow-wrap: anywhere;
 }
 
 /* Red/green diff semantics (user-directed 2026-08-28): the outgoing value
    reads red on a soft red tint, the incoming value green on a green tint;
-   the arrow and the 移除 word keep the state legible without color alone
-   (DESIGN.md §10). An absent before value stays neutral — nothing is
-   being removed. */
+   column headings and removal text keep the state legible without color
+   alone. An absent before value stays neutral — nothing is being removed. */
 .asb-diff-old,
 .asb-diff-new,
 .asb-diff-remove {
@@ -55,11 +47,6 @@
 }
 
 .asb-diff-none {
-  color: var(--asb-text-muted);
-}
-
-.asb-diff-arrow {
-  padding: 0 var(--asb-space-unit);
   color: var(--asb-text-muted);
 }
 

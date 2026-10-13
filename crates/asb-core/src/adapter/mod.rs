@@ -11,6 +11,8 @@ pub mod codex;
 mod parameters;
 #[cfg(test)]
 mod current_contract_tests;
+#[cfg(test)]
+mod provider_repair_tests;
 
 /// Reads only catalog-owned client preferences from a complete live client
 /// configuration. Provider, credential, extension, and host-owned keys never

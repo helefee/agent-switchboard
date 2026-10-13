@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { BackupRecord, ConfigWriteRecord } from "../api/client";
 import type { useCloudBackup } from "../app/useCloudBackup";
 import { BackupHistory } from "../components/BackupHistory";
@@ -13,9 +13,11 @@ import { clientName } from "../lib/client-name";
 interface BackupsPageProps {
   records: BackupRecord[];
   busy: boolean;
+  active: boolean;
+  recoveryRequest: number;
   lastSwitch: ConfigWriteRecord | null;
   cloudBackup: ReturnType<typeof useCloudBackup>;
-  onRestore: (backupId: string) => void;
+  onRestore: (backupId: string) => void | Promise<void>;
   onUndo: (lastSwitch: ConfigWriteRecord) => void;
   onOpenDir: () => void;
 }
@@ -27,6 +29,8 @@ type BackupTab = "local" | "cloud";
 export function BackupsPage({
   records,
   busy,
+  active,
+  recoveryRequest,
   lastSwitch,
   cloudBackup,
   onRestore,
@@ -35,6 +39,7 @@ export function BackupsPage({
 }: BackupsPageProps) {
   const { t } = useI18n();
   const [activeTab, setActiveTab] = useState<BackupTab>("local");
+  useEffect(() => { setActiveTab("local"); }, [recoveryRequest]);
 
   return (
     <section className="asb-panel" aria-label={t("backup.aria")}>
@@ -47,8 +52,7 @@ export function BackupsPage({
               { value: "cloud", label: t("backup.tab.cloud"), controls: "backup-cloud-panel" }]} />
         }
       />
-      {/* Both tabpanels stay mounted so each tab's aria-controls always
-          resolves; inactive content unmounts inside its hidden panel. */}
+      {/* Keep both panels mounted to preserve each tab's session state. */}
       <div
         id="backup-local-panel"
         className="asb-backup-local"
@@ -56,7 +60,6 @@ export function BackupsPage({
         aria-labelledby="backup-local-tab"
         hidden={activeTab !== "local"}
       >
-        {activeTab === "local" && (
           <>
             {lastSwitch && (
               <p className="asb-scope-note">
@@ -93,7 +96,6 @@ export function BackupsPage({
             )}
             <BackupHistory records={records} busy={busy} onRestore={onRestore} />
           </>
-        )}
       </div>
       <div
         id="backup-cloud-panel"
@@ -101,8 +103,8 @@ export function BackupsPage({
         aria-labelledby="backup-cloud-tab"
         hidden={activeTab !== "cloud"}
       >
-        {activeTab === "cloud" && (
           <CloudBackupPanel
+            active={active && activeTab === "cloud"}
             settings={cloudBackup.settings}
             loaded={cloudBackup.loaded}
             busy={busy}
@@ -111,7 +113,6 @@ export function BackupsPage({
             onUpload={cloudBackup.upload}
             onRestore={cloudBackup.restore}
           />
-        )}
       </div>
     </section>
   );

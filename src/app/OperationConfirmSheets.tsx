@@ -10,6 +10,7 @@ import type { useProviders } from "./useProviders";
 import type { useSwitchOperations } from "./useSwitchOperations";
 
 interface OperationConfirmSheetsProps {
+  busy: boolean;
   operations: ReturnType<typeof useSwitchOperations>;
   providers: ReturnType<typeof useProviders>;
 }
@@ -20,6 +21,7 @@ interface OperationConfirmSheetsProps {
 export function OperationConfirmSheets({
   operations,
   providers,
+  busy,
 }: OperationConfirmSheetsProps) {
   const { t } = useI18n();
   const { undoPending, recoverLockPending } = operations;
@@ -28,6 +30,7 @@ export function OperationConfirmSheets({
       {providers.pendingSave && (
         <ConfirmSheet
           title={t("operations.save.title")}
+          busy={busy}
           confirmLabel={t("operations.save.title")}
           onConfirm={() => void providers.runPendingSave()}
           onCancel={() => providers.setPendingSave(null)}
@@ -46,6 +49,7 @@ export function OperationConfirmSheets({
       {providers.deletePending && (
         <ConfirmSheet
           title={t("operations.delete.title")}
+          busy={busy}
           confirmLabel={t("operations.delete.confirm")}
           destructive
           onConfirm={() => void providers.runDelete()}
@@ -62,6 +66,7 @@ export function OperationConfirmSheets({
       {undoPending && (
         <ConfirmSheet
           title={t("operations.undo.title")}
+          busy={busy}
           confirmLabel={t("operations.undo.confirm")}
           confirmDisabled={operations.undoDiff.state !== "ready"}
           onConfirm={() => void operations.runUndo()}
@@ -92,6 +97,7 @@ export function OperationConfirmSheets({
       {recoverLockPending && (
         <ConfirmSheet
           title={t("operations.recoverLock.title")}
+          busy={busy}
           confirmLabel={t("operations.recoverLock.confirm")}
           destructive
           onConfirm={() => void operations.runRecoverStaleLock()}

@@ -4,24 +4,20 @@
 //! Discovery never creates directories, links, indexes, or client
 //! configuration. A fresh environment yields an empty result and no writes.
 
-use std::fs;
-use std::io::ErrorKind;
 use std::path::Path;
 
 use self::mcp::{
     append_claude_project_private_mcp_observations, append_mcp_observations,
     read_discovery_document,
 };
-use self::skills::{scan_claude_skills, scan_codex_skills, scan_skills_root, walk_skill_dir};
+use self::skills::{scan_claude_skills, scan_codex_skills, scan_skills_root};
 use asb_core::contracts::AppKind;
 use asb_core::extensions::contracts::{
-    ExtensionBinding, ExtensionDefinition, ExtensionKind, ExtensionPayload, ExtensionTarget,
-    FileState, ManagedBaseline, ManagedBaselineFile, ObservedExtension, ObservedOrigin,
+    ExtensionBinding, ExtensionKind, ExtensionTarget, ObservedExtension, ObservedOrigin,
 };
 use asb_core::extensions::diagnostics::{
     DiagnosticCode, DiagnosticRemediation, DiagnosticSubject, ExtensionDiagnostic,
 };
-use asb_core::extensions::skill::content_digest;
 
 pub struct DiscoveredPaths {
     pub home: std::path::PathBuf,
@@ -195,106 +191,8 @@ pub fn discover(
     }
 }
 
-/// Computes the file-consistency state of one binding against the current
-/// disk and its baseline. `projects` resolves project-scoped targets.
-
-pub fn binding_file_state(
-    binding: &ExtensionBinding,
-    definition: &ExtensionDefinition,
-    baseline: Option<&ManagedBaselineFile>,
-    projects: &[asb_core::extensions::contracts::ProjectRegistration],
-) -> FileState {
-    // Anything newer in the definition than the last apply is pending.
-    let applied_current_revision = binding.last_applied_revision == Some(definition.revision);
-    if !applied_current_revision && binding.last_applied_revision.is_none() {
-        return FileState::NotDeployed;
-    }
-    match &definition.payload {
-        ExtensionPayload::Mcp(_) => {
-            let Some(ManagedBaseline::DocumentEntry {
-                target_path,
-                last_written_value,
-                last_document_hash,
-                ..
-            }) = baseline.and_then(|file| {
-                file.entries
-                    .iter()
-                    .find(|entry| matches!(entry, ManagedBaseline::DocumentEntry { .. }))
-            })
-            else {
-                return FileState::NotDeployed;
-            };
-            let text = match fs::read_to_string(Path::new(target_path)) {
-                Ok(text) => text,
-                Err(error) if error.kind() == ErrorKind::NotFound => return FileState::Missing,
-                Err(_) => return FileState::Unreadable,
-            };
-            // 所有权按条目判定（E02）：文档级哈希只作快路径。切换投影、
-            // 片段合并等第一方写入会改文档其他部分，只要本应用的条目仍与
-            // 最后写入一致，绑定就处于同步状态；条目本身变了才是外部变更。
-            let document_unchanged = {
-                use sha2::Digest;
-                let current_hash = sha2::Sha256::digest(text.as_bytes())
-                    .iter()
-                    .map(|byte| format!("{byte:02x}"))
-                    .collect::<String>();
-                current_hash == *last_document_hash
-            };
-            if !document_unchanged {
-                let current = asb_core::extensions::mcp::managed_entry_text(binding, &text, projects);
-                let unchanged = match current {
-                    Ok(current) => asb_core::extensions::mcp::managed_entry_unchanged(
-                        binding.target.client(),
-                        current,
-                        last_written_value.as_deref(),
-                    ),
-                    Err(_) => false,
-                };
-                if !unchanged {
-                    return FileState::ExternalChange;
-                }
-            }
-            if applied_current_revision {
-                FileState::InSync
-            } else {
-                FileState::PendingApply
-            }
-        }
-        ExtensionPayload::Skill(_) => {
-            let Some(ManagedBaseline::Directory {
-                target_dir,
-                last_digest,
-                ..
-            }) = baseline.and_then(|file| {
-                file.entries
-                    .iter()
-                    .find(|entry| matches!(entry, ManagedBaseline::Directory { .. }))
-            })
-            else {
-                return FileState::NotDeployed;
-            };
-            match walk_skill_dir(Path::new(target_dir)) {
-                Ok(entries) => {
-                    if content_digest(&entries) != *last_digest {
-                        FileState::ExternalChange
-                    // A pinned binding follows its locked content version, not
-                    // the definition's current revision: editing the library
-                    // must not make a pinned target look pending.
-                    } else if match binding.locked_digest.as_deref() {
-                        Some(locked) => last_digest == locked,
-                        None => applied_current_revision,
-                    } {
-                        FileState::InSync
-                    } else {
-                        FileState::PendingApply
-                    }
-                }
-                Err(_) if !Path::new(target_dir).exists() => FileState::Missing,
-                Err(_) => FileState::Unreadable,
-            }
-        }
-    }
-}
+mod binding_state;
+pub use binding_state::binding_file_state;
 
 /// Marks which observed items are managed by which bindings.
 pub fn attach_bindings(

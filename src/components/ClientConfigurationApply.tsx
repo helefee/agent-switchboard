@@ -482,6 +482,7 @@ export function ClientConfigurationConfirmation({
       title={t("clientConfig.apply.confirmTitle")}
       confirmLabel={t("clientConfig.apply.confirmButton")}
       confirmDisabled={busy || applying}
+      busy={busy || applying}
       onConfirm={onConfirm}
       onCancel={onCancel}
     >

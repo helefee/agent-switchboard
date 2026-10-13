@@ -32,9 +32,6 @@
       };
     },
     extract(input) {
-      if (input.status < 200 || input.status >= 300) {
-        throw new TypeError("imported usage request was not successful");
-      }
       const body = input.body;
       if (body && body.base_resp && body.base_resp.status_code !== 0) {
         throw new TypeError(

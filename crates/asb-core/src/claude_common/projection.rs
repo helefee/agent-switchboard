@@ -56,17 +56,27 @@ pub fn apply(text: &str, extra: &Extra) -> Result<String, String> {
 /// manifest, so switching profiles swaps the fragment wholesale while
 /// unowned keys stay untouched.
 pub fn apply_profile(text: &str, fragment: &Extra) -> Result<String, String> {
+    let root = parse(text)?;
+    let mut profile_paths = declared(&root, PROFILE_MANIFEST)?;
+    profile_paths.extend(leaves(&Value::Object(fragment.clone()))?.into_keys());
+    validate_path_scopes(&declared(&root, MANIFEST)?, &profile_paths)?;
     apply_with(text, fragment, PROFILE_MANIFEST)
 }
 /// Rejects one path claimed by both the client's shared extra and the active
 /// profile's fragment. Ownership would otherwise flip between the two stores
 /// on every switch.
 pub fn validate_scopes(global: &Extra, fragment: &Extra) -> Result<(), String> {
-    let shared = leaves(&Value::Object(global.clone()))?
-        .keys()
+    validate_path_scopes(
+        &leaves(&Value::Object(global.clone()))?.into_keys().collect::<Vec<_>>(),
+        &leaves(&Value::Object(fragment.clone()))?.into_keys().collect::<Vec<_>>(),
+    )
+}
+
+fn validate_path_scopes(shared: &[String], profile: &[String]) -> Result<(), String> {
+    let shared = shared.iter()
         .map(|path| pointer::decode(path))
         .collect::<Result<Vec<Vec<String>>, _>>()?;
-    for path in leaves(&Value::Object(fragment.clone()))?.keys() {
+    for path in profile {
         let segments = pointer::decode(path)?;
         let overlaps =
             |other: &Vec<String>| segments.starts_with(other) || other.starts_with(&segments);
@@ -80,13 +90,9 @@ pub fn validate_scopes(global: &Extra, fragment: &Extra) -> Result<(), String> {
 /// A client-only apply cannot overwrite leaves claimed by the active profile.
 pub fn validate_shared_write(text: &str, extra: &Extra) -> Result<(), String> {
     let root = parse(text)?;
-    let mut fragment = Value::Object(Map::new());
-    for path in declared(&root, PROFILE_MANIFEST)? {
-        if let Some(value) = root.pointer(&path) {
-            pointer::set(&mut fragment, &pointer::decode(&path)?, value.clone())?;
-        }
-    }
-    validate_scopes(extra, fragment.as_object().expect("object root"))
+    let mut shared_paths = declared(&root, MANIFEST)?;
+    shared_paths.extend(leaves(&Value::Object(extra.clone()))?.into_keys());
+    validate_path_scopes(&shared_paths, &declared(&root, PROFILE_MANIFEST)?)
 }
 
 /// Keeps only source entries that may legally live in a fragment; ownership-

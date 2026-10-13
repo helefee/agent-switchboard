@@ -1,6 +1,7 @@
 import { useId } from "react";
 import type { AppKind, ProviderDraft, ProviderProfile, LocalizedMessage } from "../api/client";
 import { useI18n } from "../i18n";
+import { useUnsavedChanges } from "./useUnsavedChanges";
 import { Button } from "./Button";
 import { OfficialLoginPanel } from "./OfficialLoginPanel";
 import { ProviderDiagnosticsEntry } from "./provider-diagnostics/ProviderDiagnosticsEntry";
@@ -109,16 +110,22 @@ function ProviderForm({ editor, formId, ...props }: Props & { editor: ProviderEd
 function ProviderEditorSession(props: Props) {
   const { t } = useI18n();
   const editor = useProviderEditor(props.profile, props.initialApp, props.busy);
+  const leave = useUnsavedChanges(editor.dirty, props.busy);
+  const close = () => leave.request(props.onCancel);
+  const safeProps = { ...props,
+    onSwitchClient: (app: AppKind) => leave.request(() => props.onSwitchClient(app)),
+    onOpenOfficial: (app: AppKind) => leave.request(() => props.onOpenOfficial(app)),
+  };
   const formId = useId();
   const parametersOpen = editor.parametersOpen;
   const title = parametersOpen ? t("providers.editor.parameters")
     : props.profile ? t("providers.editor.title.edit") : t("providers.workspace.newProvider");
   const backLabel = parametersOpen ? t("providers.editor.backToEditor") : t("providers.editor.backToProviders");
-  const goBack = () => parametersOpen ? editor.setParametersOpen(false) : props.onCancel();
+  const goBack = () => parametersOpen ? editor.setParametersOpen(false) : close();
   return <ProviderEditorFrame title={title} titleRef={editor.headingRef} backLabel={backLabel}
-    busy={props.busy} onBack={goBack} onCancel={props.onCancel} formId={formId} canSave={editor.canSave}>
+    busy={props.busy} onBack={goBack} onCancel={close} formId={formId} canSave={editor.canSave}>
     <div hidden={parametersOpen}>
-      <ProviderForm {...props} editor={editor} formId={formId} />
+      <ProviderForm {...safeProps} editor={editor} formId={formId} />
       {props.profile && <ProviderDiagnosticsEntry profileId={props.profile.id} name={props.profile.name}
         active={props.active && !parametersOpen} disabled={props.busy} />}
     </div>
@@ -127,6 +134,7 @@ function ProviderEditorSession(props: Props) {
       claudeFragment={editor.draft.claudeFragment}
       onFragmentChange={(claudeFragment) => editor.setDraft((current) => ({ ...current, claudeFragment }))}
       baselineValues={props.profile?.parameters.settings} />}
+    {leave.confirmation}
   </ProviderEditorFrame>;
 }
 

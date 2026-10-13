@@ -13,6 +13,7 @@ import { relativeLabel } from "../lib/time";
 import { UpdateIcon } from "./icons";
 import { ModuleHeader } from "./WorkspaceHeader";
 import { useCodexResetSignal } from "./quota-reads";
+import { Table } from "./Table";
 
 const DAY_MS = 86_400_000;
 
@@ -100,7 +101,7 @@ function ResetHeatmap({ heatmap }: { heatmap: CodexResetHeatmap }) {
   return (
     <div
       className="asb-codex-reset-heatmap"
-      role="img"
+      role="group"
       aria-label={t("codex.reset.heatmapAria", { weeks, total: heatmap.total, timezone: heatmap.timezone })}
     >
       <div className="asb-codex-reset-heatmap-head">
@@ -129,6 +130,16 @@ function ResetHeatmap({ heatmap }: { heatmap: CodexResetHeatmap }) {
         <span className="asb-codex-reset-heatmap-cell is-level-4" />
         <span>{t("codex.reset.many")}</span>
       </div>
+      <details>
+        <summary>{t("codex.reset.dailyData")}</summary>
+        <div className="asb-codex-reset-daily-data" tabIndex={0}>
+          <Table rows={cells.filter((cell) => cell.day)} rowKey={(cell) => cell.key}
+            ariaLabel={t("codex.reset.dailyData")} columns={[
+              { key: "date", header: t("codex.reset.dailyDate"), render: (cell) => cell.key },
+              { key: "count", header: t("codex.reset.dailyCount"), align: "end", render: (cell) => cell.day?.count ?? 0 },
+            ]} />
+        </div>
+      </details>
     </div>
   );
 }
@@ -149,7 +160,8 @@ export function CodexResetPanel({ read }: { read: ReturnType<typeof useCodexRese
   return (
     <section className="asb-panel asb-codex-reset" aria-labelledby="codex-reset-heading">
       <ModuleHeader id="codex-reset-heading" title={t("codex.reset.title")} />
-      {cacheLoading && status === null && <p className="asb-empty" role="status">{t("codex.reset.loadingCache")}</p>}
+      {cacheLoading && status === null && <div className="asb-quota-loading" role="status" aria-label={t("codex.reset.loadingCache")}>
+        <span className="asb-skeleton" aria-hidden="true" /><span className="asb-skeleton" aria-hidden="true" /></div>}
       {status === null && !cacheLoading && readError === null && (
         <div className="asb-empty-state">
           <span className="asb-empty-state-icon" aria-hidden="true">

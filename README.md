@@ -44,65 +44,53 @@ Claude persistent reasoning effort is edited per model under **Provider → Runt
 
 ## Interface preview
 
-These screenshots show the **actual 0.2.8 frontend**, rendered with mock data in an isolated headless browser. Providers, models, balances, usage, and probe records are fictional demonstrations, not measurements or claims about real services. Capture does not contact model services or read personal configuration or credentials. The screenshots show the Chinese interface.
+These screenshots show the **current source frontend**, captured on **October 13, 2026** with mock data in an isolated headless browser. OpenAI and Claude provider profiles, balances, usage, and probe records are demonstrations, not measurements of real services. Model identifiers use current official names, including `gpt-6.1-sol`, `gpt-6-astra`, `gpt-6-luna`, and `claude-sonnet-5-5`. Capture does not contact model services or read personal configuration or credentials. The screenshots show the Chinese interface. See the [screenshot data notes](docs/screenshots/README.md) for sources and capture boundaries.
 
 **Provider overview** — See the active Codex and Claude Code connections, manage profiles, and check balances.
 
 ![Provider overview with active connections, models, profiles, and simulated balances](docs/screenshots/providers.png)
 
-<details>
-<summary>Switch preview: review changes before applying</summary>
+**Switch preview: review changes before applying**
 
 Inspect changes to models, endpoints, and runtime parameters, together with the target configuration file and backup location.
 
 ![Switch preview showing changed keys, configuration content, and backup location](docs/screenshots/switch-preview.png)
 
-</details>
+**Client configuration: sub-agents and terminal settings**
 
-<details>
-<summary>Client configuration: sub-agents, sandbox, and approvals</summary>
+Set sub-agent availability and concurrency, and manage terminal screen and resume-directory preferences.
 
-Set sub-agent availability and concurrency, and inspect the current sandbox and approval settings.
+![Client configuration with sub-agent runtime and terminal preferences](docs/screenshots/client-configuration.png)
 
-![Client configuration with sub-agent runtime and sandbox approval settings](docs/screenshots/client-configuration.png)
-
-</details>
-
-<details>
-<summary>Usage: model shares and daily trends</summary>
+**Usage: model shares and daily trends**
 
 Review input, cached, and output tokens by time range, with a model breakdown, daily trends, and session counts.
 
 ![Simulated token usage with model shares, seven-day trends, and detailed counts](docs/screenshots/usage.png)
 
-</details>
-
-<details>
-<summary>Degradation radar: batch results and individual runs</summary>
+**Degradation radar: batch results and individual runs**
 
 Review pass counts, token consumption, reasoning tokens, final answers, and duration for each run. The pictured results are simulated.
 
 ![Degradation radar with five simulated probe results and token counts](docs/screenshots/radar.png)
 
-</details>
-
-<details>
-<summary>Probe history: filter by time, profile, and status</summary>
+**Probe history: filter by time, profile, and status**
 
 Browse the configuration, question, pass count, and consumption recorded for each batch, then open its details.
 
 ![Simulated probe history with time, profile, and status filters](docs/screenshots/radar-history.png)
 
-</details>
-
-<details>
-<summary>Local gateway: protocol topology and request status</summary>
+**Local gateway: protocol topology and request status**
 
 Inspect the loopback address, protocol translation paths, request counts, failures, and latency distribution.
 
 ![Local gateway with simulated protocol translation topology and request metrics](docs/screenshots/gateway.png)
 
-</details>
+**Sub-agent models: route to another provider profile**
+
+Choose a saved profile's model as the default sub-agent target. This example routes to `gpt-6-luna` in another simulated OpenAI profile.
+
+![Sub-agent runtime parameters with a simulated cross-profile OpenAI model route](docs/screenshots/subagent-route.png)
 
 ## Core features
 
@@ -123,6 +111,8 @@ Codex work scenarios save combinations of existing providers, extensions, and in
 
 Provider switches and configuration draft writes require preview and confirmation, with backup and recovery. Extension operations apply immediately by default; sensitive connection data, deleting definitions with existing installs, and disabling a Claude project-shared Skill require extra confirmation.
 
+**Deploy & diagnose** applies matching operations to multiple targets of one extension in an atomic plan. Updates explicitly skip Skills pinned to older content; unpinning shows whether deployment is pending. MCP checks independently select a client or project target and run the current library configuration in that target's working directory, honoring Codex's explicit directory setting. Checks use standard initialization and read advertised capability directories without calling tools. Closing management cancels the check; completion refreshes the list. Results are saved per target and definition revision and do not establish that the native client is connected. Dedicated SSE/WebSocket transports and interactive authorization require native-client verification.
+
 ### Session search and saved snippets
 
 Session search reads current local transcripts, including message bodies, titles, summaries, project paths, and session IDs. Submit a phrase, error, or code fragment; matching ignores case and collapses whitespace, including line breaks. Results are paginated with message excerpts. Opening a match reloads the source and expands and focuses the matching message; changed or removed messages are reported instead of jumping to a different message. Unreadable sources are reported alongside available results.
@@ -135,7 +125,11 @@ Group sessions by client and project, filter by last activity, tags, or pinned s
 
 Open a saved provider's details and select **Diagnose**. Local checks cover the endpoint, protocol, authentication configuration, model, environment variables, client configuration, and gateway routing. Environment checks report variable names and their inspection scope without exposing secret values. Manually run connectivity checks or real model requests to verify the upstream service; model requests may consume provider quota. Direct upstream tests do not verify the client's complete path through the gateway.
 
+Codex requests read the specialized saved provider file and resolve its default model through the saved upstream mapping. A changed profile or managed account identity invalidates a prepared request. Gateway diagnostics read listener, configured port, client endpoint, and route facts independently, including when a repair plan cannot be generated.
+
 Configuration repair applies only to the currently active saved profile. Review the changes before confirming; profile-owned fields are regenerated through the existing switch executor with backup and recovery. Undo previews are tied to that repair and reject later configuration changes. Persistent backups remain available in **Settings → Backup recovery** after closing the diagnostic window. Inactive profiles, environment overrides, and upstream failures receive guidance without silently switching providers or guessing credentials.
+
+Preview and execution share the same provider write scope, preserving live client preferences, shared fragments, and unowned content. A provider fragment that conflicts with the live shared fragment's ownership declarations is rejected without overwriting shared values.
 
 Generated immutable model catalogs are retained; undo restores configuration and authentication. A repair that only recreates a missing catalog explains this outcome and does not offer an empty undo action.
 
@@ -147,16 +141,19 @@ Provider rows keep the model on a fixed primary line and show every returned usa
 
 Usage scripts return one reading or an array. Numeric fields are `remaining`, `used`, `total`, with `unit` (`%` for percentage readings); optional metadata is `planName`, `resetsAt` (RFC 3339 with timezone), `isValid`, `invalidMessage` (only when invalid), and `extra` (plain text). Missing numbers remain unknown. Native CC Switch import templates preserve declared reset times and percentage units; stored custom scripts are never silently rewritten.
 
+Both query modes share HTTP validation and business normalization. Extraction returns facts; the backend produces one `availability` state per reading: `available`, `exhausted`, `unavailable` (with an optional message), or `unknown`. Zero and negative balances, consumed quotas, and explicitly unavailable plans are successful readings that replace stale balances and clear refresh errors. Missing values stay unknown. Authentication, HTTP, script execution, and malformed-data errors remain query failures. No provider names, endpoints, or error strings select a different business path, and configured extractors are always honored. Cached readings use only the normalized contract; disposable caches with the previous shape are rebuilt by the next query.
+
 Usage details default to collapsed. The current strict preferences contract stores explicit expansions in `expandedUsageIds`; the former collapsed-id field is rejected, without compatibility reads or automatic preference rewriting. An existing preferences file in the old shape requires the application's explicit preference repair action. Disposable usage caches in an invalid shape are rebuilt by the next configured or manual query.
 
 Provider balances and Codex official quotas refresh in the background at the interval set for each profile, including while on another page or hidden in the tray. Lists and the tray share the cache; opening a page does not trigger another query. Set the interval to `0` for manual queries only.
 
 In **Usage → Degradation radar**, batch-test the active Codex configuration with built-in or custom questions:
 
-- **Results:** Only successfully completed answers are graded against the final nonnegative integer answer. Failed, cancelled, and interrupted runs remain unjudged. Changes to configuration or the effective route during a probe terminate the current call.
+- **Results:** Integer questions grade successfully completed final nonnegative integer answers. Failed, cancelled, and interrupted runs remain unjudged. Changes to configuration or the effective route during a probe terminate the current call.
+- **Pelican animation:** The single built-in pelican question uses the HTML/SVG 2D animation prompt from the [Linux.do community experiment](https://linux.do/t/topic/2702004), with a visible requirement to return complete HTML in the final answer rather than a file path. The radar and history display the document with its inline styles and animation scripts in an isolated preview; external dependencies are blocked. Original answers use the local history cache and remain available after refresh or restart without another model call. Assess the animation by observation; it receives no automatic pass/fail verdict. Custom questions can select SVG or HTML output. Tool-assisted community results use different generation conditions and are not controlled comparisons.
 - **Consumption:** Probes make real provider calls and consume quota; their usage is included in statistics. Reasoning tokens and consumption come from that CLI session. Missing data stays unknown, and partial totals disclose their coverage. Results are reference signals and cannot establish the actual model's identity.
 - **History:** Questions, expected answers, results, CLI versions, and configuration snapshots are stored locally without credentials. They remain available after refresh or restart. Profile renames and deletions do not rewrite history. An abrupt exit retains completed results and marks the batch interrupted; restarting does not resume it automatically.
-- **History actions:** Filter by time, profile, or status, browse pages and details, and rerun a stored question with its answer and repetition count. Reruns make new calls; deletion affects radar records only. Failed result saves show the cause and block new probes and normal exit until saving succeeds.
+- **History actions:** Filter by time, profile, or status, browse pages and details, and rerun a stored question with its answer format, expected answer and repetition count. Reruns make new calls; deletion affects radar records only. Failed result saves show the cause and block new probes and normal exit until saving succeeds.
 
 ### Sub-agent models and protocol gateway
 

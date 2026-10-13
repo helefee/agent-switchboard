@@ -75,8 +75,8 @@ export function SessionManager({ active }: { active: boolean }) {
         deletion={deletion} onOpen={open} />
     </div>
     <div className="asb-session-panel" id="sessions-bookmarks-panel" role="tabpanel" aria-labelledby="sessions-bookmarks-tab" hidden={view !== "bookmarks"}>
-      {active && view === "bookmarks" && <SessionBookmarksPane bookmarks={bookmarks} onOpen={open}
-        query={bookmarkQuery} filter={bookmarkFilter} />}
+      <SessionBookmarksPane bookmarks={bookmarks} onOpen={open}
+        query={bookmarkQuery} filter={bookmarkFilter} />
     </div>
   </div>;
 }

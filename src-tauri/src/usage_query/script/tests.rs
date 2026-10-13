@@ -14,8 +14,8 @@ fn multiple_windows_preserve_reset_times_and_expired_plan_facts() {
     ]"#).unwrap();
     assert_eq!(summary.readings.len(), 2);
     assert_eq!(summary.readings[0].resets_at.as_deref(), Some("2026-09-21T02:00:00Z"));
-    assert_eq!(summary.readings[1].is_valid, Some(false));
-    assert_eq!(summary.readings[1].invalid_message.as_deref(), Some("套餐已过期"));
+    assert_eq!(summary.readings[1].availability,
+        asb_core::contracts::UsageAvailability::Unavailable { message: Some("套餐已过期".into()) });
     assert_eq!(summary.readings[1].extra.as_deref(), Some("需要续费"));
     assert!(summary.readings[1].remaining.is_none());
 }
@@ -26,6 +26,8 @@ fn malformed_metadata_and_unknown_fields_fail_instead_of_becoming_fake_balances(
     assert!(extract(r#"{remaining: 1, invalidMessage: "expired"}"#).is_err());
     assert!(extract(r#"{remaining: 1, resetAt: "2026-09-21T02:00:00Z"}"#).is_err());
     assert!(extract(r#"{remaining: null, used: null, total: null}"#).is_err());
+    assert!(extract(r#"{remaining: Infinity, used: 0}"#).is_err());
+    assert!(extract(r#"{remaining: NaN, used: 0}"#).is_err());
 }
 
 #[test]
@@ -64,4 +66,44 @@ fn imported_token_plan_metadata_is_normalized_before_native_validation() {
     assert_eq!(reading.unit.as_deref(), Some("%"));
     assert_eq!(reading.resets_at.as_deref(), Some("2026-09-21T02:00:00Z"));
     assert_eq!(reading.extra.as_deref(), Some("Pro"));
+}
+
+#[test]
+fn arbitrary_script_balances_are_successful_even_when_exhausted() {
+    use asb_core::contracts::UsageAvailability;
+    for (remaining, expected) in [("17.63", UsageAvailability::Available),
+        ("-0.00", UsageAvailability::Exhausted), ("-1.25", UsageAvailability::Exhausted)] {
+        let summary = extract(&format!("{{ remaining: {remaining}, unit: 'credits' }}")).unwrap();
+        assert_eq!(summary.readings[0].availability, expected);
+        assert_eq!(summary.readings[0].unit.as_deref(), Some("credits"));
+    }
+}
+
+#[test]
+fn failed_http_never_executes_extract_and_script_errors_remain_errors() {
+    let program = ScriptProgram::new(r#"({
+        request() { return {}; },
+        extract() { throw new TypeError("broken extractor"); }
+    })"#).unwrap();
+    let error = program.extract(&serde_json::json!({}), 401, "2026-10-13T00:00:00Z".into()).unwrap_err();
+    assert!(error.contains("HTTP 401"));
+    assert_eq!(program.extract(&serde_json::json!({}), 200,
+        "2026-10-13T00:00:00Z".into()).unwrap_err(), SCRIPT_EXECUTION_FAILED);
+}
+
+#[test]
+fn balance_templates_return_exhausted_facts_without_query_errors() {
+    let source = include_str!("../../../../crates/asb-core/src/ccswitch/templates/balance_usage.js");
+    for (base, body) in [
+        ("https://api.deepseek.com/anthropic", serde_json::json!({ "is_available": false,
+            "balance_infos": [{ "currency": "CNY", "total_balance": "-0.00" }] })),
+        ("https://openrouter.ai/api/v1", serde_json::json!({ "data": {
+            "total_credits": 10, "total_usage": 12 } })),
+        ("https://api.stepfun.com/v1", serde_json::json!({ "balance": 0 })),
+    ] {
+        let program = ScriptProgram::new(source).unwrap();
+        program.request("test-key", Some(base)).unwrap();
+        let summary = program.extract(&body, 200, "2026-10-13T00:00:00Z".into()).unwrap();
+        assert_eq!(summary.readings[0].availability, asb_core::contracts::UsageAvailability::Exhausted);
+    }
 }

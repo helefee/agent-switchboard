@@ -19,7 +19,7 @@
 .asb-row-line {
   /* The action rail stays fixed while the primary data tracks share the
      remaining width, preserving their one-line scan rail. */
-  --asb-provider-grid: var(--asb-touch-target) minmax(0, 1.1fr) minmax(0, 1.5fr) minmax(0, 0.7fr) var(--asb-provider-row-action-width);
+  --asb-provider-grid: var(--asb-touch-target) minmax(0, 1.1fr) minmax(0, 1.5fr) minmax(0, 0.7fr) auto;
   display: grid;
   grid-template-columns: var(--asb-provider-grid);
   align-items: center;
@@ -34,8 +34,8 @@
   width: 100%;
   padding: var(--asb-space-2) var(--asb-space-3);
   border: 1px solid color-mix(in srgb, var(--asb-hairline) 60%, transparent);
-  border-radius: var(--asb-radius);
-  background: var(--asb-content);
+  border-radius: var(--asb-radius-medium);
+  background: var(--asb-content-muted);
   color: var(--asb-text);
   transition:
     background-color var(--asb-motion-fast) var(--asb-easing),
@@ -46,7 +46,6 @@
    preview surfaces live below it, so none can stretch the model cell. */
 .asb-row-line {
   --asb-row-line-height: var(--asb-provider-row-line-height);
-  height: var(--asb-row-line-height);
   min-height: var(--asb-row-line-height);
 }
 
@@ -69,9 +68,8 @@
    opacity transition as one set, matching the editor's collapsible modules.
    The row is a flex column with gap and the disclosure exists only while
    open or animating, so the collapsed state cancels the gap lane it would
-   otherwise claim — closing returns the row to the fixed primary rail. The
-   collapse unmount listens for transitionend, so reduced motion must zero
-   the motion tokens (the global contract) instead of transition: none. */
+   otherwise claim. Transition completion and a duration-aware fallback both
+   finish cleanup, including an immediate switch with reduced motion. */
 .asb-row-panel-disclosure {
   display: grid;
   grid-template-rows: 0fr;
@@ -204,36 +202,23 @@
   align-items: center;
   justify-content: flex-end;
   justify-self: stretch;
-  width: var(--asb-provider-row-action-width);
+  max-width: 100%;
+  flex-wrap: wrap;
   gap: var(--asb-space-2);
   min-width: 0;
 }
 
-/* Keep the action rail reserved for alignment, but reveal every row action
-   only when the row is intentionally inspected. Opacity preserves keyboard
-   tab order; focus-within reveals the focused action before it is used. */
+/* Row actions remain visible and keyboard reachable without a hover step. */
 .asb-row-item .asb-row-activate {
   flex: none;
   display: inline-flex;
   padding-inline: var(--asb-space-3);
 }
 
-@media (hover: hover) {
-  .asb-row-item .asb-row-controls > .asb-btn,
-  .asb-row-item .asb-row-controls > .asb-iconcluster {
-    opacity: 0;
-    visibility: visible;
-    pointer-events: none;
-    transition: opacity var(--asb-motion-press) var(--asb-easing);
-  }
-
-  .asb-row-item:hover .asb-row-controls > .asb-btn,
-  .asb-row-item:hover .asb-row-controls > .asb-iconcluster,
-  .asb-row-item:focus-within .asb-row-controls > .asb-btn,
-  .asb-row-item:focus-within .asb-row-controls > .asb-iconcluster {
-    opacity: 1;
-    pointer-events: auto;
-  }
+.asb-provider-list-panel { container: provider-list / inline-size; }
+@container provider-list (max-width: 55rem) {
+  .asb-row-line { grid-template-columns: var(--asb-touch-target) repeat(3, minmax(0, 1fr)); }
+  .asb-row-controls { grid-column: 2 / -1; }
 }
 
 .asb-row-item.is-live .asb-avatar {
@@ -276,11 +261,3 @@
   white-space: nowrap;
 }
 
-@media (hover: none) {
-  .asb-row-item .asb-row-controls > .asb-btn,
-  .asb-row-item .asb-row-controls > .asb-iconcluster {
-    opacity: 1;
-    visibility: visible;
-    pointer-events: auto;
-  }
-}

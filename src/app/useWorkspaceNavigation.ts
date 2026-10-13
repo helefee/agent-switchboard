@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getStartupPage, rememberWorkspacePage, type CommandError } from "../api/client";
+import { getStartupPage, onExitRecovery, rememberWorkspacePage, type CommandError } from "../api/client";
 import type { DiagnosticSection, ExtensionSection, Page, ProviderView, SettingsSection, UsageSection } from "./navigation";
 
 export function useWorkspaceNavigation(settingsReady: boolean, settingsError: string | null, onError: (error: CommandError) => void) {
@@ -36,6 +36,7 @@ export function useWorkspaceNavigation(settingsReady: boolean, settingsError: st
   const [extensionSection, setExtensionSection] = useState<ExtensionSection>("skill");
   const [usageSection, setUsageSection] = useState<UsageSection>("consumption");
   const [settingsReturnToProviders, setSettingsReturnToProviders] = useState(false);
+  const [backupRecoveryRequest, setBackupRecoveryRequest] = useState(0);
   const setPage = useCallback((next: Page) => {
     userNavigated.current = true;
     setSettingsReturnToProviders(false);
@@ -53,7 +54,17 @@ export function useWorkspaceNavigation(settingsReady: boolean, settingsError: st
     setUsageSection("quota");
     setPage("usage");
   }, [setPage]);
+  useEffect(() => {
+    let disposed = false;
+    let stop: (() => void) | undefined;
+    void onExitRecovery((destination) => {
+      if (destination === "radar") { setUsageSection("radar"); setPage("usage"); }
+      else { setBackupRecoveryRequest((request) => request + 1); setSettingsSection("backups"); setPage("settings"); }
+    }).then((unlisten) => { if (disposed) unlisten(); else stop = unlisten; })
+      .catch((error: CommandError) => onError(error));
+    return () => { disposed = true; stop?.(); };
+  }, [setPage, onError]);
   return { page, setPage, navigationReady, providerView, setProviderView, settingsSection, setSettingsSection, diagnosticSection, setDiagnosticSection,
     extensionSection, setExtensionSection, usageSection, setUsageSection, settingsReturnToProviders,
-    openSettings, returnToProviders, openQuota };
+    openSettings, returnToProviders, openQuota, backupRecoveryRequest };
 }

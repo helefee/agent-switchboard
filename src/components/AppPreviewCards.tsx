@@ -65,8 +65,8 @@ interface WindowPalette {
    doubles as the log-level art surface (logs read on a dark surface in both
    themes). */
 const LIGHT: WindowPalette = {
-  window: "#ffffff",
-  rail: "#eceef1",
+  window: "hsl(0 0% 98%)",
+  rail: "hsl(240 12% 93%)",
   stroke: "rgba(20, 22, 27, 0.18)",
   text: "#14161b",
   textSoft: "rgba(20, 22, 27, 0.55)",

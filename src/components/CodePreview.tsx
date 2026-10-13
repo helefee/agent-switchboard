@@ -1,5 +1,7 @@
-import { type ReactNode } from "react";
+import { useId, useState, type ReactNode } from "react";
 import { useI18n } from "../i18n";
+import { CopyButton } from "./CopyButton";
+import { Button } from "./Button";
 
 /**
  * The single owner of code-preview file rendering (DESIGN.md §8): the
@@ -62,14 +64,23 @@ interface CodePreviewProps {
     high-contrast without blur). */
 export function CodePreview({ target, content }: CodePreviewProps) {
   const { t } = useI18n();
+  const [expanded, setExpanded] = useState(false);
+  const id = useId();
   const lines = content.replace(/\n$/, "").split("\n");
   return (
     <div className="asb-filepreview" aria-label={t("providers.code.previewAria", { target })}>
       <div className="asb-filepreview-head">
         <span className="asb-code">{target}</span>
-        <span className="asb-filepreview-meta">{t("providers.code.lines", { count: lines.length })}</span>
+        <div className="asb-panel-actions">
+          <span className="asb-filepreview-meta">{t("providers.code.lines", { count: lines.length })}</span>
+          <CopyButton content={content} />
+          {lines.length > 12 && <Button variant="secondary" aria-expanded={expanded} aria-controls={id}
+            onClick={() => setExpanded((value) => !value)}>
+            {t(expanded ? "common.collapsePreview" : "common.expandPreview")}
+          </Button>}
+        </div>
       </div>
-      <pre className="asb-filepreview-body">
+      <pre id={id} tabIndex={0} aria-label={target} className={`asb-filepreview-body${expanded ? " is-expanded" : ""}`}>
         {lines.map((line, index) => (
           <span className="asb-filepreview-line" key={index}>
             <span className="asb-filepreview-num" aria-hidden="true">

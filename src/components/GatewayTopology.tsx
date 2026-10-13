@@ -7,7 +7,6 @@ import { Button } from "./Button";
 import { ClientLogo } from "./ClientLogo";
 import type { ClientFilterValue } from "./ClientFilter";
 import { GatewayDeviceArt, GatewayTopologyFloor } from "./GatewayDeviceArt";
-import { GatewayHub } from "./GatewayHub";
 import { GatewayTopologyWires } from "./GatewayTopologyWires";
 import { ConfirmGatewayRecoveryDiscard } from "./GatewayPagePrimitives";
 
@@ -17,17 +16,12 @@ const TRAFFIC_WINDOW_MS = 3_600_000;
 interface Props {
   status: GatewayStatus;
   failed: boolean;
-  refreshedAt: number | null;
-  retrying: boolean;
-  onRetry: () => void;
-  onChangePort: () => void;
-  onDiscardRecovery: () => void;
   profileNames: Map<string, string>;
   focus: ClientFilterValue;
   onFocus: (app: AppKind) => void;
 }
 
-export function GatewayTopology({ status, failed, refreshedAt, retrying, onRetry, onChangePort, onDiscardRecovery, profileNames, focus, onFocus }: Props) {
+export function GatewayTopology({ status, failed, profileNames, focus, onFocus }: Props) {
   const { t } = useI18n();
   const sceneRef = useRef<HTMLDivElement>(null);
   const { routes } = status;
@@ -46,8 +40,10 @@ export function GatewayTopology({ status, failed, refreshedAt, retrying, onRetry
         <GatewayTopologyFloor />
         <GatewayTopologyWires sceneRef={sceneRef} routes={routes} focus={focus} failed={failed} />
         <GatewayClientNodes rows={[1, rows]} routes={routes} counts={traffic.byApp} focus={focus} onFocus={onFocus} />
-        <GatewayHub status={status} failed={failed} refreshedAt={refreshedAt} retrying={retrying}
-          onRetry={onRetry} onChangePort={onChangePort} rows={rows} />
+        <div data-gateway-node="hub" className="asb-gateway-hub is-topology" style={{ gridRow: `1 / span ${rows}` }}>
+          <GatewayDeviceArt kind="hub" /><strong>{t("gateway.title")}</strong>
+          <span>{status.baseUrl ?? t("gateway.addressNotListening")}</span>
+        </div>
         <GatewayProviderNodes routes={routes} profileNames={profileNames} counts={traffic.byRoute} focus={focus} onFocus={onFocus} />
         {routes.length === 0 && (
           <div className="asb-gateway-node is-empty" style={{ gridRow: `1 / span ${rows}` }} role="status">
@@ -64,7 +60,6 @@ export function GatewayTopology({ status, failed, refreshedAt, retrying, onRetry
         </div>
         <p className="asb-gateway-focus-hint">{t("gateway.focusHint")}</p>
       </div>
-      <GatewayGuidance status={status} onDiscardRecovery={onDiscardRecovery} />
     </section>
   );
 }
@@ -177,7 +172,7 @@ function GatewayTraffic({ count }: { count: number }) {
   </span>;
 }
 
-function GatewayGuidance({ status, onDiscardRecovery }: { status: GatewayStatus; onDiscardRecovery: () => void }) {
+export function GatewayGuidance({ status, onDiscardRecovery, busy }: { status: GatewayStatus; onDiscardRecovery: () => Promise<void>; busy: boolean }) {
   const { t } = useI18n();
   if (status.status !== "needsRepair" && !status.blockedRecovery) return null;
   return (
@@ -199,7 +194,7 @@ function GatewayGuidance({ status, onDiscardRecovery }: { status: GatewayStatus;
           })}</p>
           <p className="asb-gateway-guidance-copy">{t("gateway.recoveryBlockedCopy")}</p>
           <p className="asb-gateway-guidance-copy">{t("gateway.failureDetail", { reason: status.blockedRecovery.reason })}</p>
-          <ConfirmGatewayRecoveryDiscard onConfirm={onDiscardRecovery} />
+          <ConfirmGatewayRecoveryDiscard onConfirm={onDiscardRecovery} busy={busy} />
         </div>
       )}
     </div>

@@ -102,7 +102,6 @@ function useCurrentClientConfiguration(busy: boolean, setStates: SetStates) {
       ...current,
       [app]: {
         ...current[app],
-        currentConfiguration: undefined,
         currentConfigurationLoading: true,
         currentConfigurationError: undefined,
       },
@@ -156,7 +155,7 @@ export function useClientSettings(deps: ClientSettingsDeps) {
     reviewConfiguration(target);
   }, [busy, load, reviewConfiguration]);
   return {
-    editorState: states[app],
+    states,
     changeValue,
     changeClaudeExtra,
     retryLoad,

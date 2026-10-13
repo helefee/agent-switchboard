@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { listSystemFonts } from "../api/client";
 import { useI18n } from "../i18n";
+import { useMessageState } from "../i18n/use-message-state";
 import { quotedFontFamily } from "../lib/font-family";
 import { Input } from "./Input";
 import { Button } from "./Button";
@@ -33,23 +34,26 @@ export function FontPicker({ value, busy, onChange }: Props) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState("");
   const [systemFonts, setSystemFonts] = useState<string[]>([]);
+  const [fontError, setFontError] = useMessageState();
+  const [fontRequest, setFontRequest] = useState(0);
   const root = useRef<HTMLDivElement>(null);
   const trigger = useRef<HTMLButtonElement>(null);
   const options = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     let cancelled = false;
+    setFontError(null);
     listSystemFonts()
       .then((fonts) => {
         if (!cancelled) setSystemFonts(fonts);
       })
-      .catch(() => {
-        // Enumeration failed: the bundled default stays selectable.
+      .catch((error) => {
+        if (!cancelled) setFontError(error);
       });
     return () => {
       cancelled = true;
     };
-  }, []);
+  }, [fontRequest]);
 
   const close = (refocus = true) => {
     setOpen(false);
@@ -145,6 +149,10 @@ export function FontPicker({ value, busy, onChange }: Props) {
 
       {open ? (
         <div className="asb-font-menu" onKeyDown={onMenuKeyDown}>
+          {fontError && <div className="asb-field" role="alert">
+            <p className="asb-field-error">{t("settings.font.loadFailed", { detail: fontError })}</p>
+            <Button variant="secondary" onClick={() => setFontRequest((value) => value + 1)}>{t("settings.retry")}</Button>
+          </div>}
           <label className="asb-font-search">
             <SearchIcon />
             <Input

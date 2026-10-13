@@ -358,10 +358,6 @@
   padding-bottom: 0;
 }
 
-.asb-usage-donut-row + .asb-usage-donut-row {
-  border-top: 1px solid var(--asb-hairline);
-}
-
 .asb-usage-donut-row-head {
   display: flex;
   align-items: center;
@@ -442,3 +438,7 @@
   gap: var(--asb-space-2);
 }
 
+
+.asb-quota-loading { display: grid; gap: var(--asb-space-3); }
+.asb-quota-loading > .asb-skeleton:first-child { height: 14rem; }
+.asb-quota-loading > .asb-skeleton:last-child { height: 7rem; }

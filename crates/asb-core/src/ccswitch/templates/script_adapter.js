@@ -89,9 +89,6 @@
       return request;
     },
     extract(input) {
-      if (input.status < 200 || input.status >= 300) {
-        throw new TypeError("imported usage request was not successful");
-      }
       const extracted = cc.extractor(input.body);
       return Array.isArray(extracted) ? extracted.map(reading) : reading(extracted);
     },

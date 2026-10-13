@@ -203,6 +203,7 @@ pub(super) async fn dispatch(
         "check_mcp_connection" => command!(commands::extensions::check_mcp_connection(
             app.clone(),
             argument(&request.args, "definitionId")?,
+            argument(&request.args, "definitionRevision")?,
             argument::<ExtensionTarget>(&request.args, "target")?,
             argument(&request.args, "confirm")?,
         )),

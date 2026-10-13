@@ -18,7 +18,7 @@ use crate::commands::extensions::support::*;
 
 use super::deploy::merge_baseline_file_entry;
 use super::document::same_mcp_namespace;
-use super::{McpScope, Planner};
+use super::{deployed_binding, McpScope, Planner};
 
 impl Planner<'_> {
     pub(super) fn build_redeploy(
@@ -55,18 +55,20 @@ impl Planner<'_> {
                 (&definition.payload, binding.locked_digest.as_deref())
             {
                 if locked != skill.content_digest {
+                    let reason = format!(
+                        "该目标已固定版本 {}；解除固定后才会更新",
+                        locked.get(..12).unwrap_or(locked)
+                    );
                     plan.targets.push(PlannedTarget {
                         binding_id: Some(binding.id.clone()),
                         target: binding.target.clone(),
                         binding: binding.clone(),
                         baseline: None,
                         steps: Vec::new(),
-                        warnings: vec![format!(
-                            "该目标已固定版本 {}；解除固定后才会更新",
-                            locked.get(..12).unwrap_or(locked)
-                        )],
+                        warnings: vec![reason.clone()],
                         changes: Vec::new(),
                         adopts_native_entry: false,
+                        skip_reason: Some(reason),
                     });
                     pushed += 1;
                     continue;
@@ -108,15 +110,20 @@ impl Planner<'_> {
         self.assert_native_key_free(next)?;
         let (changes, baseline, warnings, adopts_native_entry) =
             self.rename_deploy_steps(definition, next, old_key, batch, writer)?;
+        let binding = if next.desired == DesiredState::Enabled
+            || next.target.client() == asb_core::contracts::AppKind::Codex {
+            deployed_binding(definition, next)
+        } else { next.clone() };
         operation.targets.push(PlannedTarget {
             binding_id: Some(next.id.clone()),
             target: next.target.clone(),
-            binding: next.clone(),
+            binding,
             baseline,
             steps: Vec::new(),
             warnings,
             changes,
             adopts_native_entry,
+            skip_reason: None,
         });
         Ok(())
     }

@@ -136,6 +136,29 @@ interface ProjectPlanActionsProps {
   reset: (next: api.CodexProjectPlansView) => void;
 }
 
+function ProjectPlanMaintenance({ view, operations, selected, reset }: {
+  view: api.CodexProjectPlansView; operations: CodexOperations;
+  selected: api.CodexProjectPlansView["plans"][number]; reset: (view: api.CodexProjectPlansView) => void;
+}) {
+  const { run, busy, changed } = operations;
+  const { t } = useI18n();
+  const isCurrent = selected.id === view.current;
+  return <section className="asb-client-management-group">
+    <h4 className="asb-group-title">{t("codex.plans.maintenanceTitle")}</h4>
+    <p className="asb-scope-note">{t("codex.plans.maintenanceNote")}</p>
+    <div className="asb-project-plan-action-grid">
+      <Button variant="secondary" disabled={busy} onClick={() => void run(async () => {
+        reset(await api.resnapshotCodexProjectPlan(selected.id, view.revision));
+        changed(uiMessage("codex.plans.updatedFromCurrent"));
+      })}>{t("codex.plans.updateFromCurrent")}</Button>
+      <Button variant="secondary" disabled={busy} onClick={() => void run(async () => {
+        reset(await api.setCurrentCodexProjectPlan(isCurrent ? null : selected.id, view.revision));
+        changed(isCurrent ? uiMessage("codex.plans.clearedCurrent") : uiMessage("codex.plans.setCurrentDone"));
+      })}>{t(isCurrent ? "codex.plans.clearCurrent" : "codex.plans.setCurrentLabel")}</Button>
+    </div>
+  </section>;
+}
+
 function ProjectPlanActions({
   view,
   operations,
@@ -151,32 +174,21 @@ function ProjectPlanActions({
   const { run, busy, changed } = operations;
   const { t } = useI18n();
   const selected = view.plans.find((plan) => plan.id === selectedId) ?? null;
-  const isCurrent = !!selected && selected.id === view.current;
-
-  const setCurrent = () => void run(async () => {
-    if (!selected) return;
-    reset(await api.setCurrentCodexProjectPlan(isCurrent ? null : selected.id, view.revision));
-    changed(isCurrent ? uiMessage("codex.plans.clearedCurrent") : uiMessage("codex.plans.setCurrentDone"));
-  });
 
   return <>
     <section className="asb-client-management-group asb-project-plan-actions" aria-label={t("codex.plans.actionsAria")}>
       <h4 className="asb-group-title">{t("codex.plans.restoreGroup")}</h4>
       <p className="asb-scope-note">{t("codex.plans.restoreNote")}</p>
       {selected
-        ? <div className="asb-project-plan-action-grid">
-            <Button className="asb-project-plan-apply-action" variant="primary" disabled={busy} onClick={() => void run(async () => {
+        ? <div className="asb-form-actions">
+            <Button variant="primary" disabled={busy} onClick={() => void run(async () => {
               clearOutcome();
               setPreview(await api.previewCodexProjectPlanApply(selected.id, view.revision));
             })}>{t("codex.plans.previewApply")}</Button>
-            <Button variant="secondary" disabled={busy} onClick={() => void run(async () => {
-              reset(await api.resnapshotCodexProjectPlan(selected.id, view.revision));
-              changed(uiMessage("codex.plans.updatedFromCurrent"));
-            })}>{t("codex.plans.updateFromCurrent")}</Button>
-            <Button variant="secondary" disabled={busy} onClick={setCurrent}>{isCurrent ? t("codex.plans.clearCurrent") : t("codex.plans.setCurrentLabel")}</Button>
           </div>
         : <p className="asb-scope-note">{t("codex.plans.selectFirst")}</p>}
     </section>
+    {selected && <ProjectPlanMaintenance view={view} selected={selected} operations={operations} reset={reset} />}
     {selected && <section className="asb-client-management-group asb-project-plan-delete" aria-label={t("codex.plans.deleteGroupAria")}>
       <h4 className="asb-group-title">{t("codex.plans.deleteGroup")}</h4>
       <p className="asb-scope-note">{t("codex.plans.deleteNote")}</p>
