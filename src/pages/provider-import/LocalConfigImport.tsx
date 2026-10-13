@@ -4,6 +4,7 @@ import { FactPath } from "../../components/FactPath";
 import { ModuleHeader } from "../../components/WorkspaceHeader";
 import { SearchIcon } from "../../components/icons";
 import { useI18n, type TFunction } from "../../i18n";
+import { localizedMessageText } from "../../i18n/errors";
 import { clientName } from "../../lib/client-name";
 
 interface LocalConfigImportProps {
@@ -38,7 +39,7 @@ function LocalRouteFacts({ file }: { file: DiscoveredFile }) {
       <div><dt>{t("importDiscovery.local.managedState")}</dt><dd>{managed ? t("importDiscovery.local.managed") : t("importDiscovery.local.unmanaged")}</dd></div>
       {(warnings.length > 0 || (!importable && !managed)) && (
         <div><dt>{t("importDiscovery.local.warnings")}</dt><dd>
-          {warnings.map((warning) => <span key={warning} className="asb-warn-text asb-status-warn">{warning}</span>)}
+          {warnings.map((warning) => <span key={warning.key} className="asb-warn-text asb-status-warn">{localizedMessageText(warning, t)}</span>)}
           {!importable && !managed && <span className="asb-warn-text asb-status-warn">{t("importDiscovery.local.unimportable")}</span>}
         </dd></div>
       )}
@@ -64,7 +65,7 @@ function LocalConfigCard({ file, proposal, busy, onImport }: {
       <dl className="asb-fact-row">
         <div><dt>{t("importDiscovery.local.configFile")}</dt><dd><FactPath path={file.path} open={() => openConfigFileLocation(file.app)} /></dd></div>
         {file.state.kind === "readError" && (
-          <div><dt>{t("importDiscovery.local.errorDetail")}</dt><dd className="asb-warn-text">{file.state.message}</dd></div>
+          <div><dt>{t("importDiscovery.local.errorDetail")}</dt><dd className="asb-warn-text">{localizedMessageText(file.state.message, t)}</dd></div>
         )}
         {file.state.kind === "parseError" && (
           <div><dt>{t("importDiscovery.local.errorDetail")}</dt><dd className="asb-warn-text">
@@ -74,7 +75,7 @@ function LocalConfigCard({ file, proposal, busy, onImport }: {
         <LocalRouteFacts file={file} />
       </dl>
       {proposal && <div className="asb-discovery-import">
-        <p className="asb-discovery-basis">{proposal.basis}</p>
+        <p className="asb-discovery-basis">{localizedMessageText(proposal.basis, t)}</p>
         <Button variant="secondary" disabled={busy} onClick={onImport}>{t("importDiscovery.local.importProvider")}</Button>
       </div>}
     </article>

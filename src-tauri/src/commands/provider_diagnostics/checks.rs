@@ -164,7 +164,10 @@ fn error_check(category: &'static str, error: &CommandError) -> ProviderDiagnost
     let mut item = check(category, "error", "projectionUnavailable", "无法为该供应商生成有效配置预览。",
         Some(("editProfile", "检查已保存供应商、通用配置与依赖的模型路由。")));
     item.message = asb_core::contracts::LocalizedMessage::new(
-        error.message_key.unwrap_or("providerDiagnostics.backend.projectionDetail"),
+        error
+            .message_key
+            .as_deref()
+            .unwrap_or("providerDiagnostics.backend.projectionDetail"),
         error.params.clone().unwrap_or_else(|| serde_json::json!({ "detail": error.message })), error.message.clone());
     item
 }

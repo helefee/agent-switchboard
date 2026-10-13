@@ -21,9 +21,10 @@ pub struct CommandError {
     pub code: &'static str,
     pub message: String,
     /// App-owned explanation key; external diagnostics without a catalog
-    /// entry retain their scrubbed `message`.
+    /// entry retain their scrubbed `message`. Keys may come from core
+    /// `LocalizedMessage` values, so this is a runtime string.
     #[serde(skip_serializing_if = "Option::is_none")]
-    pub message_key: Option<&'static str>,
+    pub message_key: Option<String>,
     /// Interpolation values for `message_key`. Parameters whose name ends in
     /// `Key` carry catalog keys themselves and are resolved recursively by
     /// the renderer.
@@ -55,7 +56,7 @@ impl CommandError {
         Self {
             code,
             message: adapter::scrub_message(message.into()),
-            message_key: Some(key),
+            message_key: Some(key.to_string()),
             params: scrub_params(params),
         }
     }
@@ -63,6 +64,20 @@ impl CommandError {
     /// Convenience for `localized` without parameters.
     pub(crate) fn keyed(code: &'static str, key: &'static str, message: impl Into<String>) -> Self {
         Self::localized(code, key, message, serde_json::Value::Null)
+    }
+
+    /// Maps one core-owned localized message, keeping its runtime key and
+    /// params; the text stays the scrubbed diagnostic detail.
+    pub(crate) fn from_localized(
+        code: &'static str,
+        message: asb_core::contracts::LocalizedMessage,
+    ) -> Self {
+        Self {
+            code,
+            message: adapter::scrub_message(message.text),
+            message_key: Some(message.key),
+            params: scrub_params(message.params.unwrap_or(serde_json::Value::Null)),
+        }
     }
 }
 
@@ -285,7 +300,7 @@ mod tests {
         let error = require_write_confirmation(false, "写入配置").expect_err("must reject");
         assert_eq!(error.code, "write-not-confirmed");
         assert!(error.message.contains("显式确认"));
-        assert_eq!(error.message_key, Some("errors.writeNotConfirmed"));
+        assert_eq!(error.message_key.as_deref(), Some("errors.writeNotConfirmed"));
         assert!(require_write_confirmation(true, "写入配置").is_ok());
         assert!(require_write_confirmation(false, "写入客户端配置").is_err());
     }
@@ -298,7 +313,7 @@ mod tests {
             "无法读取当前配置",
             serde_json::json!({ "detail": "boom" }),
         );
-        assert_eq!(error.message_key, Some("errors.switch.readCurrent"));
+        assert_eq!(error.message_key.as_deref(), Some("errors.switch.readCurrent"));
         assert_eq!(error.params.as_ref().unwrap()["detail"], "boom");
         // A secret-looking value never survives into params.
         let redacted = CommandError::localized(

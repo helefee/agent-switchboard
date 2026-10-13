@@ -1,4 +1,6 @@
-use crate::contracts::{AppKind, CodexProviderDraft, CodexUpstream, ProviderDraft, RouteState};
+use crate::contracts::{
+    AppKind, CodexProviderDraft, CodexUpstream, LocalizedMessage, ProviderDraft, RouteState,
+};
 
 /// Paths the caller wants inspected, as display strings.
 pub struct DiscoveryPaths {
@@ -21,9 +23,13 @@ pub struct DiscoveredFile {
 #[serde(rename_all = "camelCase", tag = "kind")]
 pub enum DiscoveredState {
     Missing,
+    /// The canned read failure is app-owned and localized; the raw io detail
+    /// stays in the backend log.
     ReadError {
-        message: String,
+        message: LocalizedMessage,
     },
+    /// The parser's own diagnostic is an external message and stays raw by
+    /// the command-error contract (no catalog entry).
     ParseError {
         message: String,
         line: Option<usize>,
@@ -33,7 +39,7 @@ pub enum DiscoveredState {
         /// Whether the file already contains app-managed keys.
         managed: bool,
         /// Readiness warnings (unsupported shapes, plaintext secrets…).
-        warnings: Vec<String>,
+        warnings: Vec<LocalizedMessage>,
         /// Whether this exact configuration shape can be converted into an
         /// app-owned profile without dropping settings.
         importable: bool,
@@ -53,7 +59,7 @@ pub struct DiscoveryReport {
 /// The live config is re-read by the import command; this proposal contains
 /// no API key and no catalog endpoint, so cached discovery cannot become a
 /// credential or network-target store.
-#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+#[derive(Debug, Clone, PartialEq, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CodexImportProposal {
     pub name: String,
@@ -63,8 +69,7 @@ pub struct CodexImportProposal {
     pub catalog_model_count: usize,
     pub api_key_available: bool,
     pub official: bool,
-    pub basis: String,
-    pub warnings: Vec<String>,
+    pub basis: LocalizedMessage,
 }
 
 /// Internal result of parsing the live Codex files. Only the safe proposal is
@@ -87,7 +92,7 @@ pub struct CodexImportSource {
 #[serde(rename_all = "camelCase")]
 pub struct ClaudeImportProposal {
     pub draft: ProviderDraft,
-    pub basis: String,
+    pub basis: LocalizedMessage,
 }
 
 impl DiscoveryReport {

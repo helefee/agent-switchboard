@@ -55,7 +55,7 @@ export const messages = {
 	"importDiscovery.cc.resetFolder": ["恢复默认位置", "Restore default location"],
 	"importDiscovery.cc.dbFile": ["数据库文件", "Database file"],
 	"importDiscovery.cc.empty": ["导入源中没有供应商。", "No providers in the import source."],
-	"importDiscovery.cc.emptyHint": ["扫描后选择可导入的供应商档案；默认读取本机 CC Switch 数据库，也可选择其他包含 cc-switch.db 的文件夹。", "Scan, then pick the provider profiles to import. The local CC Switch database is read by default; you can also choose another folder that contains cc-switch.db."],
+	"importDiscovery.cc.emptyHint": ["扫描后选择要导入的供应商；默认读取本机 CC Switch 数据库，也可另选含 cc-switch.db 的文件夹。", "Scan, then pick the providers to import; the local CC Switch database is read by default, or choose another folder containing cc-switch.db."],
 	"importDiscovery.cc.tableAria": ["CC Switch 数据库扫描结果", "CC Switch database scan results"],
 
 	// SQL file import (SqlFileImport).
@@ -66,7 +66,7 @@ export const messages = {
 	"importDiscovery.sql.pickFile": ["选择导出的 SQL 文件", "Choose an exported SQL file"],
 	"importDiscovery.sql.sqlFile": ["SQL 文件", "SQL file"],
 	"importDiscovery.sql.empty": ["导出文件中没有供应商。", "No providers in the export file."],
-	"importDiscovery.sql.emptyHint": ["选择在其他设备导出的 SQL 文件，即可预览各供应商的完整配置并按需导入。", "Pick a SQL file exported on another device to preview every provider's complete configuration and import what you choose."],
+	"importDiscovery.sql.emptyHint": ["选择其他设备导出的 SQL 文件，预览后按需导入。", "Pick a SQL file exported on another device, preview it, and import what you choose."],
 	"importDiscovery.sql.tableAria": ["导出文件预览", "Export file preview"],
 
 	// Shared scan rows, import actions and result banners.
@@ -84,7 +84,7 @@ export const messages = {
 	"importDiscovery.export.aria": ["导出结果", "Export result"],
 	"importDiscovery.export.exported": ["已导出 {count} 项", "Exported {count} items"],
 	"importDiscovery.export.notExported": ["未导出 {count} 项", "{count} not exported"],
-	"importDiscovery.export.note": ["将全部供应商（Claude、Codex 第三方与官方登录记录）的完整配置导出为一个 SQL 文件；在其他设备打开「导入 / 导出 → 导入 SQL」选择该文件即可导入，配置完整还原，无需命令行。文件包含 API 密钥，请妥善保管。", "Exports the complete configuration of every provider (Claude, third-party Codex, and the official Codex login record) into one SQL file. On another device, open \"Import / Export → Import SQL\" and pick the file; the full configuration is restored with no command line. The file contains API keys — keep it safe."],
+	"importDiscovery.export.note": ["将全部供应商（含官方登录记录）完整配置导出为一个 SQL 文件，可在其他设备经「导入 SQL」还原；文件包含 API 密钥，请妥善保管。", "Exports every provider's complete configuration (official login records included) into one SQL file restorable on another device via \"Import SQL\"; the file contains API keys — keep it safe."],
 	"importDiscovery.export.pathLabel": ["导出文件路径", "Export file path"],
 	"importDiscovery.export.pickFolder": ["选择文件夹", "Choose folder"],
 	"importDiscovery.export.working": ["正在导出…", "Exporting…"],
@@ -144,4 +144,35 @@ export const messages = {
 	"importDiscovery.extToast.imported": ["已导入本机扩展", "Imported local extensions"],
 	"importDiscovery.extToast.partial": ["导入已完成，列表未完全更新", "Import finished; the list was not fully refreshed"],
 	"importDiscovery.extToast.description": ["{count} 项；客户端原有文件保持不变", "{count} items; the clients' original files stay untouched"],
+
+	// Local-config discovery warnings, errors and import bases. The zh text
+	// mirrors the `LocalizedMessage::new` fallback the backend ships with the
+	// same key; the renderer template wins whenever the key resolves here.
+	"importDiscovery.discovery.readFailed": ["无法读取配置文件", "Could not read the configuration file"],
+	"importDiscovery.discovery.codexMissingEndpoint": ["当前 Codex 自定义路由缺少服务地址", "The current Codex custom route has no service address"],
+	"importDiscovery.discovery.codexMissingModel": ["当前 Codex 自定义路由缺少主模型", "The current Codex custom route has no main model"],
+	"importDiscovery.discovery.parametersUnreadable": ["供应商运行参数无法导入：{error}", "Provider runtime parameters cannot be imported: {error}"],
+	"importDiscovery.discovery.claudeNativeUnreadable": ["Claude 原生云配置无法导入：{error}", "The Claude native cloud configuration cannot be imported: {error}"],
+	"importDiscovery.discovery.claudeUnimportable": ["当前 Claude 配置无法作为供应商档案导入：{error}", "The current Claude configuration cannot be imported as a provider profile: {error}"],
+	"importDiscovery.discovery.claudePlaintextToken": ["settings.json 的 env 中存在明文 ANTHROPIC_AUTH_TOKEN", "settings.json env contains a plaintext ANTHROPIC_AUTH_TOKEN"],
+	"importDiscovery.discovery.codexGatewayManaged": ["当前 Codex 配置由本应用协议网关管理，不重复导入", "The current Codex configuration is already managed by this app's gateway; it is not imported again"],
+	"importDiscovery.discovery.codexUnsafeImport": ["当前 Codex 配置无法安全导入：{error}", "The current Codex configuration cannot be imported safely: {error}"],
+	"importDiscovery.discovery.codexConfigInvalid": ["Codex 配置无法解析", "The Codex configuration cannot be parsed"],
+	"importDiscovery.discovery.codexConfigDirInvalid": ["Codex 配置目录无效", "The Codex configuration directory is invalid"],
+	"importDiscovery.discovery.codexConfigDirUnresolved": ["Codex 配置目录无法解析", "The Codex configuration directory cannot be resolved"],
+	"importDiscovery.discovery.codexCatalogParentRef": ["Codex model_catalog_json 不允许包含上级目录", "Codex model_catalog_json must not reference parent directories"],
+	"importDiscovery.discovery.codexCatalogUnreadable": ["Codex 模型目录不存在或无法读取", "The Codex model catalog does not exist or cannot be read"],
+	"importDiscovery.discovery.codexCatalogOutside": ["Codex model_catalog_json 指向配置目录外，已拒绝读取", "Codex model_catalog_json points outside the configuration directory; reading was refused"],
+	"importDiscovery.discovery.codexProviderTableMissing": ["已选 model_provider = {provider} 没有对应表", "The selected model_provider = {provider} has no matching table"],
+	"importDiscovery.discovery.codexBaseUrlMissing": ["已选供应商表缺少 base_url", "The selected provider table is missing base_url"],
+	"importDiscovery.discovery.codexWireApiUnsupported": ["已选供应商表的 wire_api 不受支持", "The selected provider table's wire_api is unsupported"],
+	"importDiscovery.discovery.codexEndpointInvalid": ["Codex 服务地址无效", "The Codex service address is invalid"],
+	"importDiscovery.discovery.codexCatalogUnparsable": ["Codex 模型目录无法解析", "The Codex model catalog cannot be parsed"],
+	"importDiscovery.discovery.codexCatalogNoModels": ["Codex 模型目录缺少 models 数组", "The Codex model catalog has no models array"],
+	"importDiscovery.discovery.codexCatalogEmpty": ["Codex 模型目录为空", "The Codex model catalog is empty"],
+	"importDiscovery.basis.claudeOfficial": ["由当前 {name} 状态生成；凭据继续由客户端管理", "Derived from the current {name} state; credentials stay managed by the client"],
+	"importDiscovery.basis.claudeCloudSdk": ["由当前 Claude 原生云 SDK 配置生成，不读取云凭据缓存", "Derived from the current Claude native cloud SDK configuration; the cloud credential cache is never read"],
+	"importDiscovery.basis.claudeConfig": ["由当前 Claude 配置的模型与服务地址生成", "Derived from the current Claude configuration's model and service address"],
+	"importDiscovery.basis.codexOfficial": ["当前 Codex 配置使用官方登录；导入只创建无凭据的官方入口", "The current Codex configuration uses official sign-in; importing creates only a credential-free official entry"],
+	"importDiscovery.basis.codexThirdParty": ["由当前 Codex config.toml、auth.json 与模型目录生成", "Derived from the current Codex config.toml, auth.json and model catalog"],
 } as const satisfies Record<string, MessageEntry>;

@@ -1,6 +1,6 @@
 use crate::contracts::{
-    AppKind, AuthenticationScheme, ProviderDraft, RouteMode, RouteState, SettingsValues,
-    UpstreamProtocol,
+    AppKind, AuthenticationScheme, LocalizedMessage, ProviderDraft, RouteMode, RouteState,
+    SettingsValues, UpstreamProtocol,
 };
 
 use crate::discovery::report::{ClaudeImportProposal, DiscoveredFile, DiscoveredState};
@@ -59,7 +59,11 @@ fn official_proposal(parameters: SettingsValues) -> ClaudeImportProposal {
             usage_query: None,
             official_quota_refresh_interval_minutes: None,
         },
-        basis: format!("由当前 {name} 状态生成；凭据继续由客户端管理"),
+        basis: LocalizedMessage::new(
+            "importDiscovery.basis.claudeOfficial",
+            serde_json::json!({ "name": name }),
+            format!("由当前 {name} 状态生成；凭据继续由客户端管理"),
+        ),
     }
 }
 
@@ -81,7 +85,11 @@ fn claude_proposal(
         proposal.draft.base_url = base_url;
         proposal.draft.model = model;
         proposal.draft.model_options = model_options;
-        proposal.basis = "由当前 Claude 原生云 SDK 配置生成，不读取云凭据缓存".into();
+        proposal.basis = LocalizedMessage::new(
+            "importDiscovery.basis.claudeCloudSdk",
+            serde_json::Value::Null,
+            "由当前 Claude 原生云 SDK 配置生成，不读取云凭据缓存",
+        );
         return Some(proposal);
     }
     let credential = |path| {
@@ -119,6 +127,10 @@ fn claude_proposal(
             usage_query: None,
             official_quota_refresh_interval_minutes: None,
         },
-        basis: "由当前 Claude 配置的模型与服务地址生成".to_string(),
+        basis: LocalizedMessage::new(
+            "importDiscovery.basis.claudeConfig",
+            serde_json::Value::Null,
+            "由当前 Claude 配置的模型与服务地址生成",
+        ),
     })
 }

@@ -1,14 +1,14 @@
 import { invoke } from "./client";
 import type { AppKind } from "./shared";
-import type { RouteState } from "./switching";
+import type { LocalizedMessage, RouteState } from "./switching";
 import type { ProviderDraft } from "./providers";
 import type { CodexUpstream } from "./providers";
 
 export type DiscoveredState =
   | { kind: "missing" }
-  | { kind: "readError"; message: string }
+  | { kind: "readError"; message: LocalizedMessage }
   | { kind: "parseError"; message: string; line: number | null }
-  | { kind: "ok"; route: RouteState; managed: boolean; warnings: string[]; importable: boolean };
+  | { kind: "ok"; route: RouteState; managed: boolean; warnings: LocalizedMessage[]; importable: boolean };
 
 export interface DiscoveredFile {
   app: AppKind;
@@ -19,7 +19,7 @@ export interface DiscoveredFile {
 
 export interface ClaudeImportProposal {
   draft: ProviderDraft;
-  basis: string;
+  basis: LocalizedMessage;
 }
 
 export interface CodexImportProposal {
@@ -30,8 +30,7 @@ export interface CodexImportProposal {
   catalogModelCount: number;
   apiKeyAvailable: boolean;
   official: boolean;
-  basis: string;
-  warnings: string[];
+  basis: LocalizedMessage;
 }
 
 export interface CodexImportResult {

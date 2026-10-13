@@ -18,14 +18,14 @@ pub use report::{
     DiscoveredFile, DiscoveredState, DiscoveryPaths, DiscoveryReport,
 };
 
-use crate::contracts::AppKind;
+use crate::contracts::{AppKind, LocalizedMessage};
 use crate::discovery::inspect::inspect_read;
 
 /// Runs discovery over injected reads. `read` returns content, a missing-file
 /// result, or a safe read error. Nothing is ever written.
 pub fn discover(
     paths: &DiscoveryPaths,
-    read: impl Fn(&str) -> Result<Option<String>, String>,
+    read: impl Fn(&str) -> Result<Option<String>, LocalizedMessage>,
 ) -> DiscoveryReport {
     let codex_text = read(&paths.codex);
     let codex_auth_text = read(&paths.codex_auth);

@@ -25,7 +25,11 @@ fn main() {
         Ok(text) if std::path::Path::new(p).is_file() => Ok(Some(text)),
         Ok(_) => Ok(None),
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(None),
-        Err(_) => Err("无法读取配置文件".to_owned()),
+        Err(_) => Err(asb_core::contracts::LocalizedMessage::new(
+            "importDiscovery.discovery.readFailed",
+            serde_json::Value::Null,
+            "无法读取配置文件",
+        )),
     };
     let report = discovery::discover(&paths, read);
 

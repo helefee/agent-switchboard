@@ -2,7 +2,7 @@ use super::error::{blocking, observe, operation_error, state, store_error, Comma
 use super::switching;
 use crate::local_state::LocalState;
 use crate::runtime_log::RuntimeLogAction;
-use asb_core::contracts::{AppKind, RouteMode};
+use asb_core::contracts::{AppKind, LocalizedMessage, RouteMode};
 use asb_core::discovery::{self, CodexImportSource, DiscoveryPaths, DiscoveryReport};
 use tauri::Manager;
 
@@ -20,12 +20,16 @@ pub fn local_config_paths() -> Result<DiscoveryPaths, String> {
     })
 }
 
-fn read_discovery_file(path: &str) -> Result<Option<String>, String> {
+fn read_discovery_file(path: &str) -> Result<Option<String>, LocalizedMessage> {
     match std::fs::read_to_string(path) {
         Ok(text) if std::path::Path::new(path).is_file() => Ok(Some(text)),
         Ok(_) => Ok(None),
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => Ok(None),
-        Err(_) => Err("无法读取配置文件".to_string()),
+        Err(_) => Err(LocalizedMessage::new(
+            "importDiscovery.discovery.readFailed",
+            serde_json::Value::Null,
+            "无法读取配置文件",
+        )),
     }
 }
 
@@ -35,7 +39,7 @@ pub(super) fn codex_import_source() -> Result<CodexImportSource, CommandError> {
     let paths = local_config_paths()
         .map_err(|error| CommandError::new("config-path-unavailable", error))?;
     let config = read_discovery_file(&paths.codex)
-        .map_err(|error| CommandError::new("codex-import-unavailable", error))?
+        .map_err(|error| CommandError::from_localized("codex-import-unavailable", error))?
         .ok_or_else(|| {
             CommandError::keyed(
                 "import-unavailable",
@@ -44,11 +48,11 @@ pub(super) fn codex_import_source() -> Result<CodexImportSource, CommandError> {
             )
         })?;
     let auth = read_discovery_file(&paths.codex_auth)
-        .map_err(|error| CommandError::new("codex-import-unavailable", error))?;
+        .map_err(|error| CommandError::from_localized("codex-import-unavailable", error))?;
     discovery::codex_import_proposal(&paths.codex, &config, auth.as_deref(), |path| {
         read_discovery_file(&path.to_string_lossy())
     })
-    .map_err(|error| CommandError::new("import-unavailable", error))?
+    .map_err(|error| CommandError::from_localized("import-unavailable", error))?
     .ok_or_else(|| {
         CommandError::keyed(
             "import-unavailable",
