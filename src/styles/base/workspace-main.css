@@ -3,11 +3,29 @@
   flex-direction: column;
   min-width: 0;
   flex: 1;
-  padding: var(--asb-space-4);
+  /* The single chrome-reservation contract: flow pages rest below and right
+     of the glass chrome, and scrolled content exits through the padding zone
+     beneath the blurred titlebar. Bounded pages (editor routes, extension
+     library, backup tables) keep this inset and stop scrolling here. */
+  padding: calc(var(--asb-titlebar-height) + var(--asb-space-4)) var(--asb-space-4) var(--asb-space-4)
+    calc(var(--asb-sidebar-width) + var(--asb-space-4));
   gap: var(--asb-space-4);
   overflow-y: auto;
+  /* Keyboard focus and anchor scrolling stop below the glass titlebar. */
+  scroll-padding-block-start: calc(var(--asb-titlebar-height) + var(--asb-space-2));
   /* Reserved gutter: the scrollbar appearing must not reflow the page. */
   scrollbar-gutter: stable;
+  transition: padding var(--asb-motion-navigation) var(--asb-easing);
+}
+
+/* Pre-shell loading state: no chrome exists yet, so the splash takes a plain
+   canvas inset instead of the chrome-reserving page root. */
+.asb-splash {
+  display: flex;
+  flex-direction: column;
+  gap: var(--asb-space-4);
+  padding: var(--asb-space-4);
+  overflow-y: auto;
 }
 
 /* The light tile keeps client marks legible on both workspace themes. */

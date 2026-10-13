@@ -1,70 +1,52 @@
-/* One outer surface joins the navigation rail and draggable titlebar. */
+/* Glass chrome floats above one full-window canvas: the rail and titlebar
+   blur the page scrolling beneath them (DESIGN.md §视觉语言). Paint order
+   follows DOM order — sidebar, titlebar, then the canvas they overlay. */
 .asb-shell {
   position: relative;
   z-index: 1;
-  display: flex;
-  flex-direction: row;
   height: 100%;
-  background: var(--asb-sidebar-bg);
-}
-
-.asb-body {
-  display: flex;
-  flex-direction: column;
-  flex: 1;
-  min-width: 0;
-  min-height: 0;
 }
 
 .asb-shell.is-collapsed {
   --asb-sidebar-width: var(--asb-sidebar-collapsed-width);
 }
 
-/* The workspace is one inset surface; chrome stays continuous above and left. */
+/* The canvas fills the window; .asb-main inside it owns page geometry. */
 .asb-workspace {
-  position: relative;
+  position: absolute;
+  inset: 0;
   display: flex;
   flex-direction: column;
-  flex: 1;
-  min-width: 0;
-  min-height: 0;
-  margin: 0 var(--asb-space-unit) var(--asb-space-unit) 0;
-  border: 1px solid var(--asb-hairline);
-  border-radius: var(--asb-radius-panel);
   overflow: clip;
   background: var(--asb-content);
 }
 
-/* Width and text share one duration; flex gives the workspace the remaining width. */
+/* The rail is a full-height glass strip over the canvas's left edge. */
 .asb-sidebar {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  z-index: 2;
   display: flex;
   flex-direction: column;
-  flex: none;
   width: var(--asb-sidebar-width);
   min-height: 0;
   user-select: none;
   -webkit-user-select: none;
+  border-right: 1px solid var(--asb-hairline);
+  background: var(--asb-chrome-bg);
+  backdrop-filter: var(--asb-chrome-blur);
   transition: width var(--asb-motion-navigation) var(--asb-easing);
 }
 
 .asb-sidebar-top {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  justify-content: flex-start;
   flex: none;
   height: var(--asb-titlebar-height);
   padding-inline: var(--asb-space-1);
-}
-
-.asb-sidebar-icon {
-  flex: none;
-  width: var(--asb-icon-size-xl);
-  height: var(--asb-icon-size-xl);
-  object-fit: contain;
-}
-
-.asb-shell.is-collapsed .asb-sidebar-icon {
-  display: none;
 }
 
 .asb-sidenav {
@@ -162,11 +144,16 @@
   outline-offset: -2px;
 }
 
-/* A fixed-height titlebar pairs global information with stable window actions. */
+/* The titlebar is the top glass strip, from the rail's right edge to the
+   window's right edge; it pairs global information with stable window
+   actions and tracks the rail so collapse stays seamless. */
 .asb-titlebar {
+  position: absolute;
+  top: 0;
+  left: var(--asb-sidebar-width);
+  right: 0;
+  z-index: 2;
   display: flex;
-  flex: none;
-  min-height: var(--asb-titlebar-height);
   height: var(--asb-titlebar-height);
   align-items: center;
   justify-content: flex-end;
@@ -174,6 +161,25 @@
   padding: var(--asb-space-2);
   user-select: none;
   -webkit-user-select: none;
+  border-bottom: 1px solid var(--asb-hairline);
+  background: var(--asb-chrome-bg);
+  backdrop-filter: var(--asb-chrome-blur);
+  transition: left var(--asb-motion-navigation) var(--asb-easing);
+}
+
+/* The app mark and product name travel together as one brand unit. */
+.asb-titlebar-brand {
+  display: flex;
+  align-items: center;
+  flex: none;
+  gap: var(--asb-space-2);
+}
+
+.asb-titlebar-icon {
+  flex: none;
+  width: var(--asb-icon-size-xl);
+  height: var(--asb-icon-size-xl);
+  object-fit: contain;
 }
 
 .asb-titlebar-name {
@@ -260,5 +266,5 @@
   height: calc(var(--asb-space-unit) + var(--asb-space-hairline));
   border-radius: var(--asb-radius-pill);
   background: var(--asb-safe);
-  box-shadow: 0 0 0 2px var(--asb-surface-rail);
+  box-shadow: 0 0 0 2px var(--asb-chrome-bg);
 }

@@ -8,6 +8,7 @@ import { UpdateButton } from "../components/UpdateButton";
 import { GlobalInformation } from "../components/GlobalInformation";
 import { WindowControls } from "../components/WindowControls";
 import { isBrowserDevelopment } from "../lib/runtime";
+import appIcon from "../assets/app-icon.svg";
 
 interface AppShellProps {
   page: Page;
@@ -29,10 +30,11 @@ interface AppShellProps {
   children: ReactNode;
 }
 
-/** Application frame: left navigation sidebar (brand and primary navigation)
- * beside one workspace column whose slim titlebar owns the
- * drag region and the window actions. Page geometry never changes when
- * banners appear or disappear. */
+/** Application frame: one full-window canvas beneath a frosted-glass chrome —
+ * the left navigation rail and the slim titlebar, which owns the drag region
+ * and the window actions. Page content scrolls under the chrome and is
+ * blurred by it. Page geometry never changes when banners appear or
+ * disappear. */
 export function AppShell({
   page,
   onPageChange,
@@ -48,31 +50,30 @@ export function AppShell({
   const { t } = useI18n();
   const [collapsed, setCollapsed] = useState(false);
   return (
-    <>
-      <div className={`asb-shell${collapsed ? " is-collapsed" : ""}`}>
-        <SideNav page={page} onPageChange={onPageChange} collapsed={collapsed}
-          onToggle={() => setCollapsed((value) => !value)} />
-        <div className="asb-body">
-          <header className="asb-titlebar" data-tauri-drag-region>
-            <span className="asb-titlebar-name" data-tauri-drag-region>Agent Switchboard</span>
-            <GlobalInformation error={error} settingsError={settingsError} busy={busy}
-              onRepairStore={onRepairStore} onRepairSettings={onRepairSettings} />
-            <div className="asb-titlebar-actions">
-              {isBrowserDevelopment ? <span className="asb-web-development-badge">{t("shell.devBadge")}</span> : null}
-              {update ? (
-                <UpdateButton latestVersion={update.latestVersion} onOpen={update.onOpen} />
-              ) : null}
-              {pin ? (
-                <PinTopButton active={pin.active} disabled={busy} onToggle={pin.onToggle} />
-              ) : null}
-              {!isBrowserDevelopment && <WindowControls />}
-            </div>
-          </header>
-          <div className="asb-workspace">
-            {children}
-          </div>
+    <div className={`asb-shell${collapsed ? " is-collapsed" : ""}`}>
+      <SideNav page={page} onPageChange={onPageChange} collapsed={collapsed}
+        onToggle={() => setCollapsed((value) => !value)} />
+      <header className="asb-titlebar" data-tauri-drag-region>
+        <span className="asb-titlebar-brand" data-tauri-drag-region>
+          <img className="asb-titlebar-icon" src={appIcon} alt="" data-tauri-drag-region />
+          <span className="asb-titlebar-name" data-tauri-drag-region>Agent Switchboard</span>
+        </span>
+        <GlobalInformation error={error} settingsError={settingsError} busy={busy}
+          onRepairStore={onRepairStore} onRepairSettings={onRepairSettings} />
+        <div className="asb-titlebar-actions">
+          {isBrowserDevelopment ? <span className="asb-web-development-badge">{t("shell.devBadge")}</span> : null}
+          {update ? (
+            <UpdateButton latestVersion={update.latestVersion} onOpen={update.onOpen} />
+          ) : null}
+          {pin ? (
+            <PinTopButton active={pin.active} disabled={busy} onToggle={pin.onToggle} />
+          ) : null}
+          {!isBrowserDevelopment && <WindowControls />}
         </div>
+      </header>
+      <div className="asb-workspace">
+        {children}
       </div>
-    </>
+    </div>
   );
 }

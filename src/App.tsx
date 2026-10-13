@@ -17,7 +17,7 @@ export default function App() {
   const settingsReady = appSettingsState.appSettings !== null || appSettingsState.loadError !== null;
   if (!settingsReady) {
     return (
-      <main className="asb-main" aria-label="Agent Switchboard">
+      <main className="asb-splash" aria-label="Agent Switchboard">
         <div className="asb-settings-skeleton" role="status">
           <div className="asb-skeleton" /><div className="asb-skeleton" /><div className="asb-skeleton" />
         </div>
