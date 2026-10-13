@@ -131,10 +131,8 @@ function ClientConfigurationReview({
         <h3 className="asb-section-title">{t("clientConfig.review.scopeTitle")}</h3>
         <p className="asb-field-help">
           {t("clientConfig.review.scopeHelp")}
+          {app === "codex" && <>{" "}{t("clientConfig.review.scopeCodexHelp")}</>}
         </p>
-        {app === "codex" && (
-          <p className="asb-field-help">{t("clientConfig.review.scopeCodexHelp")}</p>
-        )}
       </section>
       {app === "claude" && (
         <ClaudeExtraConfigurationEditor

@@ -106,30 +106,33 @@
 
 /* The local backup tab owns the workspace height: page-level controls remain
    fixed, while long histories scroll inside the table instead of extending
-   the application workspace. This is deliberately scoped to the backup tab;
-   the other settings sections retain their normal page scrolling. */
-.asb-main:has(> .asb-page-stack:not([hidden]) .asb-backup-local:not([hidden])) {
+   the application workspace. Visibility means effectively visible: the local
+   tab's own hidden flag belongs to the local/cloud sub-tab switch, while the
+   section and page hide it through hidden ancestors — sections stay mounted
+   behind their hidden tabpanel — so the test must reject hidden ancestors as
+   well or the takeover leaks into every other settings section. */
+.asb-main:has(.asb-backup-local:not([hidden], [hidden] *)) {
   overflow: hidden;
 }
 
 /* The settings page-stack wrapper and its content column (the settings
-   workspace root) stretch to the workspace only while the backups panel with
-   its own internal scroll is visible. */
-.asb-page-stack:has(> .asb-settings-content .asb-backup-local:not([hidden])),
-.asb-settings-content:has(.asb-backup-local:not([hidden])) {
+   workspace root) stretch to the workspace only while the local backup tab
+   is effectively visible. */
+.asb-page-stack:has(> .asb-settings-content .asb-backup-local:not([hidden], [hidden] *)),
+.asb-settings-content:has(.asb-backup-local:not([hidden], [hidden] *)) {
   flex: 1;
   min-height: 0;
 }
 
-.asb-settings-content:has(.asb-backup-local:not([hidden])) {
+.asb-settings-content:has(.asb-backup-local:not([hidden], [hidden] *)) {
   display: flex;
   flex-direction: column;
 }
 
 /* Keep the settings tabpanel in the flex height chain so the history receives
    a bounded height instead of growing behind the workspace's clipped edge. */
-.asb-settings-content > [role="tabpanel"]:has(.asb-backup-local:not([hidden])),
-.asb-panel:has(.asb-backup-local:not([hidden])) {
+.asb-settings-content > [role="tabpanel"]:has(.asb-backup-local:not([hidden], [hidden] *)),
+.asb-panel:has(.asb-backup-local:not([hidden], [hidden] *)) {
   display: flex;
   flex: 1;
   flex-direction: column;

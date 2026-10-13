@@ -35,7 +35,7 @@ function AppearanceSettings({ settings, busy, onPatch }: Props) {
       <AppSettingRow label={t("settings.appearance.font")}>
         <FontPicker value={settings.interfaceFont} busy={busy} onChange={(interfaceFont) => void onPatch({ interfaceFont })} />
       </AppSettingRow>
-      <AppPreviewSetting<AppSettings["interfaceScale"]> label={t("settings.appearance.scale")} detail={t("settings.appearance.scale.detail")}
+      <AppPreviewSetting<AppSettings["interfaceScale"]> label={t("settings.appearance.scale")}
         value={settings.interfaceScale} busy={busy}
         options={[
           { value: 90, label: "90%", preview: <InterfaceScalePreview zoom={0.9} /> },
@@ -73,7 +73,7 @@ function WindowSettings({ settings, busy, onPatch }: Props) {
         <Switch label={t("settings.window.launchAtLogin")} checked={settings.launchAtLogin} disabled={busy}
           onChange={(launchAtLogin) => void onPatch({ launchAtLogin })} />
       </AppSettingRow>
-      <AppSettingRow label={t("settings.window.startMinimized")} detail={t("settings.window.startMinimized.detail")}>
+      <AppSettingRow label={t("settings.window.startMinimized")}>
         <Switch label={t("settings.window.startMinimized")} checked={settings.startMinimized} disabled={busy}
           onChange={(startMinimized) => void onPatch({ startMinimized })} />
       </AppSettingRow>

@@ -22,10 +22,9 @@ interface Props {
 /** A model ledger rendered as one prominent ring with an adjacent, auditable
  * legend. Only the tail is combined, and its label records that fact. */
 export function ModelUsageDistributionChart({ items, ariaLabel, emptyMessage }: Props) {
-  const { t } = useI18n();
   const visible = resolveDisplayItems(items);
   if (visible.length === 0) {
-    return <p className="asb-chart-empty" role="status">{emptyMessage || t("usage.composition.noData")}</p>;
+    return <p className="asb-chart-empty" role="status">{emptyMessage}</p>;
   }
 
   return <DonutCard visible={visible} ariaLabel={ariaLabel} />;

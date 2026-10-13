@@ -69,7 +69,7 @@ function CodexProviderForm({ editor, formId, ...props }: Props & { editor: Codex
           onChange={(next) => setDraft((current) => ({ ...current, requestMode: next.requestMode }))} />}
         <CodexCapabilitiesSection editor={editor} busy={busy} />
         <div className="asb-provider-advanced-action">
-          <div><strong>{t("codex.editor.runtimeParams")}</strong><span>{t("codex.editor.runtimeParamsNote")}</span></div>
+          <div><strong>{t("codex.editor.runtimeParams")}</strong><span>{t("providers.editor.parametersNote")}</span></div>
           <Button ref={triggerRef} variant="secondary" disabled={busy || !parameters.ready}
             onClick={() => setParametersOpen(true)}>{t("codex.editor.configureParams")} <span aria-hidden="true">→</span></Button>
         </div>

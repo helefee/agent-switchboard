@@ -141,7 +141,7 @@ export const messages = {
   "backup.cloud.guide.fill.title": ["填写并测试", "Fill in and test"],
   "backup.cloud.guide.fill.body": ["在下方填写项目地址、Publishable key、项目 Auth 邮箱和新密码，然后点击「测试连接」。测试只验证登录和备份表读取权限；成功后会在当前窗口保留项目 Auth 密码，上传或恢复成功后才清空。", "Fill in the project URL, publishable key, project Auth email and a new password below, then click “Test connection”. The test only verifies sign-in and read access to the backup table; after it succeeds the project Auth password stays in this window and is only cleared once an upload or restore succeeds."],
   "backup.cloud.guide.save.title": ["保存并备份", "Save and back up"],
-  "backup.cloud.guide.save.body": ["测试成功后点击「保存连接」。首次备份会加密完整的供应商档案（含运行参数、API 格式和最大输出 token）、客户端设置和切换记录；认证请求头会在使用时按 API 格式自动推导。设置至少 8 位的备份密码，恢复必须使用同一条密码，应用不会保存它。", "After the test succeeds, click “Save connection”. The first backup encrypts the complete provider profiles (including run parameters, API format and max output tokens), client settings and switch records; authentication request headers are derived automatically from the API format when used. Set a backup password of at least 8 characters; restores must use the same password, and the app never stores it."],
+  "backup.cloud.guide.save.body": ["测试成功后点击「保存连接」。首次备份会加密完整供应商档案（含运行参数、API 格式和最大输出 token）、客户端设置和切换记录；备份密码至少 8 位，恢复需同一条密码，应用不保存它。", "After the test succeeds, click “Save connection”. The first backup encrypts the complete provider profiles (including run parameters, API format and max output tokens), client settings and switch records; the backup password needs at least 8 characters, restores must use the same password, and the app never stores it."],
 
   // Cloud backup panel: forms and confirmations
   "backup.cloud.loadingAria": ["正在读取云端备份设置", "Reading cloud backup settings"],
@@ -162,7 +162,6 @@ export const messages = {
   "backup.cloud.restore": ["从云端恢复", "Restore from cloud"],
   "backup.cloud.uploadConfirmTitle": ["确认上传加密云端备份", "Confirm encrypted cloud backup upload"],
   "backup.cloud.uploadConfirmConfirm": ["确认备份", "Back up"],
-  "backup.cloud.uploadConfirm1": ["将加密当前供应商档案、客户端设置和切换记录。", "The current provider profiles, client settings and switch records will be encrypted."],
   "backup.cloud.uploadConfirm2": ["将替换此 Supabase 账户已有的云端备份。", "Any existing cloud backup on this Supabase account will be replaced."],
   "backup.cloud.uploadConfirm3": ["项目 Auth 登录密码和备份密码不会保存。", "The project Auth sign-in password and the backup password are never stored."],
   "backup.cloud.restoreConfirmTitle": ["确认从云端恢复", "Confirm restore from cloud"],

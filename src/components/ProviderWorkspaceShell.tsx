@@ -91,7 +91,7 @@ export function ProviderWorkspaceShell({
           }
         />
       <DualRelay statuses={statuses} profiles={profiles} locks={locks} />
-      <section className="asb-panel asb-provider-list-panel" aria-label={t("providers.list.aria")}>
+      <section className="asb-provider-list" aria-label={t("providers.list.aria")}>
         {children}
       </section>
     </section>

@@ -186,7 +186,6 @@ export function SkillDisableScopeSheet({
         </>
       }
     >
-      <p>{t("extensions.disableScope.body")}</p>
       <label className="asb-field">
         <span>{t("extensions.disableScope.field")}</span>
         <Select

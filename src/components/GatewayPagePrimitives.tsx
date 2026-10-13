@@ -37,8 +37,7 @@ export function GatewayPanel({ children, controls }: { children: ReactNode; cont
   const { t } = useI18n();
   return (
     <section className="asb-panel asb-gateway-panel" aria-label={t("gateway.panelAriaLabel")}>
-      <ModuleHeader title={t("gateway.title")} primary={<p className="asb-gateway-intro">{t("gateway.intro")}</p>}
-        primaryActions={controls} />
+      <ModuleHeader title={t("gateway.title")} primaryActions={controls} />
       <div className="asb-gateway-stack">{children}</div>
     </section>
   );

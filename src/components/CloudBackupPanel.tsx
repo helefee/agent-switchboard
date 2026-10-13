@@ -377,7 +377,6 @@ export function CloudBackupPanel({
           onCancel={() => setPending(null)}
         >
           <ul className="asb-dialog-details">
-            <li>{t("backup.cloud.uploadConfirm1")}</li>
             <li>{t("backup.cloud.uploadConfirm2")}</li>
             <li>{t("backup.cloud.uploadConfirm3")}</li>
           </ul>

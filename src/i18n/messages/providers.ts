@@ -72,7 +72,6 @@ export const messages = {
   "providers.test.connectivity": ["连通性测试", "Connectivity test"],
   "providers.test.liveRequest": ["真实请求", "Live request"],
   "providers.test.needUrl": ["请先填写服务地址。", "Enter a service address first."],
-  "providers.test.connectivityNote": ["仅检测服务地址是否可达，不携带密钥，不发送模型请求。", "Only checks that the service address is reachable; no key is attached and no model request is sent."],
   "providers.test.probing": ["检测中…", "Probing…"],
   "providers.test.start": ["开始检测", "Start test"],
   "providers.test.needFields": ["请填写服务地址、API 密钥，并选择有效的 API 格式和请求模式。", "Enter the service address and API key, and pick a valid API format and request mode."],
@@ -147,7 +146,7 @@ export const messages = {
   "providers.probe.slow": ["连通但较慢", "Reachable but slow"],
   "providers.probe.result": ["{grade} · HTTP {status} · {latency} 毫秒", "{grade} · HTTP {status} · {latency} ms"],
   "providers.probe.networkFailed": ["网络请求失败", "The network request failed"],
-  "providers.probe.note": ["检测仅确认服务地址可达，不发送模型请求，也不验证密钥是否有效。", "The probe only confirms the service address is reachable; it sends no model request and does not validate the key."],
+  "providers.probe.note": ["仅确认服务地址可达：不携带密钥、不发送模型请求，也不验证密钥有效性。", "Only confirms the service address is reachable: no key is attached, no model request is sent, and the key is never validated."],
 
   // Fact path.
   "providers.factPath.openTitle": ["打开所在位置", "Open location"],
@@ -239,8 +238,6 @@ export const messages = {
   // Editor: connection test section.
   "providers.editor.test.collapse": ["收起测试", "Collapse tests"],
   "providers.editor.test.open": ["测试供应商", "Test provider"],
-  "providers.editor.test.expanded": ["测试工具已展开", "Test tools expanded"],
-  "providers.editor.test.ready": ["准备就绪", "Ready"],
   "providers.editor.test.needFields": ["请先完成连接字段", "Complete the connection fields first"],
 
   // Editor: main model and Claude mapping.
@@ -267,13 +264,13 @@ export const messages = {
   "providers.editor.responses.requestMode": ["请求模式", "Request mode"],
   "providers.editor.responses.standard": ["标准请求", "Standard requests"],
   "providers.editor.responses.minimal": ["最小请求", "Minimal requests"],
-  "providers.editor.responses.minimalNote": ["经本机网关移除可选扩展字段，保留输入与工具语义；网关先还原 previous_response_id 引用的上下文，再发送完整输入；引用失效时明确报错。此模式不发送 store，数据保留遵循供应商默认策略。", "The local gateway strips optional extension fields while preserving input and tool semantics; it first restores the context referenced by previous_response_id, then sends the full input, and reports a clear error when a reference is stale. This mode sends no store field; data retention follows the provider's default policy."],
-  "providers.editor.responses.standardNote": ["保留客户端发送的 Responses 字段；供应商不支持可选扩展字段时，可选择最小请求。", "Keeps the Responses fields the client sends; choose minimal requests when the provider does not support optional extension fields."],
+  "providers.editor.responses.minimalNote": ["经本机网关移除可选扩展字段并还原 previous_response_id 上下文，不发送 store；引用失效时明确报错。", "The local gateway strips optional extension fields and restores previous_response_id context, sending no store field; stale references fail with a clear error."],
+  "providers.editor.responses.standardNote": ["保留客户端发送的全部 Responses 字段。", "Keeps every Responses field the client sends."],
   "providers.editor.responses.transportNote": ["第三方统一使用 HTTP/SSE；Codex 与本机网关之间可使用 WebSocket，无需供应商开关。", "Third parties always use HTTP/SSE; WebSocket may be used between Codex and the local gateway without any provider-side switch."],
 
   // Editor: runtime parameters page.
   "providers.parameters.aria": ["供应商运行参数", "Provider runtime parameters"],
-  "providers.parameters.help": ["运行参数随此供应商保存；当前设置来自已保存的供应商档案，新建供应商从默认值开始。修改会在返回编辑后统一保存。", "Runtime parameters are saved with this provider; current settings come from the saved profile, and a new provider starts from the defaults. Changes are saved together after returning to the editor."],
+  "providers.parameters.help": ["运行参数随此供应商保存，返回编辑后统一保存；新建供应商从默认值开始。", "Runtime parameters are saved with this provider and committed when you return to the editor; a new provider starts from the defaults."],
   "providers.parameters.reset": ["恢复运行参数默认值", "Restore default runtime parameters"],
   "providers.parameters.loading": ["正在读取运行参数", "Loading runtime parameters"],
   "providers.parameters.retry": ["重新读取运行参数", "Reload runtime parameters"],

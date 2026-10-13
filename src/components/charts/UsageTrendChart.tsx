@@ -52,7 +52,7 @@ export function UsageTrendChart({
   const prepared = useMemo(() => prepareTrendSeries(series), [series, t]);
 
   if (prepared.length === 0) {
-    return <p className="asb-chart-empty" role="status">{emptyMessage || t("usage.trend.noData")}</p>;
+    return <p className="asb-chart-empty" role="status">{emptyMessage}</p>;
   }
 
   if (!trendSeriesShareUnit(prepared)) {

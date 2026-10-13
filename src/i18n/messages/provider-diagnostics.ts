@@ -37,7 +37,7 @@ export const messages = {
   "doctor.undo": ["预览撤回修复", "Preview undo repair"],
   "doctor.confirmUndo": ["确认撤回", "Confirm undo"],
   "doctor.undone": ["已撤回此次修复。", "This repair was undone."],
-  "doctor.backup": ["备份：{id}", "Backup: {id}"],
-  "doctor.backupLocation": ["关闭此窗口后，也可在「设置 → 备份恢复」查看和恢复备份。", "After closing this window, you can also inspect and restore the backup in Settings → Backup recovery."],
+  "doctor.backup": ["备份：{id}；", "Backup: {id};"],
+  "doctor.backupLocation": ["之后可在「设置 → 备份恢复」查看或恢复。", "Inspect or restore it later in Settings → Backup recovery."],
   "doctor.catalogOnly": ["本次仅补齐应用生成的模型目录；该文件会保留，没有配置或认证变更需要撤回。", "This repair only recreated a generated model catalog. That file is retained; there are no configuration or authentication changes to undo."],
 } as const satisfies Record<string, MessageEntry>;

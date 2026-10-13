@@ -167,17 +167,17 @@
 /* ---------------------------------------------------------------------------
  * Empty state — the one shape (DESIGN.md §8).
  *
- * A glyph, a section-step heading, one line of explanation, at most one
- * action. Every page or section that can be empty renders this and nothing
- * else, so "there is nothing here" is never confused with "still loading"
- * (a loading line stays an .asb-empty note) and never with "your filter
- * matched nothing" (the heading and action say which).
+ * A glyph, a section-step heading, at most one action. Every page or section
+ * that can be empty renders this and nothing else, so "there is nothing
+ * here" is never confused with "still loading" (a loading line stays an
+ * .asb-empty note) and never with "your filter matched nothing" (the heading
+ * and action say which). The heading alone carries the explanation — a
+ * detail line under it is not part of the shape.
  *
  * Markup contract:
  *   <div class="asb-empty-state">
  *     <span class="asb-empty-state-icon" aria-hidden="true">…</span>
  *     <h3 class="asb-section-title">…</h3>
- *     <p class="asb-empty-state-detail">…</p>
  *     <Button …>…</Button>
  *   </div>
  * ------------------------------------------------------------------------- */
@@ -198,13 +198,6 @@
   border-radius: var(--asb-radius-pill);
   background: var(--asb-content-muted);
   color: var(--asb-text-muted);
-}
-
-.asb-empty-state-detail {
-  margin: 0;
-  max-width: 34em;
-  color: var(--asb-text-muted);
-  font: var(--asb-text-label);
 }
 
 /* ---------------------------------------------------------------------------

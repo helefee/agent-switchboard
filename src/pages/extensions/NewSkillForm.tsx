@@ -37,7 +37,6 @@ export function NewSkillForm({
         <span>{t("extensions.newSkill.name")}</span>
         <Input
           required
-          placeholder="note-helper"
           value={newSkillName}
           disabled={busy}
           onChange={(event) => setNewSkillName(event.target.value)}

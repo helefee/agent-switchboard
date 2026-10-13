@@ -81,6 +81,6 @@ export const messages = {
 
   "recovery.aria": ["界面恢复", "Interface recovery"],
   "recovery.title": ["界面未能加载", "The interface failed to load"],
-  "recovery.body": ["重新加载界面可尝试恢复，尚未保存的编辑将丢失。已保存的配置不受影响。", "Reload the interface to try to recover. Unsaved edits will be lost. Saved configuration is preserved."],
+  "recovery.body": ["重新加载可尝试恢复，未保存的编辑将丢失；已保存的配置不受影响。", "Reload to try to recover; unsaved edits are lost, saved configuration is untouched."],
   "recovery.reload": ["重新加载界面", "Reload interface"],
 } as const satisfies Record<string, MessageEntry>;

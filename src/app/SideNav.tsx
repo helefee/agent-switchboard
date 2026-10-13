@@ -13,7 +13,6 @@ import {
   CollapseNavigationIcon,
   ExpandNavigationIcon,
 } from "../components/icons";
-import appIcon from "../assets/app-icon.svg";
 
 /** Icon per top-level page; the mapping sits beside the rail, its single
  * consumer, while the page list itself stays owned by navigation.ts. */
@@ -42,7 +41,6 @@ export function SideNav({ page, onPageChange, collapsed, onToggle }: SideNavProp
   return (
     <aside className="asb-sidebar">
       <div className="asb-sidebar-top" data-tauri-drag-region>
-        <img className="asb-sidebar-icon" src={appIcon} alt="" data-tauri-drag-region />
         <Button variant="icon" aria-label={t(collapsed ? "shell.nav.expand" : "shell.nav.collapse")}
           aria-expanded={!collapsed} aria-controls="asb-primary-navigation" onClick={onToggle}>
           {collapsed ? <ExpandNavigationIcon /> : <CollapseNavigationIcon />}

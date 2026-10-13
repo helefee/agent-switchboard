@@ -215,7 +215,7 @@
   padding-inline: var(--asb-space-3);
 }
 
-.asb-provider-list-panel { container: provider-list / inline-size; }
+.asb-provider-list { container: provider-list / inline-size; }
 @container provider-list (max-width: 55rem) {
   .asb-row-line { grid-template-columns: var(--asb-touch-target) repeat(3, minmax(0, 1fr)); }
   .asb-row-controls { grid-column: 2 / -1; }

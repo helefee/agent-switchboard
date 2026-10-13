@@ -12,7 +12,7 @@ function ConnectivityTest({ url }: { url: string | null }) {
   const probe = useEndpointProbe(url);
   return <div className="asb-connectivity-test">
     <p className="asb-test-address">{url || t("providers.test.needUrl")}</p>
-    <p className="asb-request-note">{t("providers.test.connectivityNote")}</p>
+    <p className="asb-request-note">{t("providers.probe.note")}</p>
     <div><Button variant="secondary" disabled={!url || probe.busy} onClick={() => void probe.run()}>
       {probe.busy ? t("providers.test.probing") : t("providers.test.start")}
     </Button></div>

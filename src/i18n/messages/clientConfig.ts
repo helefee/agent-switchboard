@@ -22,7 +22,7 @@ export const messages = {
   "clientConfig.settings.memoryDirectoryHelp": ["使用绝对目录或 ~/ 开头的目录；留空使用客户端默认目录。", "Use an absolute directory or a path starting with ~/; leave empty for the client default."],
   "clientConfig.settings.outputLimitHelp": ["填写正整数；实际输出仍受所选模型与客户端上限约束。", "Enter a positive integer; actual output remains subject to model and client limits."],
   "clientConfig.modelEffort.title": ["按模型推理强度", "Per-model reasoning effort"],
-  "clientConfig.modelEffort.help": ["填写实际模型标识并选择持久化强度。网关会同步模型路由；同一模型再次添加会更新其强度。自动表示移除此项覆盖，max 不可保存为模型默认值。", "Enter the actual model identifier and a persistent effort level. Gateway mode maps model routes; adding the same model updates its effort. Automatic removes the override; max cannot be saved as a model default."],
+  "clientConfig.modelEffort.help": ["填写实际模型标识与持久化强度；同一模型再次添加即更新强度，自动为移除覆盖，max 不能存为默认。", "Enter the actual model identifier and a persistent effort; re-adding a model updates its effort, automatic removes the override, and max cannot be a default."],
   "clientConfig.modelEffort.model": ["模型标识", "Model identifier"],
   "clientConfig.modelEffort.choose": ["选择推理强度", "Choose effort"],
   "clientConfig.modelEffort.forModel": ["{model} 的推理强度", "Effort for {model}"],
@@ -50,8 +50,8 @@ export const messages = {
   "clientConfig.review.readingReal": ["正在读取当前机器的真实配置。", "Reading this machine's real configuration."],
   "clientConfig.review.readError": ["无法读取当前机器的真实配置：{message}", "Failed to read this machine's real configuration: {message}"],
   "clientConfig.review.scopeTitle": ["ASB 管理范围", "Managed by ASB"],
-  "clientConfig.review.scopeHelp": ["标准通用设置由本页表单管理；收起通用配置文件后，请使用对应设置项修改。", "Standard common settings are managed by the forms on this page; collapse the common configuration file and edit the corresponding settings."],
-  "clientConfig.review.scopeCodexHelp": ["Codex 子 agent 的三项全局运行设置由“子 agent 运行”模块管理。", "The three global run settings for Codex subagents are managed by the \"Subagent run\" module."],
+  "clientConfig.review.scopeHelp": ["通用设置由本页表单管理，收起通用配置文件后请用对应设置项修改。", "Common settings are managed by the forms on this page; after collapsing the common configuration file, edit them through their settings."],
+  "clientConfig.review.scopeCodexHelp": ["Codex 子 agent 的三项全局运行设置由「子 agent 运行」模块管理。", "Codex's three global subagent run settings are managed by the \"Subagent run\" module."],
 
   // Editor load errors.
   "clientConfig.loadError": ["无法读取客户端设置：{message}", "Failed to read client settings: {message}"],
@@ -86,7 +86,7 @@ export const messages = {
   "clientConfig.reset.deepLead": ["清除 ASB 管理的标准通用配置覆盖，并移除真实配置中界面未拥有的字段。", "Clear the standard common setting overrides managed by ASB and remove fields in the real configuration that the UI does not own."],
   "clientConfig.reset.nativeLead": ["清除 ASB 管理的标准通用配置覆盖，让客户端按其原生默认行为运行。", "Clear the standard common setting overrides managed by ASB so the client runs on its native defaults."],
   "clientConfig.reset.advancedCheckbox": ["同时移除界面外字段（高级范围）", "Also remove fields outside the UI (advanced scope)"],
-  "clientConfig.reset.advancedCheckboxHelp": ["开启后额外移除真实配置中界面未拥有的字段，包括第三方工具或手动添加的内容；移除项会先创建备份，可从历史备份恢复。", "When enabled, fields in the real configuration that the UI does not own are also removed, including content added by third-party tools or by hand; removals are backed up first and can be restored from backup history."],
+  "clientConfig.reset.advancedCheckboxHelp": ["移除项（含第三方或手动添加的字段）会先创建备份，可从历史备份恢复。", "Removals — including third-party or hand-added fields — are backed up first and can be restored from backup history."],
   "clientConfig.reset.scopeWillRestore": ["将恢复", "Will restore"],
   "clientConfig.reset.scopeStandardSettings": ["ASB 管的标准客户端通用设置", "Standard client common settings managed by ASB"],
   "clientConfig.reset.scopeCodexSubagent": ["Codex 的 3 项子 agent 全局运行设置", "The 3 global subagent run settings of Codex"],
@@ -115,7 +115,7 @@ export const messages = {
 
   // Extra common configuration.
   "clientConfig.extra.title": ["额外通用配置", "Extra common settings"],
-  "clientConfig.extra.actionHelp": ["这些字段来自配置草稿，不包含在上方的原生默认值恢复中。当前管理 {count} 项额外配置。", "These fields come from the configuration draft and are not part of the native-defaults restore above. {count} extra configuration entries are currently managed."],
+  "clientConfig.extra.actionHelp": ["来自配置草稿，不含在原生默认值恢复内；当前管理 {count} 项。", "From the configuration draft, outside the native-defaults restore; {count} entries managed."],
   "clientConfig.extra.savedNotice": ["已加入当前通用设置草稿；收起通用配置文件后可保存并预览应用。", "Added to the current common settings draft; collapse the common configuration file to save and preview the apply."],
   "clientConfig.extra.invalid": ["Claude 额外通用配置无效", "Invalid Claude extra common configuration"],
   "clientConfig.extra.editorTitle": ["ASB 管理的额外通用配置", "Extra common settings managed by ASB"],

@@ -9,12 +9,6 @@
 
 .asb-gateway-panel { container: gateway / inline-size; }
 
-.asb-gateway-intro {
-  margin: 0;
-  color: var(--asb-text-muted);
-  font: var(--asb-text-label);
-}
-
 /* —— 网关节点：全图唯一视觉锚点 —— */
 
 .asb-gateway-hub {

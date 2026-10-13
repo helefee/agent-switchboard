@@ -177,9 +177,7 @@ function GatewayRecentRequests({ samples, profileNames, focus }: {
           {recent.length > 0 ? t("gateway.recentCount", { count: recent.length }) : t("gateway.noRecords")}
         </span>
       </header>
-      {recent.length === 0 ? (
-        <p className="asb-gateway-empty" role="status">{focus === "all" ? t("gateway.noRequests") : t("gateway.noClientRequests", { app: clientFullName(focus) })}</p>
-      ) : (
+      {recent.length > 0 && (
         <div className="asb-gateway-recent-table">
           <Table
             ariaLabel={t("gateway.recentTableAriaLabel")}

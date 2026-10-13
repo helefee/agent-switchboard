@@ -33,7 +33,7 @@ function outcomeView(result: McpCheckResult): { badge: string; tone: string; tex
         text: tr("extensions.check.failedDetail", { classification: outcome.classification, message: outcome.error }),
       };
     case "cancelled":
-      return { badge: tr("extensions.check.cancelled"), tone: "", text: tr("extensions.check.cancelledDetail") };
+      return { badge: tr("extensions.check.cancelled"), tone: "", text: "" };
     case "needsNativeConfirmation":
       return {
         badge: tr("extensions.check.needsNativeConfirmation"),
@@ -53,7 +53,7 @@ function CheckResults({ item, projectNames, check }: ExtensionManagementProps) {
         { key: "result", header: t("extensions.table.result"), render: ({ result, view }) => (
           <div className="asb-ext-table-cell-stack">
             <span className="asb-pill-status">{view.badge}</span>
-            <span className={view.tone}>{view.text}{result.truncated ? t("extensions.check.truncated") : ""}</span>
+            {view.text && <span className={view.tone}>{view.text}{result.truncated ? t("extensions.check.truncated") : ""}</span>}
           </div>
         ) },
         { key: "time", header: t("extensions.table.checkedAt"), render: ({ result }) => <Time iso={result.checkedAt} /> },

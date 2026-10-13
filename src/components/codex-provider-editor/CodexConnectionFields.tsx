@@ -147,13 +147,13 @@ export function CodexConnectionFields({ editor, busy }: Props) {
               ...current,
               connection: { ...current.connection, modelsUrl: event.target.value.trim() || null },
             }))} />
-          <p className="asb-scope-note">{t("codex.connection.modelsUrlNote")}</p>
+          <p className="asb-scope-note">{t("providers.editor.modelsUrlNote")}</p>
         </label>
         <div className="asb-provider-route-note">
           {gatewayRoute
             ? <p className="asb-scope-note asb-warn-text">{connection.gatewayRouteWarning}</p>
             : <p className="asb-scope-note">
-              {t("codex.connection.directNote", { client: clientName("codex") })}
+              {t("providers.editor.route.direct", { client: clientName("codex") })}
             </p>}
           {draft.upstream !== "responses" && (
             <p className="asb-scope-note asb-warn-text">

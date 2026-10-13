@@ -16,8 +16,7 @@ export function ProviderRepairPane({ repair }: {
     {repair.error && <p className="asb-warn-text" role="alert">{repair.error}</p>}
     {repair.warnings.length > 0 && <ul className="asb-warnings">{repair.warnings.map((warning, index) =>
       <li key={index}>{localizedMessageText(warning, t)}</li>)}</ul>}
-    {repair.receipt && <p className="asb-scope-note">{t("doctor.backup", { id: repair.receipt.outcome.backup.id })}
-      <br />{t("doctor.backupLocation")}</p>}
+    {repair.receipt && <p className="asb-scope-note">{t("doctor.backup", { id: repair.receipt.outcome.backup.id })}{" "}{t("doctor.backupLocation")}</p>}
     {repair.receipt && !repair.receipt.canUndo && <p className="asb-scope-note">{t("doctor.catalogOnly")}</p>}
     {pending?.kind === "repair" && <PreviewInspector filePreview={pending.preview.file} userConfigModel={null} userConfigWarnings={[]} />}
     {pending?.kind === "undo" && <DiffView changes={pending.preview.changes} label={t("doctor.undo")} />}

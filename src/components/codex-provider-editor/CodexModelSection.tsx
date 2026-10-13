@@ -33,10 +33,6 @@ function modelName(entry: EditableCodexCatalogEntry, t: TFunction): string {
   return entry.id || t("codex.model.fallbackName");
 }
 
-function imageInputNote(entry: EditableCodexCatalogEntry, t: TFunction): string {
-  return entry.images ? t("codex.model.imageInputNoteProfileYes") : t("codex.model.imageInputNoteProfileNo");
-}
-
 function CatalogCapabilities({ entry, capabilities, busy, update, toggleReasoning }: {
   entry: EditableCodexCatalogEntry;
   capabilities: CodexEditorState["draft"]["capabilities"];
@@ -67,7 +63,6 @@ function CatalogCapabilities({ entry, capabilities, busy, update, toggleReasonin
         disabled={busy || !capabilities.compact}
         onChange={(checked) => update({ compact: checked && capabilities.compact })} />
     </div>
-    <p className="asb-scope-note">{imageInputNote(entry, t)}</p>
   </>;
 }
 

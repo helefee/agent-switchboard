@@ -56,7 +56,7 @@ export function ProviderConnectionTest({
           aria-controls={id} onClick={() => setOpen((value) => !value)}>
           <ConnectivityIcon />{open ? t("providers.editor.test.collapse") : t("providers.editor.test.open")}
         </Button>
-        <span className="asb-field-help">{open ? t("providers.editor.test.expanded") : target ? t("providers.editor.test.ready") : t("providers.editor.test.needFields")}</span>
+        {!open && !target && <span className="asb-field-help">{t("providers.editor.test.needFields")}</span>}
       </div>
       {active && <div className={`asb-provider-test-disclosure${open ? " is-open" : ""}`} aria-hidden={!open}>
         <ProviderTestPanel id={id} name={t("providers.test.draftName")} url={baseUrl?.trim() || null} target={target}

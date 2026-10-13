@@ -87,7 +87,6 @@ function ProjectPlanDetails({
         <input type="radio" name={ledgerName} checked={!selectedId} disabled={busy} onChange={() => select(null)} />
         <span className="asb-client-management-option-text">
           <span className="asb-client-management-option-name">{t("codex.plans.newScenario")}</span>
-          <span className="asb-client-management-option-meta">{t("codex.plans.newScenarioMeta")}</span>
         </span>
       </label>
       {view.plans.map((plan) => (

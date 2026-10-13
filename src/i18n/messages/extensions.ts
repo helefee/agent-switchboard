@@ -61,7 +61,7 @@ export const messages = {
   "extensions.check.results": ["各目标最近检测结果", "Latest check results by target"],
   "extensions.check.run": ["检测", "Check"],
   "extensions.check.target": ["检测目标", "Check target"],
-  "extensions.check.contextHint": ["检测运行库中当前配置。用户级目标使用用户目录，项目目标使用项目目录；Codex 的工作目录设置优先。结果不代表客户端实际连接状态。", "The check runs the current library configuration. User targets use the home directory; project targets use the project directory. Codex working-directory settings take precedence. Results do not establish the native client's connection state."],
+  "extensions.check.contextHint": ["按当前库配置在对应目录运行，Codex 工作目录设置优先；结果不代表客户端实际连接状态。", "Runs the current library configuration in the target's directory; Codex working-directory settings take precedence. Results do not establish the client's real connection state."],
   "extensions.check.running": ["正在检测…", "Checking…"],
   "extensions.check.cancelling": ["正在取消检测…", "Cancelling the check…"],
   "extensions.check.passed": ["通过", "Passed"],
@@ -71,7 +71,6 @@ export const messages = {
   "extensions.check.failed": ["失败", "Failed"],
   "extensions.check.failedDetail": ["{classification}：{message}", "{classification}: {message}"],
   "extensions.check.cancelled": ["已取消", "Cancelled"],
-  "extensions.check.cancelledDetail": ["检测已被取消", "The check was cancelled"],
   "extensions.check.needsNativeConfirmation": ["需要客户端验证", "Client confirmation required"],
   "extensions.check.nativeConfirmationDetail": ["该传输或授权需要原生客户端验证；请在客户端 MCP 管理界面检查。", "This transport or authorization requires native-client verification; check the client's MCP management view."],
   "extensions.check.duration": ["{duration} ms", "{duration} ms"],
@@ -116,7 +115,6 @@ export const messages = {
 
   "extensions.disableScope.title": ["选择 Claude 项目 Skill 停用范围", "Choose the scope for disabling Claude project skills"],
   "extensions.disableScope.confirm": ["执行停用", "Disable"],
-  "extensions.disableScope.body": ["Claude 的项目 Skill 可见性规则可写入项目共享设置或个人本地设置。请选择本次规则的作用范围。", "Claude's project skill visibility rules can be written to project-shared settings or personal local settings. Choose the scope for this change."],
   "extensions.disableScope.field": ["停用规则写入位置", "Where to write the disable rule"],
   "extensions.disableScope.local": ["个人本地设置", "Personal local settings"],
   "extensions.disableScope.shared": ["项目共享设置", "Project shared settings"],
@@ -175,7 +173,7 @@ export const messages = {
   "extensions.history.resultsAria": ["{time} 操作的各目标结果", "Target results for the operation at {time}"],
   "extensions.history.rollback": ["回滚：已恢复 {restored} 个目标，失败 {failed} 个。", "Rollback: restored {restored} targets, {failed} failed."],
 
-  "extensions.import.pathLabel": ["便携包文件路径（.json，导出的内容不含任何密钥）", "Portable package file path (.json; exported content contains no secrets)"],
+  "extensions.import.pathLabel": ["便携包文件路径（.json）", "Portable package file path (.json)"],
   "extensions.import.pick": ["选择 JSON", "Choose JSON"],
   "extensions.import.submit": ["导入便携包", "Import portable package"],
 
@@ -196,7 +194,6 @@ export const messages = {
   "extensions.library.emptyMcp": ["还没有 MCP 服务", "No MCP servers yet"],
   "extensions.library.noFilterMatches": ["没有符合过滤条件的扩展", "No extensions match the filters"],
   "extensions.library.loadFailed": ["扩展库加载失败", "Failed to load the extension library"],
-  "extensions.library.loadFailedDetail": ["重试以读取本机扩展库。", "Retry to read the local extension library."],
   "extensions.library.reload": ["重新加载", "Reload"],
   "extensions.library.showing": ["显示 {count} 项", "Showing {count} items"],
 
@@ -299,7 +296,7 @@ export const messages = {
   "extensions.remove.unboundBody": ["此操作不改动任何客户端配置文件。", "This operation does not touch any client configuration files."],
 
   "extensions.repo.title": ["Skill 仓库", "Skill repositories"],
-  "extensions.repo.summaryLead": ["管理 Skill 来源，已安装的 Skill 不会被移除。共 ", "Manage skill sources; installed skills are kept. "],
+  "extensions.repo.summaryLead": ["共 ", "Total: "],
   "extensions.repo.summaryTail": [" 个仓库", " repositories"],
   "extensions.repo.add": ["添加仓库", "Add repository"],
   "extensions.repo.backToSearch": ["返回 Skills 查找", "Back to skill search"],

@@ -40,7 +40,6 @@ export function ExtensionLibraryPanel({ workspace }: { workspace: ExtensionWorks
     return (
       <div className="asb-empty-state" role="alert">
         <h3 className="asb-section-title">{t("extensions.library.loadFailed")}</h3>
-        <p className="asb-empty-state-detail">{t("extensions.library.loadFailedDetail")}</p>
         <Button
           variant="secondary"
           disabled={workspace.busy}
