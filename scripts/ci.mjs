@@ -1,15 +1,28 @@
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { createWriteStream, mkdirSync, mkdtempSync, readFileSync, readdirSync, writeFileSync } from "node:fs";
 import { homedir } from "node:os";
 import { join, resolve } from "node:path";
 import { fileURLToPath } from "node:url";
+import { ensurePinnedNode } from "./pinned-node.mjs";
 
 const root = fileURLToPath(new URL("../", import.meta.url));
 const expectedNode = readFileSync(join(root, ".node-version"), "utf8").trim();
-if (process.versions.node !== expectedNode) {
-  throw new Error(`CI requires Node ${expectedNode}; received ${process.versions.node}`);
-}
 if (!process.env.npm_execpath) throw new Error("Run this gate with npm run ci");
+if (process.env.ASB_CI_PINNED !== "1") {
+  // The gate always executes on the pinned toolchain: a matching PATH Node is
+  // used only when it passes the same health check, otherwise the owned copy
+  // under .tmp/node is (re-)provisioned with checksum verification. No manual
+  // local install is ever trusted — the Windows Temp copy rotted silently.
+  const toolchain = await ensurePinnedNode(root, expectedNode);
+  const rerun = spawnSync(toolchain.nodeBin, [fileURLToPath(import.meta.url)], {
+    stdio: "inherit",
+    env: { ...process.env, ASB_CI_PINNED: "1", npm_execpath: toolchain.npmCli },
+  });
+  process.exit(rerun.status ?? 1);
+}
+if (process.versions.node !== expectedNode) {
+  throw new Error(`Pinned CI toolchain drift: expected Node ${expectedNode}, received ${process.versions.node}`);
+}
 
 mkdirSync(join(root, ".tmp"), { recursive: true });
 const output = mkdtempSync(join(root, ".tmp", "ci-"));
