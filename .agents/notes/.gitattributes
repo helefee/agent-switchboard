@@ -1,0 +1,5 @@
+# Archived notes are byte-frozen: their manifest seals hash raw bytes, so
+# checkouts must never rewrite line endings (a CRLF checkout fails every seal
+# on verify-archived-agent-notes).
+**/*.md text eol=lf
+**/manifest.json text eol=lf
