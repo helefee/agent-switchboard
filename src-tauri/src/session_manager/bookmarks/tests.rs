@@ -14,7 +14,7 @@ fn snapshot() -> (SessionMeta, SessionMessage) {
 #[test]
 fn bookmarks_are_idempotent_persistent_snapshots() {
     let temp = tempdir().unwrap();
-    assert!(list_bookmarks(temp.path()).unwrap().is_empty());
+    assert!(search_bookmarks(temp.path(), BookmarkSearchRequest::default()).unwrap().items.is_empty());
     assert!(!database_path(temp.path()).exists());
     let (meta, message) = snapshot();
     let first = save_snapshot(temp.path(), &meta, &message).unwrap();
@@ -24,11 +24,11 @@ fn bookmarks_are_idempotent_persistent_snapshots() {
     assert_eq!(first.id, second.id);
     assert_eq!(first.saved_at, second.saved_at);
     assert_eq!(second.session_title, meta.title);
-    let rows = list_bookmarks(temp.path()).unwrap();
+    let rows = search_bookmarks(temp.path(), BookmarkSearchRequest::default()).unwrap().items;
     assert_eq!(rows.len(), 1);
-    assert_eq!(rows[0].content, message.content);
+    assert_eq!(rows[0].excerpt, message.content);
     delete_bookmark(temp.path(), &first.id).unwrap();
-    assert!(list_bookmarks(temp.path()).unwrap().is_empty());
+    assert!(search_bookmarks(temp.path(), BookmarkSearchRequest::default()).unwrap().items.is_empty());
 }
 
 #[test]
@@ -40,7 +40,7 @@ fn rejects_system_messages_and_does_not_replace_invalid_database() {
     let path = database_path(temp.path());
     fs::create_dir_all(path.parent().unwrap()).unwrap();
     fs::write(&path, b"corrupted database").unwrap();
-    assert!(list_bookmarks(temp.path()).is_err());
+    assert!(search_bookmarks(temp.path(), BookmarkSearchRequest::default()).is_err());
     assert_eq!(fs::read(&path).unwrap(), b"corrupted database");
 }
 
@@ -52,7 +52,7 @@ fn rejects_foreign_schema_without_migration() {
     let connection = Connection::open(&path).unwrap();
     connection.execute_batch("CREATE TABLE previous(content TEXT); PRAGMA user_version=9;").unwrap();
     drop(connection);
-    assert!(list_bookmarks(temp.path()).unwrap_err().contains("结构无效"));
+    assert!(search_bookmarks(temp.path(), BookmarkSearchRequest::default()).unwrap_err().contains("结构无效"));
     let connection = Connection::open(&path).unwrap();
     let version: i64 = connection.query_row("PRAGMA user_version", [], |row| row.get(0)).unwrap();
     assert_eq!(version, 9);
@@ -75,7 +75,7 @@ fn concurrent_duplicate_saves_keep_one_row() {
         });
         assert_eq!(first.join().unwrap().id, second.join().unwrap().id);
     });
-    assert_eq!(list_bookmarks(temp.path()).unwrap().len(), 1);
+    assert_eq!(search_bookmarks(temp.path(), BookmarkSearchRequest::default()).unwrap().items.len(), 1);
 }
 
 #[test]
@@ -111,9 +111,37 @@ fn parsed_tool_output_cannot_be_bookmarked() {
         "{\"type\":\"response_item\",\"payload\":{\"type\":\"custom_tool_call_output\",\"output\":\"patch error\"}}\n",
     )).unwrap();
     let (meta, _) = snapshot();
-    for message in read_messages(&path).unwrap() {
+    for message in collect_messages(&path).unwrap() {
         assert_eq!(message.role, "tool");
         assert!(save_snapshot(temp.path(), &meta, &message).unwrap_err().contains("只能收藏"));
     }
     assert!(!database_path(temp.path()).exists());
+}
+
+#[test]
+fn bookmark_queries_are_paged_and_content_reads_preserve_nul_and_unicode() {
+    let temp = tempdir().unwrap();
+    let (meta, mut message) = snapshot();
+    message.content = format!("head\0{}\nÄPFEL  连接", "🙂中".repeat(9000));
+    let saved = save_snapshot(temp.path(), &meta, &message).unwrap();
+    for index in 0..55 {
+        let mut next = message.clone(); next.id = format!("message-{index}");
+        save_snapshot(temp.path(), &meta, &next).unwrap();
+    }
+    let page = search_bookmarks(temp.path(), BookmarkSearchRequest {
+        query: "äpfel 连接".into(), app: Some(AppKind::Codex), offset: 0,
+    }).unwrap();
+    assert_eq!(page.total, 56);
+    assert_eq!(page.items.len(), PAGE_SIZE);
+    assert_eq!(page.items[0].excerpt.chars().count(), PREVIEW_CHARS);
+    assert_eq!(page.items[0].content_length, message.content.chars().count());
+    assert!(page.items[0].content_offset > 0);
+    let matched = load_bookmark_content(temp.path(), &page.items[0].id, page.items[0].content_offset).unwrap();
+    assert!(matched.content.contains("ÄPFEL  连接"));
+    let first = load_bookmark_content(temp.path(), &saved.id, 0).unwrap();
+    let second = load_bookmark_content(temp.path(), &saved.id, first.page_size).unwrap();
+    assert_eq!(first.content + &second.content, message.content);
+    assert_eq!(search_bookmarks(temp.path(), BookmarkSearchRequest {
+        query: "äpfel 连接".into(), app: None, offset: PAGE_SIZE,
+    }).unwrap().items.len(), 6);
 }

@@ -1,12 +1,15 @@
-/* Hover/focus tooltip (Radix portal content; no animated compositing). */
+/* Hover/focus tooltip (Radix portal content; no animated compositing). The
+   anchor is rendered by the shared Tooltip as the Radix trigger, so the
+   label's open and close keep receiving pointer events. */
 .asb-tooltip-anchor {
   display: inline-flex;
 }
 
-/* Chromium does not dispatch pointer events from disabled controls, so the
-   anchor span carrying the tooltip never sees the click that must dismiss
-   the label. Let the span take every pointer event instead. */
-.asb-tooltip-anchor > .asb-btn:disabled {
+/* Chromium does not dispatch pointer events from disabled controls, not even
+   to ancestors, so a disabled child would swallow the leave that closes the
+   label and the press that dismisses it. Remove the child from hit testing;
+   the anchor sees every pointer event instead. */
+.asb-tooltip-anchor > :disabled {
   pointer-events: none;
 }
 

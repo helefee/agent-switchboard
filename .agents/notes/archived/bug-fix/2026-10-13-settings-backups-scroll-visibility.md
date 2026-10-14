@@ -1,6 +1,7 @@
 # Agent Note: 设置页滚动被备份高度接管锁死
 
 Status: implemented
+Archived: 2026-10-14
 
 ## Problem
 

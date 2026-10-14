@@ -1,6 +1,7 @@
 import { uiMessage } from "../i18n/errors";
 import { useMessageState } from "../i18n/use-message-state";
 import { useCallback, useEffect, useState } from "react";
+import { toast, toastMessage } from "./use-toast";
 import {
   deleteCodexProbeBatches, getCodexProbeBatch, listCodexProbeHistory,
   listCodexProbeHistoryProfiles, type CodexProbeBatch, type CodexProbeBatchStatus,
@@ -128,7 +129,8 @@ export function useCodexProbeHistory(enabled: boolean, revision: string) {
   const deleteSelected = useCallback(async (ids: string[]): Promise<boolean> => {
     setDeleting(true); setDeleteError(null);
     try {
-      await deleteCodexProbeBatches(ids);
+      const result = await deleteCodexProbeBatches(ids);
+      if (result.warning) toast({ kind: "warning", title: toastMessage("storage.probeReclaimWarning", { detail: result.warning }) });
       clearSelection(); setPage(1); refresh();
       return true;
     } catch (reason) {

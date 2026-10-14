@@ -7,6 +7,7 @@
 
 use chrono::DateTime;
 use serde::{Deserialize, Serialize};
+#[cfg(test)]
 use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU8, Ordering};
@@ -73,6 +74,8 @@ static ACTIVE_LOG_LEVEL: AtomicU8 = AtomicU8::new(RuntimeLogLevel::Info.as_code(
 #[serde(rename_all = "camelCase")]
 pub enum RuntimeLogAction {
     AppStarted,
+    StorageCacheMaintained,
+    StorageHistoryArchived,
     AppSettingsSaved,
     OutboundProxySaved,
     AppSettingsRepaired,
@@ -210,43 +213,9 @@ pub fn log_directory(app: &AppHandle) -> Result<PathBuf, String> {
     crate::app_paths::log_directory(&app.config().identifier)
 }
 
-fn list_from_dir(directory: &Path) -> Result<Vec<RuntimeLogEntry>, String> {
-    let files = match fs::read_dir(directory) {
-        Ok(files) => files,
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(vec![]),
-        Err(_) => return Err("应用日志目录不可读".to_string()),
-    };
-    let mut entries = Vec::new();
-
-    for file in files {
-        let file = file.map_err(|_| "应用日志目录不可读".to_string())?;
-        let path = file.path();
-        if !file
-            .file_type()
-            .map_err(|_| "应用日志目录不可读".to_string())?
-            .is_file()
-            || !is_runtime_log_file(&path)
-        {
-            continue;
-        }
-        let text = fs::read_to_string(&path).map_err(|_| "应用日志不可读".to_string())?;
-        for line in text.lines() {
-            let Ok(entry) = serde_json::from_str::<RuntimeLogEntry>(line) else {
-                // The current file can be read while an incomplete final line
-                // is still being flushed. Old or foreign lines never become UI
-                // data merely because they share the directory.
-                continue;
-            };
-            if entry.is_valid() {
-                entries.push(entry);
-            }
-        }
-    }
-
-    entries.sort_by(|left, right| right.at.cmp(&left.at));
-    entries.truncate(MAX_VISIBLE_ENTRIES);
-    Ok(entries)
-}
+#[path = "runtime_log/reader.rs"]
+mod reader;
+use reader::list_from_dir;
 
 fn is_runtime_log_file(path: &Path) -> bool {
     let Some(name) = path.file_name().and_then(|name| name.to_str()) else {

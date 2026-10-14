@@ -8,16 +8,17 @@ import {
   Check,
   ChevronDown,
   ChevronUp,
+  ChevronsLeft,
+  ChevronsRight,
   Copy,
   Download,
   Eye,
   EyeOff,
   FolderOpen,
   GripVertical,
+  LoaderCircle,
   Minus,
   Network,
-  PanelLeftClose,
-  PanelLeftOpen,
   Pencil,
   Pin,
   Play,
@@ -25,6 +26,8 @@ import {
   ScrollText,
   Search,
   Send,
+  Server,
+  Sparkles,
   Square,
   Trash2,
   Upload,
@@ -64,13 +67,14 @@ export const PinIcon = icon(Pin, 16);
 export const GripIcon = icon(GripVertical, 18);
 export const PlayIcon = icon(Play, 16);
 export const UpdateIcon = icon(Download, 16);
+export const UpdateSpinnerIcon = icon(LoaderCircle, 16);
 export const ExportIcon = icon(Upload, 16);
 export const UsageIcon = icon(ChartColumnIncreasing, 16);
 export const ConnectivityIcon = icon(Wifi, 16);
 export const RequestIcon = icon(Send, 16);
 export const GatewayIcon = icon(Network, 20);
-export const CollapseNavigationIcon = icon(PanelLeftClose, 20);
-export const ExpandNavigationIcon = icon(PanelLeftOpen, 20);
+export const CollapseNavigationIcon = icon(ChevronsLeft, 20);
+export const ExpandNavigationIcon = icon(ChevronsRight, 20);
 
 export const ChevronDownIcon = icon(ChevronDown, 16, 2.4);
 export const ChevronUpIcon = icon(ChevronUp, 16, 2.4);
@@ -79,3 +83,7 @@ export const ScrollTextIcon = icon(ScrollText, 16, 2.4);
 export const FolderOpenIcon = icon(FolderOpen, 16);
 export const CheckIcon = icon(Check, 14, 3.6);
 export const DashIcon = icon(Minus, 14, 3.6);
+
+/** Extension kind glyphs, paired with the library empty state's imagery. */
+export const SkillKindIcon = icon(Sparkles, 14, 2.9);
+export const McpKindIcon = icon(Server, 14, 2.9);

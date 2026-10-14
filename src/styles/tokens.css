@@ -28,8 +28,6 @@
   --asb-content: hsl(0 0% 98%);
   --asb-content-muted: hsl(240 16% 96%);
   --asb-surface-rail: var(--asb-content-muted);
-  --asb-sidebar-bg: hsl(240 12% 93%);
-  --asb-sidebar-hover: color-mix(in srgb, var(--asb-text) 5%, var(--asb-sidebar-bg));
   --asb-sidebar-selected: var(--asb-row-selected);
   --asb-surface-menu: var(--asb-content);
   --asb-surface-sheet: var(--asb-content);
@@ -132,12 +130,9 @@
   /* Materials */
   --asb-shadow-modal: 0 12px 40px rgba(7, 23, 37, 0.18);
   --asb-inset-highlight: inset 0 1px 0 rgba(255, 255, 255, 0.55);
-  /* Frosted chrome material (sidebar + titlebar): the only sanctioned
-     backdrop-filter surfaces (DESIGN.md; user-directed 2026-10-13). The tint
-     is first-class per mode (dark blocks below redefine it); the blur is
-     mode-independent. */
-  --asb-chrome-bg: hsl(240 12% 93% / 0.72);
-  --asb-chrome-blur: blur(24px) saturate(1.4);
+  /* One shell tint; the native window compositor owns background blur. */
+  --asb-chrome-bg: hsl(240 12% 93% / 0.6);
+  --asb-chrome-hover: color-mix(in srgb, var(--asb-text) 5%, transparent);
 
   /* Motion */
   --asb-motion-press: 120ms;
@@ -245,9 +240,8 @@
     --asb-hairline-strong: rgba(237, 240, 247, 0.26);
      --asb-content: #0d2133;
      --asb-content-muted: #10293f;
-    --asb-chrome-bg: rgb(17 30 43 / 0.72);
+    --asb-chrome-bg: rgb(17 30 43 / 0.6);
      --asb-surface-rail: var(--asb-content-muted);
-    --asb-sidebar-bg: #111e2b;
      --asb-surface-menu: var(--asb-content);
      --asb-surface-sheet: var(--asb-content);
     --asb-row-selected: color-mix(
@@ -288,9 +282,8 @@
     --asb-hairline-strong: rgba(237, 240, 247, 0.26);
     --asb-content: #0d2133;
     --asb-content-muted: #10293f;
-    --asb-chrome-bg: rgb(17 30 43 / 0.72);
+    --asb-chrome-bg: rgb(17 30 43 / 0.6);
     --asb-surface-rail: var(--asb-content-muted);
-    --asb-sidebar-bg: #111e2b;
     --asb-surface-menu: var(--asb-content);
     --asb-surface-sheet: var(--asb-content);
     --asb-row-selected: color-mix(

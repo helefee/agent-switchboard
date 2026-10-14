@@ -1,8 +1,9 @@
-import { openUrl } from "@tauri-apps/plugin-opener";
+import { useMemo } from "react";
 import { CUSTOM_PROBE_QUESTION_ID, type CodexProbeBatch, type CodexProbeGradingVersion } from "../api/client";
 import type { TFunction } from "../i18n";
 import { useI18n } from "../i18n";
 import { Button } from "./Button";
+import { createProbeHtmlPreview } from "../lib/probe-html";
 import { Input } from "./Input";
 import { Select } from "./Select";
 import {
@@ -54,7 +55,7 @@ function CustomQuestionForm({ form, disabled }: { form: CodexProbeFormState; dis
   const { t } = useI18n();
   if (form.questionId !== CUSTOM_PROBE_QUESTION_ID) return null;
   return (
-    <div className="asb-codex-probe-custom">
+    <div className="asb-codex-probe-question">
       <span>{t("codex.probe.visual.answerFormat")}</span>
       <Select value={form.customGradingVersion} disabled={disabled}
         ariaLabel={t("codex.probe.visual.answerFormat")} options={[
@@ -72,9 +73,23 @@ function CustomQuestionForm({ form, disabled }: { form: CodexProbeFormState; dis
         <Input id="codex-probe-custom-answer" placeholder={t("codex.probe.exampleAnswer")} value={form.customAnswer}
           disabled={disabled} onChange={(event) => form.onCustomAnswerChange(event.target.value)} />
       </> : <p className="asb-codex-probe-note">{t("codex.probe.visual.note")}</p>}
-      {form.customGradingVersion === "html-visual-v1" &&
-        <p className="asb-codex-probe-note">{t("codex.probe.html.note")}</p>}
     </div>
+  );
+}
+
+/** The catalog's hand-made reference rendering through the same preview
+ * pipeline as real answers, always in view; one possible output only. */
+function ReferenceVisual({ answer }: { answer: string }) {
+  const { t } = useI18n();
+  const source = useMemo(() => createProbeHtmlPreview(answer), [answer]);
+  if (!source) return null;
+  return (
+    <>
+      <p className="asb-codex-probe-meta">{t("codex.probe.visual.referenceTitle")}</p>
+      <iframe className="asb-probe-html" srcDoc={source} sandbox="allow-scripts"
+        referrerPolicy="no-referrer" loading="lazy"
+        title={t("codex.probe.visual.referenceTitle")} />
+    </>
   );
 }
 
@@ -140,17 +155,12 @@ export function CodexProbePanel({ probe, form }: {
       {probe.cancelError && <p className="asb-warn-text" role="alert">{t("codex.probe.cancelError", { error: probe.cancelError })}</p>}
       {probe.retryError && <p className="asb-warn-text" role="alert">{t("codex.probe.retryError", { error: probe.retryError })}</p>}
       <CustomQuestionForm form={form} disabled={probe.running || probe.starting} />
-      {selected && <div className="asb-codex-probe-custom">
+      {selected && <div className="asb-codex-probe-question">
         <p className="asb-codex-probe-meta">{t("codex.probe.metaQuestion")}{selected.label}</p>
         <p className="asb-probe-question-text">{selected.text}</p>
+        {selected.referenceVisual && <ReferenceVisual answer={selected.referenceVisual} />}
         {selected.gradingVersion !== "1" &&
           <p className="asb-codex-probe-note">{t("codex.probe.visual.note")}</p>}
-        {selected.gradingVersion === "html-visual-v1" &&
-          <p className="asb-codex-probe-note">{t("codex.probe.html.note")}</p>}
-        {selected.sourceUrl && <a href={selected.sourceUrl}
-          onClick={(event) => { event.preventDefault(); if (selected.sourceUrl) void openUrl(selected.sourceUrl); }}>
-          {t("codex.probe.visual.questionSource")}
-        </a>}
       </div>}
       {probe.status ? <ProbeResults status={probe.status} probe={probe} /> : (
         <div className="asb-empty-state asb-codex-probe-empty">

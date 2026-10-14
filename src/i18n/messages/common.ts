@@ -57,6 +57,8 @@ export const messages = {
 
   "update.available": ["发现新版本 {version}", "New version available {version}"],
   "update.button": ["更新", "Update"],
+  "update.check": ["检查更新", "Check for updates"],
+  "update.checking": ["正在检查更新", "Checking for updates"],
 
   "toast.dismiss": ["关闭通知", "Dismiss notification"],
   "common.operationFailed": ["操作失败", "Operation failed"],

@@ -24,6 +24,7 @@ try {
     if (!existsSync(generated)) throw new Error("Missing generated icon: " + icon);
     copyFileSync(generated, join(iconDirectory, icon));
   }
+  copyFileSync(master, join(root, "website", "public", "favicon.svg"));
 } finally {
   rmSync(output, { force: true, recursive: true });
 }

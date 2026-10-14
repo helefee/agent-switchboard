@@ -24,5 +24,10 @@ Status: implemented
 ## Consequences
 
 - 收益：错误形状的 Anthropic 地址在保存/导入/诊断/请求任一入口都被同一规则提前拒绝，并给出可操作的中文原因；不再产生双重版本路径的静默坏请求。
-- 代价：已保存了 `/v1` 结尾 Anthropic 基址的旧档案在下次校验时会报错，需要用户改为服务根地址——这是有意的 fail-closed，不提供兼容读取。
+- 代价：已保存了 `/v1` 结尾 Anthropic 基址的旧档案在下次校验时会报错，需要用户改为服务根地址——这是有意的 fail-closed，不提供兼容读取。修复路径后续开了唯一例外（备份 + 报告下的自动剥除/丢弃），见 [修复流程解锁版本前缀死锁](2026-10-14-repair-unlocks-anthropic-version-prefix-deadlock.md)。
 - 验证：`cargo test --locked --workspace` 583 项全过（含新增契约测试与按协议拆分的夹具）。
+
+## Related decisions
+
+- [供应商诊断契约笔记](2026-10-13-provider-diagnostics-contract.md) 拥有诊断消费端点解析的方式，本次只收紧其消费的底层规则，消费结构不变。
+- [修复流程解锁版本前缀死锁](2026-10-14-repair-unlocks-anthropic-version-prefix-deadlock.md) 拥有 repair 路径对这类基址的自动改写规则；保存/导入/诊断/请求仍按本篇拒绝。

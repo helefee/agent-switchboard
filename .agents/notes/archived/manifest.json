@@ -1,6 +1,8 @@
 {
   "version": 1,
   "files": {
-    "archived/feature/2026-10-12-sidebar-navigation.md": "sha256:9524943b9eafd10ce7ab77aa43c072e6ab2ab7959d6947c28778bb911d5874db"
+    "archived/bug-fix/2026-10-13-settings-backups-scroll-visibility.md": "sha256:a142c44177049d9b2ee03a893f3113b08b9b347dba50f3ff96e5c47335c1b8bc",
+    "archived/feature/2026-10-12-sidebar-navigation.md": "sha256:9524943b9eafd10ce7ab77aa43c072e6ab2ab7959d6947c28778bb911d5874db",
+    "archived/feature/2026-10-13-frosted-glass-chrome.md": "sha256:69b1a3249a1c0a007dd97e496093eaa4619d80fdccac1eb5a476683491199fa4"
   }
 }

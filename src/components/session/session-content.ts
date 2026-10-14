@@ -1,6 +1,7 @@
 import type { SessionMeta } from "../../api/client";
 import type { MessageKey } from "../../i18n";
 import { tr } from "../../i18n/current";
+import { uiMessage } from "../../i18n/errors";
 
 const CODEX_IDE_CONTEXT_PREFIX = "# Context from my IDE setup:";
 const CODEX_REQUEST_MARKER = "my request for codex";
@@ -73,6 +74,15 @@ export function codexOutlinePreview(content: string): string | null {
   return content;
 }
 
-export function copyText(text: string): Promise<void> {
-  return navigator.clipboard.writeText(text);
+let copying = false;
+
+export async function copyText(source: string | (() => Promise<string>)): Promise<void> {
+  if (copying) throw uiMessage("sessions.message.copyBusy");
+  copying = true;
+  try {
+    if (typeof source === "string") await navigator.clipboard.writeText(source);
+    else await navigator.clipboard.write([new ClipboardItem({
+      "text/plain": source().then((text) => new Blob([text], { type: "text/plain" })),
+    })]);
+  } finally { copying = false; }
 }

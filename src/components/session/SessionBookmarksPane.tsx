@@ -1,33 +1,37 @@
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 import { Button as MenuButton, Menu, MenuItem, MenuTrigger, Popover } from "react-aria-components";
-import { getSessionMetadata, type SessionBookmark, type SessionMeta } from "../../api/client";
+import { getSessionBookmarkContent, getSessionCopyText, getSessionMetadata, type SessionBookmarkSummary, type SessionMeta } from "../../api/client";
 import { useI18n } from "../../i18n";
 import { useMessageState } from "../../i18n/use-message-state";
 import { Button } from "../Button";
-import type { ClientFilterValue } from "../ClientFilter";
+import { Pagination } from "../Pagination";
 import { ClientLogo } from "../ClientLogo";
 import { ConfirmSheet } from "../ConfirmSheet";
 import { Time } from "../Time";
 import { SessionMessageView } from "./SessionMessageView";
 import type { SessionBookmarks } from "./use-session-bookmarks";
+import { useReadingScroll } from "./use-reading-scroll";
 
-const normalized = (value: string) => value.toLowerCase().replace(/\s+/gu, " ").trim();
-
-function BookmarkDetail({ item, busy, onRemove, onOpen }: {
-  item: SessionBookmark; busy: boolean; onRemove: () => void;
-  onOpen: (session: SessionMeta, messageId: string) => void;
+function BookmarkDetail({ item, offset, scrollTop, onOffsetChange, busy, onRemove, onOpen }: {
+  item: SessionBookmarkSummary; busy: boolean; onRemove: () => void;
+  offset: number; onOffsetChange: (id: string, offset: number) => void;
+  scrollTop: { current: number };
+  onOpen: (session: SessionMeta, messageId: string, contentOffset: number) => void;
 }) {
   const { t } = useI18n();
   const [opening, setOpening] = useState(false);
   const [error, setError] = useMessageState();
   const mounted = useRef(true);
+  const { container, onScroll } = useReadingScroll(scrollTop);
+  const readContent = useCallback((_id: string, offset: number) => getSessionBookmarkContent(item.id, offset), [item.id]);
+  const readCopyText = useCallback((_id: string) => getSessionCopyText({ kind: "bookmark", id: item.id }), [item.id]);
   useEffect(() => { mounted.current = true; return () => { mounted.current = false; }; }, []);
   const open = async () => {
     setOpening(true); setError(null);
     try {
       const source = await getSessionMetadata(item.app, item.sessionId);
       if (!mounted.current) return;
-      onOpen(source, item.messageId);
+      onOpen(source, item.messageId, offset);
     } catch (caught) { if (mounted.current) setError(caught); }
     finally { if (mounted.current) setOpening(false); }
   };
@@ -50,47 +54,54 @@ function BookmarkDetail({ item, busy, onRemove, onOpen }: {
     <p className="asb-scope-note">{t("sessions.bookmarks.snapshot")}</p>
     {item.projectDir && <p className="asb-session-bookmark-path">{item.projectDir}</p>}
     {error && <p className="asb-warn-text" role="alert">{error}</p>}
-    <div className="asb-session-transcript">
-      <SessionMessageView message={{ id: item.messageId, role: item.role, content: item.content, at: item.at }}
-        targeted={false} expanded />
+    <div className="asb-session-transcript" ref={container} onScroll={onScroll}>
+      <SessionMessageView message={{ id: item.messageId, role: item.role, content: item.excerpt,
+        contentLength: item.contentLength, bookmarked: true, at: item.at }}
+        readContent={readContent} readCopyText={readCopyText} targeted={false} expanded contentOffset={offset}
+        onContentOffsetChange={(_id, next) => onOffsetChange(item.id, next)} />
     </div>
   </section>;
 }
 
-export function SessionBookmarksPane({ bookmarks, onOpen, query, filter }: {
-  bookmarks: SessionBookmarks; onOpen: (session: SessionMeta, messageId: string) => void;
-  query: string; filter: ClientFilterValue;
+export function SessionBookmarksPane({ bookmarks, onOpen }: {
+  bookmarks: SessionBookmarks; onOpen: (session: SessionMeta, messageId: string, contentOffset: number) => void;
 }) {
   const { t } = useI18n();
-  const [selectedId, setSelectedId] = useState<string | null>(null);
-  const [pending, setPending] = useState<SessionBookmark | null>(null);
-  const needle = normalized(query);
-  const items = bookmarks.items?.filter((item) => (filter === "all" || filter === item.app)
-    && [item.content, item.sessionTitle, item.projectDir ?? ""].some((text) => normalized(text).includes(needle))) ?? [];
-  const selected = items.find((item) => item.id === selectedId);
+  const [reading, setReading] = useState<{ id: string | null; offset: number }>({ id: null, offset: 0 });
+  const scrollTop = useRef(0);
+  const [pending, setPending] = useState<SessionBookmarkSummary | null>(null);
+  const items = bookmarks.items ?? [];
+  const selected = items.find((item) => item.id === reading.id);
   return <>
     <div className="asb-session-layout">
       <section className="asb-session-list" aria-label={t("sessions.bookmarks.title")} aria-busy={bookmarks.loading}>
-        <div className="asb-session-list-heading"><span>{t("sessions.bookmarks.title")}</span><span className="asb-session-count">{items.length}</span></div>
+        <div className="asb-session-list-heading"><span>{t("sessions.bookmarks.title")}</span>
+          <span className="asb-session-count">{bookmarks.result?.total ?? 0}</span></div>
         {bookmarks.loading && <p role="status">{t("sessions.bookmarks.loading")}</p>}
         {!bookmarks.loading && bookmarks.items !== null && !items.length && <p>{t("sessions.bookmarks.empty")}</p>}
         <div className="asb-session-items">{items.map((item) =>
-          <Button variant="unstyled" key={item.id} aria-pressed={selectedId === item.id}
-            className={`asb-session-item${selectedId === item.id ? " is-active" : ""}`} onClick={() => setSelectedId(item.id)}>
+          <Button variant="unstyled" key={item.id} aria-pressed={reading.id === item.id}
+            className={`asb-session-item${reading.id === item.id ? " is-active" : ""}`}
+            onClick={() => { scrollTop.current = 0; setReading({ id: item.id, offset: item.contentOffset }); }}>
             <span className="asb-session-item-title"><ClientLogo app={item.app} className="asb-session-logo" />
               <span title={item.sessionTitle}>{item.sessionTitle}</span></span>
-            <span className="asb-session-search-excerpt">{item.content.slice(0, 220)}</span>
+            <span className="asb-session-search-excerpt">{item.excerpt.slice(0, 220)}</span>
             <span className="asb-session-item-time"><Time iso={item.savedAt} /></span>
           </Button>)}</div>
+        {bookmarks.result && <Pagination total={bookmarks.result.total} page={bookmarks.page}
+          pageSize={bookmarks.result.pageSize} label={t("sessions.bookmarks.pagination")} onPageChange={bookmarks.setPage} />}
       </section>
       {selected ? <BookmarkDetail key={selected.id} item={selected} busy={bookmarks.busy || bookmarks.loading} onOpen={onOpen}
+        offset={reading.offset} scrollTop={scrollTop} onOffsetChange={(id, offset) => setReading({ id, offset })}
         onRemove={() => setPending(selected)} /> : <section className="asb-session-detail asb-session-empty-detail"
           aria-label={t("sessions.bookmarks.detail")}><p>{t("sessions.bookmarks.select")}</p></section>}
     </div>
     {pending && <ConfirmSheet title={t("sessions.bookmarks.remove")} confirmLabel={t("sessions.bookmarks.remove")}
       busy={bookmarks.busy}
       confirmDisabled={bookmarks.busy || bookmarks.loading}
-      destructive onCancel={() => setPending(null)} onConfirm={() => { void bookmarks.remove(pending.id).finally(() => setPending(null)); }}>
+      destructive onCancel={() => setPending(null)} onConfirm={() => {
+        void bookmarks.remove(pending.id).then((removed) => { if (removed) setPending(null); });
+      }}>
       <p>{t("sessions.bookmarks.removeDetail", { title: pending.sessionTitle })}</p>
     </ConfirmSheet>}
   </>;

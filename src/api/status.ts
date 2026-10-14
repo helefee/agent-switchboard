@@ -7,7 +7,12 @@ import type { RouteState, ConfigWriteRecord } from "./switching";
 /** Closed, renderer-safe runtime events emitted by the application backend. */
 export type RuntimeLogAction =
   | "appStarted"
+  | "storageCacheMaintained"
+  | "storageHistoryArchived"
   | "appSettingsSaved"
+  | "outboundProxySaved"
+  | "codexSubagentSettingsApplied"
+  | "providersSqlImported"
   | "appSettingsRepaired"
   | "profileStoreRepaired"
   | "profileCreated"

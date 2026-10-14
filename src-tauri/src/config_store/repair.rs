@@ -3,7 +3,11 @@
 
 use super::snapshot::activation::{activate_staged, Activation};
 use super::{history, write_json_atomic, ConfigStore, PROFILE_PREIMAGE_FILE, SWITCH_INTENT_FILE};
-use asb_core::contracts::{AppKind, CodexProviderFile, ProviderFile, SettingValue, SettingsValues};
+use asb_core::contracts::{
+    AppKind, CodexProviderFile, ProviderConnectionOptions, ProviderFile, RouteMode, SettingValue,
+    SettingsValues, UpstreamProtocol,
+};
+use asb_core::endpoint::strip_anthropic_version_prefix;
 use asb_core::ownership::{default_client_settings, default_provider_parameters};
 use serde::Serialize;
 use serde_json::Value;
@@ -135,12 +139,17 @@ fn repair_file(root: &Path, path: &Path, kind: FileKind) -> Result<bool, String>
     let source = text.strip_prefix('\u{feff}').unwrap_or(&text);
     let mut value: Value = serde_json::from_str(source)
         .map_err(|error| format!("{label} 的 JSON 无效：{error}"))?;
+    let mut changed = if provider {
+        repair_provider_urls(kind, &mut value)?
+    } else {
+        false
+    };
     let settings = if provider {
         value.get_mut("parameters").ok_or_else(|| format!("{label} 缺少供应商参数"))?
     } else {
         &mut value
     };
-    let changed = fill_automatic(settings, app, provider)
+    changed |= fill_automatic(settings, app, provider)
         .map_err(|error| format!("{label}：{error}"))?
         || source.len() != text.len();
     if provider {
@@ -177,6 +186,82 @@ fn fill_automatic(node: &mut Value, app: AppKind, provider: bool) -> Result<bool
     for key in missing {
         map.insert(key, serde_json::json!({ "mode": "automatic" }));
     }
+    Ok(true)
+}
+
+/// Repairs a terminal Anthropic version prefix using the endpoint owner's
+/// source and result validation. Matching candidates are removed instead of
+/// redirected; the repair backup preserves them. Full-URL mode and other
+/// protocols keep their declared targets. Typed files retain serde as the
+/// routing fields' owner; unrepairable inputs fail in `inspect_provider`.
+fn repair_provider_urls(kind: FileKind, value: &mut Value) -> Result<bool, String> {
+    match kind {
+        FileKind::ClientSettings(_) => Ok(false),
+        FileKind::CodexProvider => {
+            let Ok(mut file) = serde_json::from_value::<CodexProviderFile>(value.clone()) else {
+                return Ok(false);
+            };
+            if file.profile.upstream.protocol() != UpstreamProtocol::AnthropicMessages
+                || file.profile.connection.is_full_url
+            {
+                return Ok(false);
+            }
+            let mut changed = false;
+            if let Some(root) = strip_anthropic_version_prefix(&file.profile.endpoint.0) {
+                file.profile.endpoint.0 = root;
+                changed = true;
+            }
+            changed |= drop_version_prefixed_candidates(&mut file.profile.connection);
+            write_back_if_repaired(value, &file, changed)
+        }
+        FileKind::GenericProvider(_) => {
+            let Ok(mut file) = serde_json::from_value::<ProviderFile>(value.clone()) else {
+                return Ok(false);
+            };
+            if file.route_mode != RouteMode::Custom
+                || file.upstream_protocol != Some(UpstreamProtocol::AnthropicMessages)
+                || file.connection.is_full_url
+            {
+                return Ok(false);
+            }
+            let mut changed = false;
+            if let Some(root) = file
+                .base_url
+                .as_deref()
+                .and_then(strip_anthropic_version_prefix)
+            {
+                file.base_url = Some(root);
+                changed = true;
+            }
+            changed |= drop_version_prefixed_candidates(&mut file.connection);
+            write_back_if_repaired(value, &file, changed)
+        }
+    }
+}
+
+fn drop_version_prefixed_candidates(connection: &mut ProviderConnectionOptions) -> bool {
+    let prefixed = connection
+        .custom_endpoints
+        .keys()
+        .filter(|url| strip_anthropic_version_prefix(url).is_some())
+        .cloned()
+        .collect::<Vec<_>>();
+    let changed = !prefixed.is_empty();
+    for url in prefixed {
+        connection.custom_endpoints.remove(&url);
+    }
+    changed
+}
+
+fn write_back_if_repaired<T: Serialize>(
+    value: &mut Value,
+    file: &T,
+    changed: bool,
+) -> Result<bool, String> {
+    if !changed {
+        return Ok(false);
+    }
+    *value = serde_json::to_value(file).map_err(|error| format!("供应商文件序列化失败：{error}"))?;
     Ok(true)
 }
 

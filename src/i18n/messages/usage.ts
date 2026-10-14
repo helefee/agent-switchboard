@@ -41,7 +41,7 @@ export const messages = {
 	"usage.radar.starting": ["正在启动…", "Starting…"],
 	"usage.radar.start": ["开始检测", "Start probe"],
 	"usage.radar.history": ["历史记录", "History"],
-	"usage.radar.statusNote": ["每次检测都是真实调用并消耗额度 · 结果保存在本机检测历史", "Every probe is a real call that consumes quota · results stay in the local probe history"],
+	"usage.radar.statusNote": ["每次检测真实消耗额度 · 结果保存在本机历史", "Every probe consumes real quota · results stay on this machine"],
 
 	"usage.consumption": ["模型消耗", "Model consumption"],
 	"usage.loading": ["正在汇总本地会话记录…", "Summarizing local session records…"],

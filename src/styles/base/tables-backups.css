@@ -104,57 +104,9 @@
   margin-top: var(--asb-space-3);
 }
 
-/* The local backup tab owns the workspace height: page-level controls remain
-   fixed, while long histories scroll inside the table instead of extending
-   the application workspace. Visibility means effectively visible: the local
-   tab's own hidden flag belongs to the local/cloud sub-tab switch, while the
-   section and page hide it through hidden ancestors — sections stay mounted
-   behind their hidden tabpanel — so the test must reject hidden ancestors as
-   well or the takeover leaks into every other settings section. */
-.asb-main:has(.asb-backup-local:not([hidden], [hidden] *)) {
-  overflow: hidden;
-}
-
-/* The settings page-stack wrapper and its content column (the settings
-   workspace root) stretch to the workspace only while the local backup tab
-   is effectively visible. */
-.asb-page-stack:has(> .asb-settings-content .asb-backup-local:not([hidden], [hidden] *)),
-.asb-settings-content:has(.asb-backup-local:not([hidden], [hidden] *)) {
-  flex: 1;
-  min-height: 0;
-}
-
-.asb-settings-content:has(.asb-backup-local:not([hidden], [hidden] *)) {
-  display: flex;
-  flex-direction: column;
-}
-
-/* Keep the settings tabpanel in the flex height chain so the history receives
-   a bounded height instead of growing behind the workspace's clipped edge. */
-.asb-settings-content > [role="tabpanel"]:has(.asb-backup-local:not([hidden], [hidden] *)),
-.asb-panel:has(.asb-backup-local:not([hidden], [hidden] *)) {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  min-height: 0;
-  overflow: hidden;
-}
-
-.asb-backup-local {
-  display: flex;
-  flex: 1;
-  flex-direction: column;
-  min-height: 0;
-}
-
-.asb-backup-local > .asb-scope-note {
-  flex: none;
-}
-
 /* Local backup actions stay tied to their tab rather than the cloud flow. */
 .asb-backup-toolbar {
   display: flex;
-  flex: none;
   justify-content: flex-end;
   margin-bottom: var(--asb-space-3);
 }
@@ -163,7 +115,6 @@
    act on, on their own hairline row below the safe action cluster. */
 .asb-backup-danger-row {
   display: flex;
-  flex: none;
   justify-content: flex-end;
   border-top: 1px solid var(--asb-hairline);
   padding-top: var(--asb-space-3);
@@ -181,19 +132,6 @@
 
 .asb-backup-diff-loading {
   min-height: 96px;
-}
-
-.asb-backups {
-  flex: 1;
-  min-height: 0;
-  overflow: auto;
-  scrollbar-gutter: stable;
-}
-
-.asb-backups > .asb-table > thead th {
-  position: sticky;
-  top: 0;
-  z-index: 1;
 }
 
 /* The cloud-backup controls fill their own tab and remain a clearly bounded

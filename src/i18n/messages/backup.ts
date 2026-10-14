@@ -3,6 +3,11 @@ import type { MessageEntry } from "../types";
 /** Domain dictionary for backup (zh-CN / en-US pairs). Keys are prefixed with
  * "backup." and must never collide with another domain file. */
 export const messages = {
+  "backup.action.storageCacheMaintained": ["维护浏览器缓存", "Maintain browser cache"],
+  "backup.action.outboundProxySaved": ["保存出站代理", "Save outbound proxy"],
+  "backup.action.codexSubagentSettingsApplied": ["应用 Codex 子代理设置", "Apply Codex sub-agent settings"],
+  "backup.action.providersSqlImported": ["导入供应商 SQL", "Import provider SQL"],
+  "backup.action.storageHistoryArchived": ["归档本地历史", "Archive local history"],
   // BackupsPage shell
   "backup.aria": ["备份恢复", "Backup & Restore"],
   "backup.title": ["备份恢复", "Backup & Restore"],
@@ -190,6 +195,7 @@ export const messages = {
   "backup.update.releasePageErrorDetail": ["请检查默认浏览器后重试。", "Check the default browser and try again."],
   "backup.update.storeManaged": ["由 Microsoft Store 管理更新", "Updates are managed by Microsoft Store"],
   "backup.update.currentVersion": ["当前版本 v{version}", "Current version v{version}"],
+  "backup.update.currentNotes": ["当前版本更新日志", "Notes for this version"],
   "backup.update.storeAuto": ["Store 会自动检查并安装新版本", "The Store checks for and installs new versions automatically"],
   "backup.update.restarting": ["正在重新启动", "Restarting"],
   "backup.update.restartRequired": ["更新已安装，需要重启", "Update installed; a restart is required"],

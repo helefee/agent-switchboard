@@ -92,7 +92,7 @@ impl ProbeLedger {
     /// Deletes finished batches and their runs. A running batch blocks the
     /// whole request; deleting only the radar's own records never touches
     /// Codex sessions or the metering ledger.
-    pub(crate) fn delete_batches(&self, batch_ids: &[String]) -> Result<u32, String> {
+    pub(crate) fn delete_batches(&self, batch_ids: &[String]) -> Result<crate::storage::ReclaimOutcome, String> {
         if batch_ids.is_empty() {
             return Err("未选择要删除的检测记录".to_string());
         }
@@ -132,7 +132,7 @@ impl ProbeLedger {
             )
             .map_err(db_error)?;
         transaction.commit().map_err(db_error)?;
-        Ok(deleted as u32)
+        Ok(crate::storage::ReclaimOutcome { removed: deleted as u64, warning: crate::storage::sqlite::compact(&connection).err() })
     }
 
 }

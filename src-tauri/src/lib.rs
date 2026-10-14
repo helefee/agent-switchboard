@@ -1,5 +1,6 @@
 mod app_paths;
 mod ccswitch_source;
+mod changelog;
 mod client_config_watcher;
 mod claude_auth;
 mod claude_integration;
@@ -35,6 +36,7 @@ mod provider_request;
 mod provider_transfer;
 mod runtime_log;
 mod session_manager;
+mod storage;
 #[cfg(test)]
 mod test_client_paths;
 mod tray;
@@ -277,6 +279,7 @@ fn start_background_services(app: &mut tauri::App, local: &local_state::LocalSta
     // tray, or on another page. The scheduler thread owns that
     // cadence, so no renderer lifecycle can stop it.
     usage_query::scheduler::spawn(app.handle().clone());
+    storage::spawn(app.handle().clone());
     runtime_log::record_started();
     #[cfg(debug_assertions)]
     {

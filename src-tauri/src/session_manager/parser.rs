@@ -4,8 +4,10 @@ use chrono::{DateTime, Utc};
 use serde_json::Value;
 use sha2::{Digest, Sha256};
 use std::fs::{self, File};
-use std::io::{self, BufRead, BufReader};
+use std::io::{self, BufRead, BufReader, Read};
+use std::ops::ControlFlow;
 use std::path::Path;
+use std::sync::Mutex;
 
 const SUMMARY_LIMIT: usize = 180;
 /// Every metadata field below is first-match-wins, so once all five are
@@ -13,17 +15,30 @@ const SUMMARY_LIMIT: usize = 180;
 /// the per-file scan cost when some fields never appear; records past the cap
 /// are ignored and the title falls back as if they were absent.
 pub(super) const METADATA_LINE_LIMIT: usize = 32;
+pub(super) const MAX_RECORD_BYTES: u64 = 32 * 1024 * 1024;
+static SCAN_GATE: Mutex<()> = Mutex::new(());
+
+fn read_record(reader: &mut impl BufRead, line: &mut String) -> io::Result<bool> {
+    line.clear();
+    let bytes = (&mut *reader).take(MAX_RECORD_BYTES + 1).read_line(line)?;
+    if bytes as u64 > MAX_RECORD_BYTES {
+        return Err(io::Error::new(io::ErrorKind::InvalidData, "会话单条记录超过 32 MiB 读取上限"));
+    }
+    Ok(bytes != 0)
+}
 
 pub(super) fn parse_session(app: AppKind, path: &Path) -> Result<SessionMeta, io::Error> {
+    let _guard = SCAN_GATE.lock().map_err(|_| io::Error::other("会话读取锁不可用"))?;
     let mut session_id = None;
     let mut project_dir = None;
     let mut created_at = None;
     let mut custom_title = None;
     let mut first_user_message = None;
 
-    let reader = BufReader::new(File::open(path)?);
-    for (index, line) in reader.lines().take(METADATA_LINE_LIMIT).enumerate() {
-        let line = line?;
+    let mut reader = BufReader::new(File::open(path)?);
+    let mut line = String::new();
+    for index in 0..METADATA_LINE_LIMIT {
+        if !read_record(&mut reader, &mut line)? { break; }
         if line.trim().is_empty() { continue; }
         let value = serde_json::from_str::<Value>(&line).map_err(|error| {
             io::Error::new(io::ErrorKind::InvalidData, format!("第 {} 行 JSON 无效: {error}", index + 1))
@@ -35,8 +50,8 @@ pub(super) fn parse_session(app: AppKind, path: &Path) -> Result<SessionMeta, io
         if first_user_message.is_none() {
             first_user_message = message_from(&value)
                 .filter(|message| message.role == "user")
-                .map(|message| message.content)
-                .filter(|content| useful_user_content(content));
+                .filter(|message| useful_user_content(&message.content))
+                .map(|message| clamp_text(&message.content, SUMMARY_LIMIT));
         }
         if session_id.is_some()
             && project_dir.is_some()
@@ -79,9 +94,11 @@ pub(super) fn parse_session(app: AppKind, path: &Path) -> Result<SessionMeta, io
 }
 
 pub(crate) fn session_id_in_session_file(path: &Path) -> io::Result<Option<String>> {
-    let reader = BufReader::new(File::open(path)?);
-    for line in reader.lines().take(METADATA_LINE_LIMIT) {
-        let line = line?;
+    let _guard = SCAN_GATE.lock().map_err(|_| io::Error::other("会话读取锁不可用"))?;
+    let mut reader = BufReader::new(File::open(path)?);
+    let mut line = String::new();
+    for _ in 0..METADATA_LINE_LIMIT {
+        if !read_record(&mut reader, &mut line)? { break; }
         let Ok(value) = serde_json::from_str::<Value>(&line) else {
             continue;
         };
@@ -92,19 +109,21 @@ pub(crate) fn session_id_in_session_file(path: &Path) -> io::Result<Option<Strin
     Ok(None)
 }
 
-pub(super) fn read_messages(path: &Path) -> Result<Vec<SessionMessage>, String> {
+pub(super) fn visit_messages(
+    path: &Path,
+    mut visitor: impl FnMut(SessionMessage) -> Result<ControlFlow<()>, String>,
+) -> Result<(), String> {
+    let _guard = SCAN_GATE.lock().map_err(|_| "会话读取锁不可用")?;
     let file = File::open(path)
         .map_err(|error| format!("无法读取会话记录 {}: {error}", path.display()))?;
     let mut reader = BufReader::new(file);
-    let mut messages = Vec::new();
     let mut prefix = Sha256::new();
     let mut line = String::new();
     let mut line_number = 0;
     loop {
-        line.clear();
-        let read = reader.read_line(&mut line)
+        let read = read_record(&mut reader, &mut line)
             .map_err(|error| format!("无法读取 {} 第 {} 行: {error}", path.display(), line_number + 1))?;
-        if read == 0 { break; }
+        if !read { break; }
         line_number += 1;
         // Hash the complete prefix: appending preserves IDs; edits cannot
         // redirect an old search hit to a different occurrence of a message.
@@ -115,9 +134,32 @@ pub(super) fn read_messages(path: &Path) -> Result<Vec<SessionMessage>, String> 
             .map_err(|error| format!("会话 {} 第 {line_number} 行 JSON 无效: {error}", path.display()))?;
         if let Some(mut message) = message_from(&value) {
             message.id = format!("{:x}", prefix.clone().finalize());
-            messages.push(message);
+            if visitor(message)?.is_break() { break; }
         }
     }
+    Ok(())
+}
+
+pub(super) fn find_message(path: &Path, id: &str) -> Result<SessionMessage, String> {
+    let mut found = None;
+    visit_messages(path, |message| {
+        if message.id == id {
+            found = Some(message);
+            Ok(ControlFlow::Break(()))
+        } else {
+            Ok(ControlFlow::Continue(()))
+        }
+    })?;
+    found.ok_or_else(|| "原消息已改变或不存在；请重新打开会话".into())
+}
+
+#[cfg(test)]
+pub(super) fn collect_messages(path: &Path) -> Result<Vec<SessionMessage>, String> {
+    let mut messages = Vec::new();
+    visit_messages(path, |message| {
+        messages.push(message);
+        Ok(ControlFlow::Continue(()))
+    })?;
     Ok(messages)
 }
 
@@ -237,13 +279,10 @@ pub(super) fn clamp_title(text: &str) -> String {
 }
 
 fn clamp_text(text: &str, limit: usize) -> String {
-    let text = text.split_whitespace().collect::<Vec<_>>().join(" ");
-    if text.chars().count() <= limit {
-        return text;
-    }
-    let mut shortened = text.chars().take(limit).collect::<String>();
-    shortened.push('…');
-    shortened
+    let mut characters = super::text::compact_chars(text);
+    let mut result = characters.by_ref().take(limit).collect::<String>();
+    if characters.next().is_some() { result.push('…'); }
+    result
 }
 
 fn useful_user_content(content: &str) -> bool {
@@ -260,4 +299,18 @@ fn project_name(path: &str) -> Option<String> {
 
 fn system_time_iso(time: std::time::SystemTime) -> String {
     DateTime::<Utc>::from(time).to_rfc3339()
+}
+
+#[cfg(test)]
+mod read_tests {
+    use super::*;
+
+    #[test]
+    fn refuses_oversized_records_before_allocating_an_entire_input() {
+        let input = std::io::repeat(b'x').take(MAX_RECORD_BYTES + 100);
+        let mut reader = BufReader::new(input);
+        let mut line = String::new();
+        assert_eq!(read_record(&mut reader, &mut line).unwrap_err().kind(), io::ErrorKind::InvalidData);
+        assert_eq!(line.len(), MAX_RECORD_BYTES as usize + 1);
+    }
 }

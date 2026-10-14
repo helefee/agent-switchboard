@@ -19,7 +19,7 @@ pub struct CodexProbeQuestionDto<'a> {
     label: &'a str,
     text: &'a str,
     grading_version: ProbeGrading,
-    source_url: Option<&'a str>,
+    reference_visual: Option<&'a str>,
 }
 
 #[tauri::command]
@@ -31,7 +31,7 @@ pub async fn list_codex_probe_questions() -> Result<Vec<CodexProbeQuestionDto<'s
             label: question.label,
             text: question.prompt,
             grading_version: question.grading,
-            source_url: question.source_url,
+            reference_visual: question.reference_visual,
         })
         .collect())
 }
@@ -203,7 +203,8 @@ pub struct DeleteCodexProbeBatchesRequest {
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct DeletedCodexProbeBatchesDto {
-    deleted: u32,
+    deleted: u64,
+    warning: Option<String>,
 }
 
 /// Deletes finished batches and their runs — only the radar's own records;
@@ -217,7 +218,7 @@ pub async fn delete_codex_probe_batches(
     blocking(move || {
         codex_probe::ProbeLedger::new(local.root())
             .delete_batches(&request.batch_ids)
-            .map(|deleted| DeletedCodexProbeBatchesDto { deleted })
+            .map(|result| DeletedCodexProbeBatchesDto { deleted: result.removed, warning: result.warning })
             .map_err(|message| CommandError::new("codex-probe-delete-failed", message))
     })
     .await

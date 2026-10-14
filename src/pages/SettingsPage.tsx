@@ -18,6 +18,7 @@ interface SettingsPageProps {
   gateway: ReactNode;
   clientManagement: ReactNode;
   diagnostics: ReactNode;
+  storage: ReactNode;
   settings: AppSettings | null;
   /** Why settings could not load; null while loading or after success. */
   loadError: string | null;
@@ -75,6 +76,7 @@ function ApplicationSettings(props: SettingsPageProps) {
         <div className="asb-skeleton" />
         <div className="asb-skeleton" />
       </div>}
+      {props.storage}
     </div>
   );
 }

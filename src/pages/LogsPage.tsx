@@ -14,7 +14,12 @@ import { RUNTIME_LOG_PAGE_SIZE, levelLabel, useRuntimeLogs } from "./use-runtime
 
 const ACTION_LABEL: Record<RuntimeLogAction, MessageKey> = {
   appStarted: "backup.action.appStarted",
+  storageCacheMaintained: "backup.action.storageCacheMaintained",
+  storageHistoryArchived: "backup.action.storageHistoryArchived",
   appSettingsSaved: "backup.action.appSettingsSaved",
+  outboundProxySaved: "backup.action.outboundProxySaved",
+  codexSubagentSettingsApplied: "backup.action.codexSubagentSettingsApplied",
+  providersSqlImported: "backup.action.providersSqlImported",
   appSettingsRepaired: "backup.action.appSettingsRepaired",
   profileStoreRepaired: "backup.action.profileStoreRepaired",
   profileCreated: "backup.action.profileCreated",

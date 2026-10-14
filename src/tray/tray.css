@@ -64,10 +64,11 @@ html, body, #root { background: transparent; overflow: hidden; }
 }
 .tray-client-logo { width: 20px; height: 20px; padding: var(--asb-space-hairline); border-radius: var(--asb-radius); background: var(--asb-text-on-action); }
 
-/* Provider rows. .tray-provider is the single owner of the row contract:
-   one native full-width button, four fixed columns, no wrapper element. A
-   button's auto width is fit-content, so width: 100% is what lets the switch
-   rail pin to the panel's right edge on every row. */
+/* Provider rows. .tray-provider owns the row silhouette and the fixed
+   column order [switch button | usage refresh | switch rail]; the switch
+   action spans every column as one native button and the usage warning
+   carries a second native refresh button — a button cannot be nested, so
+   the old single-button row is gone. */
 .tray-provider {
   display: flex;
   align-items: center;
@@ -77,26 +78,41 @@ html, body, #root { background: transparent; overflow: hidden; }
   padding: var(--asb-space-hairline) var(--asb-space-2);
   border: 1px solid transparent;
   border-radius: var(--asb-radius);
-  background: transparent;
   color: var(--asb-text);
   font: var(--asb-text-label);
-  text-align: left;
 }
 
 .tray-provider + .tray-provider {
   margin-top: var(--asb-space-hairline);
 }
 
-/* Disabled marks the current row and rows locked during a switch, not
-   unavailable controls; the global button dim must not apply. */
-.tray-provider:disabled { opacity: 1; }
-
-.tray-provider:not(:disabled):hover { background: var(--asb-content-muted); }
-
 .tray-provider.is-active {
   border-color: var(--asb-action);
   background: var(--asb-row-selected);
 }
+
+/* The switch action inherits the row's full-column geometry and typography. */
+.tray-provider-main {
+  display: flex;
+  align-items: center;
+  flex: 1;
+  min-width: 0;
+  gap: calc(var(--asb-space-unit) + var(--asb-space-hairline));
+  padding: 0;
+  border: 0;
+  border-radius: var(--asb-radius);
+  background: transparent;
+  color: inherit;
+  font: inherit;
+  text-align: left;
+}
+
+/* Disabled marks the current row and rows locked during an action, not
+   unavailable controls; the global button dim must not apply. */
+.tray-provider-main:disabled,
+.tray-provider-refresh:disabled { opacity: 1; }
+
+.tray-provider:has(.tray-provider-main:not(:disabled)):hover { background: var(--asb-content-muted); }
 
 /* Fixed-width slot, always rendered: inactive rows keep it empty so the name
    column starts at the same x on every row and state. */
@@ -134,14 +150,47 @@ html, body, #root { background: transparent; overflow: hidden; }
 .tray-usage-name { max-width: 5em; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .tray-usage-value { flex: none; color: var(--asb-text); font-weight: 600; }
 .tray-usage-reading[data-tone="danger"] .tray-usage-value { color: var(--asb-danger); }
-.tray-usage-state { flex: none; color: var(--asb-warning); font: var(--asb-text-caption); }
+/* Warning states are one non-interactive icon; the hover title carries the
+   state label, backend error text and last successful read. */
+.tray-usage-alert { display: inline-flex; flex: none; color: var(--asb-warning); }
 .tray-usage-more { flex: none; }
 
+/* The usage refresh control exists only beside a warning icon and re-runs
+   that provider's forced query through the shared backend executors. */
+.tray-provider-refresh {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex: none;
+  width: var(--asb-icon-size-xl);
+  height: var(--asb-icon-size-xl);
+  padding: 0;
+  border: 0;
+  border-radius: var(--asb-radius);
+  background: transparent;
+  color: var(--asb-text-muted);
+}
+.tray-provider-refresh:not(:disabled):hover {
+  background: var(--asb-content-muted);
+  color: var(--asb-text);
+}
+.tray-provider-refresh .is-busy { animation: asb-tray-refresh-spin 1s linear infinite; }
 
-/* Fixed right rail: the widest state text (切换中) reserves the width so
-   every row and state keeps an identical name column. 切换 is a hover-only
-   affordance — hidden on idle rows, revealed under the pointer — while a
-   switching row always shows its 切换中 feedback. */
+@keyframes asb-tray-refresh-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  :root:not([data-motion="system"]) .tray-provider-refresh .is-busy { animation: none; }
+}
+
+:root[data-motion="reduce"] .tray-provider-refresh .is-busy { animation: none; }
+
+
+/* Fixed right rail inside the switch button: the widest state text (切换中)
+   reserves the width so every row and state keeps an identical name column.
+   切换 is a hover-only affordance — hidden on idle rows, revealed under the
+   pointer — while a switching row always shows its 切换中 feedback. */
 .tray-provider-switch {
   flex: none;
   min-width: 3em;
@@ -149,8 +198,8 @@ html, body, #root { background: transparent; overflow: hidden; }
   color: var(--asb-action);
   visibility: hidden;
 }
-.tray-provider:not(:disabled):hover .tray-provider-switch,
-.tray-provider:focus-visible .tray-provider-switch,
+.tray-provider-main:not(:disabled):hover .tray-provider-switch,
+.tray-provider-main:focus-visible .tray-provider-switch,
 .tray-provider.is-switching .tray-provider-switch {
   visibility: visible;
 }
@@ -190,8 +239,8 @@ html, body, #root { background: transparent; overflow: hidden; }
 }
 
 @media (hover: none) {
-  .tray-provider:not(:disabled) .tray-provider-switch { visibility: visible; }
+  .tray-provider-main:not(:disabled) .tray-provider-switch { visibility: visible; }
 }
 
 .tray-usage-measure { position: fixed; visibility: hidden; pointer-events: none; display: flex; width: max-content; inset: 0 auto auto 0; }
-.tray-usage-measure > [data-measure="status"] { display: inline-flex; gap: var(--asb-space-2); }
+.tray-usage-measure > [data-measure="fixed"] { display: inline-flex; }

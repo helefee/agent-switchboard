@@ -19,18 +19,16 @@ export function PinTopButton({
   const label = active ? t("pin.unpin") : t("pin.pin");
   return (
     <Tooltip label={label} side="bottom">
-      <span className="asb-tooltip-anchor">
-        <Button
-          variant="unstyled"
-          className={`asb-winbtn asb-pinbtn${active ? " is-active" : ""}`}
-          aria-label={label}
-          aria-pressed={active}
-          disabled={disabled}
-          onClick={onToggle}
-        >
-          <PinIcon />
-        </Button>
-      </span>
+      <Button
+        variant="unstyled"
+        className={`asb-winbtn asb-pinbtn${active ? " is-active" : ""}`}
+        aria-label={label}
+        aria-pressed={active}
+        disabled={disabled}
+        onClick={onToggle}
+      >
+        <PinIcon />
+      </Button>
     </Tooltip>
   );
 }

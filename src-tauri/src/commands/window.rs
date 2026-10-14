@@ -3,10 +3,11 @@
 //!
 //! The custom webview buttons only emit intents; the native side performs
 //! them through Tauri's portable window APIs, so the same buttons work on
-//! every supported platform. Visuals stay in the webview.
+//! every supported platform. Controls stay in the webview; window state and
+//! material theme stay native.
 
 use super::error::CommandError;
-use crate::local_state::AppSettings;
+use crate::local_state::{AppSettings, ThemePreference};
 use tauri::{AppHandle, Manager};
 use tauri_plugin_autostart::ManagerExt;
 
@@ -40,7 +41,14 @@ pub(crate) fn apply_desktop_settings(
             .disable()
             .map_err(|error| CommandError::new("launch-at-login-disable-failed", error.to_string()))?;
     }
-    crate::desktop_shortcut::apply(app, &settings.global_shortcut)
+    crate::desktop_shortcut::apply(app, &settings.global_shortcut)?;
+    // App-level theme also reaches tray windows created after startup.
+    app.set_theme(match settings.theme {
+        ThemePreference::System => None,
+        ThemePreference::Light => Some(tauri::Theme::Light),
+        ThemePreference::Dark => Some(tauri::Theme::Dark),
+    });
+    Ok(())
 }
 
 fn apply_interface_scale(

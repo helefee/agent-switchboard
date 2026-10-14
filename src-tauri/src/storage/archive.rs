@@ -1,0 +1,136 @@
+use super::{ArchiveOutcome, ArchiveScope};
+use crate::{codex_metering::CodexRequestLedger, codex_probe::ProbeLedger, local_state::LocalState};
+use asb_core::contracts::AppKind;
+use chrono::{DateTime, Datelike, NaiveDate, Utc};
+use flate2::{write::GzEncoder, Compression};
+use serde::{Deserialize, Serialize};
+use sha2::{Digest, Sha256};
+use std::collections::BTreeMap;
+use std::fs::{self, File};
+use std::io::{BufWriter, Write};
+use std::path::{Path, PathBuf};
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub(crate) struct ArchiveDigest { pub records: u64, pub revision: String }
+
+pub(crate) struct ArchiveWriter<'a> {
+    output: &'a mut dyn Write,
+    hash: Sha256,
+    records: u64,
+}
+
+impl<'a> ArchiveWriter<'a> {
+    pub(crate) fn new(output: &'a mut dyn Write, context: &str) -> Self {
+        let mut hash = Sha256::new();
+        hash.update(context.as_bytes());
+        Self { output, hash, records: 0 }
+    }
+    pub(crate) fn record(&mut self, kind: &str, record: &impl Serialize) -> Result<(), String> {
+        #[derive(Serialize)]
+        struct Entry<'a, T> { kind: &'a str, record: &'a T }
+        let bytes = serde_json::to_vec(&Entry { kind, record }).map_err(|error| error.to_string())?;
+        self.output.write_all(&bytes).and_then(|()| self.output.write_all(b"\n")).map_err(|error| error.to_string())?;
+        self.hash.update(&bytes); self.hash.update(b"\n"); self.records += 1;
+        Ok(())
+    }
+    pub(crate) fn finish(self) -> ArchiveDigest {
+        ArchiveDigest { records: self.records, revision: format!("{:x}", self.hash.finalize()) }
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub(crate) struct HistoryArchivePlan {
+    pub cutoff: String,
+    pub configuration: BTreeMap<AppKind, ArchiveDigest>,
+    pub codex: ArchiveDigest,
+    pub probes: ArchiveDigest,
+}
+
+pub(crate) fn cutoff_date(value: &str) -> Result<DateTime<Utc>, String> {
+    let date = NaiveDate::parse_from_str(value, "%Y-%m-%d").map_err(|_| "请选择有效的归档日期")?;
+    if date.to_string() != value { return Err("归档日期格式无效".into()); }
+    let today = Utc::now().date_naive();
+    let month = today.with_day(1).ok_or("无法确定当前计费月份")?;
+    if date > month { return Err("当前 UTC 计费月份的记录必须保留，归档日期不能晚于本月首日".into()); }
+    Ok(date.and_hms_opt(0, 0, 0).ok_or("归档日期无效")?.and_utc())
+}
+
+pub(crate) fn plan(local: &LocalState, cutoff: &str, output: &mut dyn Write) -> Result<HistoryArchivePlan, String> {
+    let date = cutoff_date(cutoff)?;
+    let store = local.configuration();
+    let mut configuration = BTreeMap::new();
+    for app in [AppKind::Codex, AppKind::Claude] {
+        configuration.insert(app, store.archive_history_digest(app, date, output)?);
+    }
+    Ok(HistoryArchivePlan { cutoff: cutoff.into(), configuration,
+        codex: CodexRequestLedger::new(local.root()).archive_digest(date, output)?,
+        probes: ProbeLedger::new(local.root()).archive_digest(date, output)? })
+}
+
+struct Temporary(PathBuf);
+impl Drop for Temporary {
+    fn drop(&mut self) { let _ = fs::remove_file(&self.0); }
+}
+
+#[cfg(windows)]
+fn publish(source: &Path, target: &Path) -> Result<(), String> {
+    use std::os::windows::ffi::OsStrExt;
+    use windows_sys::Win32::Storage::FileSystem::{MoveFileExW, MOVEFILE_REPLACE_EXISTING, MOVEFILE_WRITE_THROUGH};
+    let source = source.canonicalize().map_err(|error| error.to_string())?;
+    let target = target.parent().ok_or("归档位置无效")?.canonicalize().map_err(|error| error.to_string())?
+        .join(target.file_name().ok_or("归档文件名无效")?);
+    let wide = |path: &Path| -> Result<Vec<u16>, String> {
+        let mut value = path.as_os_str().encode_wide().collect::<Vec<_>>();
+        if value.contains(&0) { return Err("归档路径包含无效字符".into()); }
+        value.push(0); Ok(value)
+    };
+    let source = wide(&source)?;
+    let target = wide(&target)?;
+    if unsafe { MoveFileExW(source.as_ptr(), target.as_ptr(), MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH) } == 0 {
+        return Err(std::io::Error::last_os_error().to_string());
+    }
+    Ok(())
+}
+
+#[cfg(not(windows))]
+fn publish(source: &Path, target: &Path) -> Result<(), String> {
+    fs::rename(source, target).map_err(|error| error.to_string())?;
+    File::open(target.parent().ok_or("归档位置无效")?).and_then(|directory| directory.sync_all())
+        .map_err(|error| format!("归档已写入，但目录持久化未确认；历史未清理：{error}"))
+}
+
+pub(crate) fn execute(local: &LocalState, expected: &HistoryArchivePlan, target: &Path) -> Result<ArchiveOutcome, String> {
+    if plan(local, &expected.cutoff, &mut std::io::sink())? != *expected {
+        return Err("待归档历史已经变化，请重新预览".into());
+    }
+    let parent = target.parent().ok_or("归档位置无效")?;
+    let temporary = Temporary(parent.join(format!(".asb-history-{}.tmp", uuid::Uuid::new_v4())));
+    let mut file = File::create_new(&temporary.0).map_err(|error| error.to_string())?;
+    {
+        let writer = BufWriter::new(&mut file);
+        let mut archive = GzEncoder::new(writer, Compression::default());
+        serde_json::to_writer(&mut archive, &serde_json::json!({"format":"agent-switchboard-history","version":1,"plan":expected}))
+            .map_err(|error| error.to_string())?;
+        archive.write_all(b"\n").map_err(|error| error.to_string())?;
+        if plan(local, &expected.cutoff, &mut archive)? != *expected {
+            return Err("导出期间待归档历史已经变化，原历史未清理；请重新预览".into());
+        }
+        archive.finish().and_then(|mut writer| writer.flush()).map_err(|error| error.to_string())?;
+    }
+    file.sync_all().map_err(|error| error.to_string())?;
+    drop(file);
+    publish(&temporary.0, target)?;
+    let date = cutoff_date(&expected.cutoff)?;
+    let mut result = ArchiveOutcome { path: target.to_string_lossy().into_owned(), removed: 0, warnings: Vec::new() };
+    for app in [AppKind::Codex, AppKind::Claude] {
+        result.add(ArchiveScope::Configuration(app), local.configuration().prune_archived_history(app, date, &expected.configuration[&app]));
+    }
+    result.add(ArchiveScope::CodexRequests, CodexRequestLedger::new(local.root()).prune_archived(date, &expected.codex));
+    result.add(ArchiveScope::Probes, ProbeLedger::new(local.root()).prune_archived(date, &expected.probes));
+    Ok(result)
+}
+
+#[cfg(test)]
+mod tests;

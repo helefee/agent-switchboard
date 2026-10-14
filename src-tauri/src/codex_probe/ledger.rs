@@ -58,6 +58,7 @@ pub(crate) use types::*;
 mod history;
 mod recovery;
 mod writes;
+mod archive;
 
 #[derive(Clone)]
 pub(crate) struct ProbeLedger {

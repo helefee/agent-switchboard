@@ -30,6 +30,7 @@ mod profiles;
 mod query;
 mod quota;
 mod sessions;
+pub(crate) mod storage;
 pub(crate) mod quota_refresh;
 
 

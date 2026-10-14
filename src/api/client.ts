@@ -148,7 +148,8 @@ export * from "./official-login";
 export * from "./extensions/types";
 export * from "./extensions/commands";
 
-/** One verified application update discovered by Tauri's updater plugin. */
+/** One verified application update discovered by Tauri's updater plugin. The
+ * release body is raw markdown for the shared frontend viewer. */
 export interface UpdateCheck {
   latestVersion: string;
   releaseNotes: string | null;
@@ -161,6 +162,13 @@ export type UpdateChannel = "github" | "microsoftStore";
 
 export function getUpdateChannel(): Promise<UpdateChannel> {
   return invoke<UpdateChannel>("update_channel");
+}
+
+/** Returns the bundled changelog body for one version as raw markdown, or
+ * null when the version has no section; the backend owns the single-source
+ * file and its version-section boundaries. */
+export function getChangelogSection(version: string): Promise<string | null> {
+  return invoke<string | null>("changelog_section", { version });
 }
 
 function updateFailure(operation: "check" | "install", caught: unknown): CommandError {

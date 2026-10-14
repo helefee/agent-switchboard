@@ -34,9 +34,23 @@ fn searches_complete_transcripts_and_locates_unicode_cross_line_hits() {
     assert!(page.issues.is_empty());
     assert!(page.results[0].excerpt.contains("ÄPFEL 连接 Error42"));
     assert!(page.results[0].excerpt.starts_with('…'));
-    let messages = read_messages(&path).unwrap();
+    let messages = collect_messages(&path).unwrap();
     assert_eq!(page.results[0].message_id.as_deref(), Some(messages[0].id.as_str()));
     assert_ne!(messages[0].id, messages[1].id);
+}
+
+#[test]
+fn deep_unicode_match_opens_its_original_content_page() {
+    let temp = tempdir().unwrap();
+    let path = temp.path().join("source.jsonl");
+    let text = format!("  {}\n\t  İ目标  跨行\n命中", "🙂 \t".repeat(20_000));
+    fs::write(&path, message(&text)).unwrap();
+    let page = search(vec![source(&path, "s")], vec![], "İ目标 跨行 命中", None, 0);
+    assert!(page.issues.is_empty());
+    let offset = page.results[0].content_offset;
+    assert!(offset > 0);
+    let part = super::super::messages::content_page(&text, offset).unwrap();
+    assert!(part.content.contains("İ目标  跨行\n命中"));
 }
 
 #[test]
@@ -77,13 +91,13 @@ fn message_ids_survive_append_but_reject_changed_prefix() {
     let path = temp.path().join("source.jsonl");
     let first = message("same text");
     fs::write(&path, &first).unwrap();
-    let old = read_messages(&path).unwrap()[0].id.clone();
+    let old = collect_messages(&path).unwrap()[0].id.clone();
     fs::write(&path, first.clone() + &first).unwrap();
-    let appended = read_messages(&path).unwrap();
+    let appended = collect_messages(&path).unwrap();
     assert_eq!(old, appended[0].id);
     assert_ne!(old, appended[1].id);
     fs::write(&path, message("edited") + &first).unwrap();
-    assert!(read_messages(&path).unwrap().iter().all(|message| message.id != old));
+    assert!(collect_messages(&path).unwrap().iter().all(|message| message.id != old));
 }
 
 #[test]
@@ -116,7 +130,7 @@ fn searches_codex_tool_outputs_once_without_event_mirror_duplicates() {
             "type":"tool_output", "output":"Error: database is locked"}}),
     ];
     fs::write(&path, records.iter().map(|record| format!("{record}\n")).collect::<String>()).unwrap();
-    let messages = read_messages(&path).unwrap();
+    let messages = collect_messages(&path).unwrap();
     assert_eq!(messages.len(), 2);
     assert!(messages.iter().all(|message| message.role == "tool"));
     let page = search(vec![source(&path, "s")], vec![], "error:", None, 0);

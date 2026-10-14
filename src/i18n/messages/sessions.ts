@@ -3,6 +3,16 @@ import type { MessageEntry } from "../types";
 /** Domain dictionary for sessions (zh-CN / en-US pairs). Keys are prefixed with
  * "sessions." and must never collide with another domain file. */
 export const messages = {
+  "sessions.message.copyPreview": ["复制摘要", "Copy preview"],
+  "sessions.message.copyFull": ["复制完整消息", "Copy full message"],
+  "sessions.message.copyBusy": ["已有复制操作正在进行，请稍后重试。", "Another copy operation is in progress. Try again shortly."],
+  "sessions.message.copyPage": ["复制本页", "Copy this page"],
+  "sessions.message.pagedText": ["此消息较长，按原文分页显示。", "This long message is shown as paginated source text."],
+  "sessions.message.pagination": ["消息正文分页", "Message content pages"],
+  "sessions.transcript.pagination": ["会话消息分页", "Conversation message pages"],
+  "sessions.bookmarks.pagination": ["片段收藏分页", "Bookmark pages"],
+  "sessions.bookmarks.reclaimWarning": ["收藏已删除，数据库空间回收未完成：{detail}", "Bookmark deleted; database space could not be reclaimed: {detail}"],
+  "sessions.bookmarks.readUnavailable": ["会话可继续阅读，收藏状态不可用：{detail}", "The conversation remains readable; bookmark status is unavailable: {detail}"],
   "sessions.projects.heading": ["按项目浏览", "Browse by project"],
   "sessions.projects.all": ["全部项目", "All projects"],
   "sessions.projects.none": ["未归属项目", "No project"],
@@ -124,7 +134,7 @@ export const messages = {
   "sessions.transcript.loading.aria": ["正在读取会话", "Loading session"],
   "sessions.transcript.empty": ["会话中没有可展示的消息。", "This session has no messages to show."],
   "sessions.toc.aria": ["消息目录", "Message outline"],
-  "sessions.toc.heading": ["消息目录", "Outline"],
+  "sessions.toc.heading": ["本页消息目录", "This page's outline"],
 
   "sessions.message.copied": ["已复制消息内容", "Copied message content"],
   "sessions.message.copyFailed": ["无法复制消息内容", "Could not copy message content"],

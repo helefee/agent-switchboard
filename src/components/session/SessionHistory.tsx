@@ -14,7 +14,7 @@ import type { SessionDeletionState } from "./SessionDeletion";
 export function SessionHistory({ search, detail, bookmarks, organization, deletion, onOpen }: {
   search: SessionSearch; detail: SessionDetailState; bookmarks: SessionBookmarks;
   organization: SessionOrganization; deletion: SessionDeletionState;
-  onOpen: (session: SessionMeta, messageId: string | null) => void;
+  onOpen: (session: SessionMeta, messageId: string | null, contentOffset: number) => void;
 }) {
   const { t } = useI18n();
   const busy = deletion.busy || organization.busy;
@@ -29,7 +29,7 @@ export function SessionHistory({ search, detail, bookmarks, organization, deleti
       <SessionSearchList search={search} selected={detail.selected} selecting={deletion.selecting}
         chosen={deletion.chosen} disabled={busy} onToggle={deletion.toggle}
         onToggleMode={deletion.toggleMode}
-        onSelect={(hit) => onOpen(hit.session, hit.messageId)} />
+        onSelect={(hit) => onOpen(hit.session, hit.messageId, hit.contentOffset)} />
       {detail.selected ? <SessionDetail key={sessionKey(detail.selected)} detail={detail} session={detail.selected}
         bookmarks={bookmarks} organization={organization} deleting={busy} onDelete={(session) => deletion.setPending([session])} />
         : <section className="asb-session-detail asb-session-empty-detail" aria-label={t("sessions.detail.aria")}>

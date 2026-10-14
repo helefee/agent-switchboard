@@ -3,6 +3,7 @@ import { useI18n } from "../i18n";
 import { PAGES, pageLabelKey, type Page } from "./navigation";
 import { Button } from "../components/Button";
 import { Tooltip } from "../components/Tooltip";
+import { UpdateButton } from "../components/UpdateButton";
 import {
   ClientConfigurationIcon,
   ExtensionsIcon,
@@ -33,10 +34,12 @@ interface SideNavProps {
   onPageChange: (page: Page) => void;
   collapsed: boolean;
   onToggle: () => void;
+  /** Sidebar update entry above the settings item; App owns the check state. */
+  update: { checking: boolean; latestVersion: string | null; onCheck: () => void; onOpen: () => void };
 }
 
 /** Navigation stays mounted across width changes; its group scrolls independently. */
-export function SideNav({ page, onPageChange, collapsed, onToggle }: SideNavProps) {
+export function SideNav({ page, onPageChange, collapsed, onToggle, update }: SideNavProps) {
   const { t } = useI18n();
   return (
     <aside className="asb-sidebar">
@@ -56,6 +59,10 @@ export function SideNav({ page, onPageChange, collapsed, onToggle }: SideNavProp
           ))}
         </ul>
         <ul className="asb-sidenav-footer">
+          <li>
+            <UpdateButton checking={update.checking} latestVersion={update.latestVersion}
+              onCheck={update.onCheck} onOpen={update.onOpen} />
+          </li>
           <li>
             <SideNavItem page="settings" active={page === "settings"}
               onSelect={() => onPageChange("settings")} />

@@ -9,7 +9,7 @@ export interface SiteActionLink {
   icon?: "github" | "star";
 }
 
-/** One real application screenshot captured in the isolated demo sandbox. */
+/** One application screenshot from the isolated local 0.3.3 production frontend. */
 export interface SiteScreenshot {
   src: string;
   alt: string;
@@ -112,7 +112,7 @@ export const siteContentByLocale: Record<Locale, SiteContent> = {
       ],
       shot: {
         src: "/media/screenshots/providers.png",
-        alt: "Agent Switchboard 当前供应商工作区：OpenAI、Claude 演示连接，gpt-6.1-sol、claude-sonnet-5-5 模型与模拟余额（2026-10-13 隔离截图）",
+        alt: "Agent Switchboard 当前供应商工作区：OpenAI、Claude 演示连接，gpt-6.1-sol、claude-sonnet-5-5 模型与模拟余额（2026-10-14 隔离截图）",
         badge: "隔离沙箱 · 演示数据",
         caption: "当前供应商工作区：OpenAI、Claude 档案与模拟余额。",
         width: 1440,
@@ -148,7 +148,7 @@ export const siteContentByLocale: Record<Locale, SiteContent> = {
       ],
       shot: {
         src: "/media/screenshots/client-configuration.png",
-        alt: "Agent Switchboard 当前客户端配置：子 agent 开关、并发数及终端偏好（2026-10-13 隔离模拟数据截图）",
+        alt: "Agent Switchboard 当前客户端配置：子 agent 开关、并发数及终端偏好（2026-10-14 隔离模拟数据截图）",
         badge: "隔离沙箱 · 演示数据",
         caption: "客户端配置：子 agent 运行设置与终端偏好。",
         width: 1440,
@@ -181,7 +181,7 @@ export const siteContentByLocale: Record<Locale, SiteContent> = {
         ],
         shot: {
           src: "/media/screenshots/subagent-route.png",
-          alt: "Agent Switchboard 当前 Codex 运行参数：默认子 agent 模型指向另一个模拟 OpenAI 档案的 gpt-6-luna（2026-10-13 隔离截图）",
+          alt: "Agent Switchboard 当前 Codex 运行参数：默认子 agent 模型指向另一个模拟 OpenAI 档案的 gpt-6-luna（2026-10-14 隔离截图）",
           badge: "隔离沙箱 · 演示数据",
           caption: "子 agent 模型路由：请求由本机网关转发，失败不回退主模型。",
         width: 1440,
@@ -239,7 +239,7 @@ export const siteContentByLocale: Record<Locale, SiteContent> = {
       ],
       shot: {
         src: "/media/screenshots/providers.png",
-        alt: "Current Agent Switchboard providers workspace: mock OpenAI and Claude connections, gpt-6.1-sol and claude-sonnet-5-5 models, and simulated balances, captured in isolation on 2026-10-13",
+        alt: "Current Agent Switchboard providers workspace: mock OpenAI and Claude connections, gpt-6.1-sol and claude-sonnet-5-5 models, and simulated balances, captured in isolation on 2026-10-14",
         badge: "Isolated sandbox · demo data",
         caption: "Current providers workspace: OpenAI and Claude profiles, simulated balances.",
         width: 1440,
@@ -275,7 +275,7 @@ export const siteContentByLocale: Record<Locale, SiteContent> = {
       ],
       shot: {
         src: "/media/screenshots/client-configuration.png",
-        alt: "Current Agent Switchboard client configuration: sub-agent availability, concurrency, and terminal preferences, with isolated mock data captured on 2026-10-13",
+        alt: "Current Agent Switchboard client configuration: sub-agent availability, concurrency, and terminal preferences, with isolated mock data captured on 2026-10-14",
         badge: "Isolated sandbox · demo data",
         caption: "Client configuration: sub-agent runtime settings and terminal preferences.",
         width: 1440,
@@ -308,7 +308,7 @@ export const siteContentByLocale: Record<Locale, SiteContent> = {
         ],
         shot: {
           src: "/media/screenshots/subagent-route.png",
-          alt: "Current Agent Switchboard Codex runtime parameters: the default sub-agent model targets gpt-6-luna in another simulated OpenAI profile, captured in isolation on 2026-10-13",
+          alt: "Current Agent Switchboard Codex runtime parameters: the default sub-agent model targets gpt-6-luna in another simulated OpenAI profile, captured in isolation on 2026-10-14",
           badge: "Isolated sandbox · demo data",
           caption: "Sub-agent model route: forwarded by the local gateway, never falling back to the main model.",
         width: 1440,

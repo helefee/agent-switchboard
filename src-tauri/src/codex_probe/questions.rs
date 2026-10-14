@@ -30,24 +30,35 @@ impl ProbeGrading {
     }
 }
 
-/// The backend-owned question catalog, including its output contract.
+/// The backend-owned question catalog, including its output contract. The
+/// first entry is the radar's default selection.
 pub(crate) struct ProbeQuestion {
     pub(crate) id: &'static str,
     pub(crate) label: &'static str,
     pub(crate) prompt: &'static str,
     pub(super) expected_answer: &'static str,
     pub(crate) grading: ProbeGrading,
-    pub(crate) source_url: Option<&'static str>,
+    /// A hand-made reference rendering shown in the UI; never used for
+    /// grading — visual answers stay human-observed.
+    pub(crate) reference_visual: Option<&'static str>,
 }
 
 pub(crate) const QUESTIONS: [ProbeQuestion; 4] = [
+    ProbeQuestion {
+        id: "pelican-riding-bicycle",
+        label: "鹈鹕骑自行车",
+        prompt: "生成html，内容是svg绘制鹈鹕骑自行车2D动画，不用进行测试。\n直接在最终回答中输出完整 HTML 源码，不要只返回文件路径或完成说明。",
+        expected_answer: "",
+        grading: ProbeGrading::HtmlVisual,
+        reference_visual: Some(include_str!("pelican-reference.html")),
+    },
     ProbeQuestion {
         id: "divisible-or-contains-3",
         label: "计数题",
         prompt: "从 1 到 100（含两端）的整数中，有多少个数能被 3 整除，或者十进制写法中至少含有一个数字 3？只输出最终数字。",
         expected_answer: "45",
         grading: ProbeGrading::Integer,
-        source_url: None,
+        reference_visual: None,
     },
     ProbeQuestion {
         id: "mountain-round-trip",
@@ -55,7 +66,7 @@ pub(crate) const QUESTIONS: [ProbeQuestion; 4] = [
         prompt: "某人沿同一条山路上山后原路下山：上山速度 5 km/h，下山速度 7 km/h，往返一共用了 4 小时 48 分钟。山路单程长多少公里？只输出最终数字。",
         expected_answer: "14",
         grading: ProbeGrading::Integer,
-        source_url: None,
+        reference_visual: None,
     },
     ProbeQuestion {
         id: "round-table-neighbours",
@@ -63,15 +74,7 @@ pub(crate) const QUESTIONS: [ProbeQuestion; 4] = [
         prompt: "5 个人围一张圆桌就坐（旋转后相同的坐法视为同一种），其中甲、乙两人必须相邻。共有多少种不同的坐法？只输出最终数字。",
         expected_answer: "12",
         grading: ProbeGrading::Integer,
-        source_url: None,
-    },
-    ProbeQuestion {
-        id: "pelican-riding-bicycle",
-        label: "鹈鹕骑自行车",
-        prompt: "生成html，内容是svg绘制鹈鹕骑自行车2D动画，不用进行测试。\n直接在最终回答中输出完整 HTML 源码，不要只返回文件路径或完成说明。",
-        expected_answer: "",
-        grading: ProbeGrading::HtmlVisual,
-        source_url: Some("https://linux.do/t/topic/2702004"),
+        reference_visual: None,
     },
 ];
 

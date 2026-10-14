@@ -1,4 +1,5 @@
 use super::CodexRequestRecord;
+mod archive;
 
 /// Persistent per-file cursor of the session usage sync pass.
 #[derive(Debug, Clone, PartialEq, Eq)]

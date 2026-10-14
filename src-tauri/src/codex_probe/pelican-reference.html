@@ -1,0 +1,270 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>鹈鹕骑自行车</title>
+<style>
+html,body{margin:0}
+#pelican-ride{width:100%}
+#pelican-ride svg{width:100%;height:auto;display:block}
+#pelican-ride .eye{transform-box:fill-box;transform-origin:center;animation:pr-blink 4.6s infinite}
+@keyframes pr-blink{0%,93%{transform:scaleY(1)}96%{transform:scaleY(.12)}100%{transform:scaleY(1)}}
+#pelican-ride .speed-line{animation:pr-zoom .75s linear infinite;stroke-linecap:round}
+@keyframes pr-zoom{from{transform:translateX(0);opacity:.75}to{transform:translateX(-110px);opacity:0}}
+@media (prefers-reduced-motion:reduce){#pelican-ride .eye,#pelican-ride .speed-line{animation:none}}
+</style>
+</head>
+<body>
+<div id="pelican-ride">
+<svg viewBox="0 0 960 540" role="img" aria-label="鹈鹕骑自行车的 2D 动画">
+  <title>鹈鹕骑自行车</title>
+  <desc>一只戴红帽的鹈鹕蹬着红色自行车沿海边木板路前进：车轮与曲柄转动，双腿按踏板位置交替画圆，云、海浪与木板向后流动。</desc>
+  <defs>
+    <linearGradient id="pr-sky" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#c7e8fd"/><stop offset="1" stop-color="#effaff"/>
+    </linearGradient>
+    <linearGradient id="pr-sea" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#7fd0ea"/><stop offset="1" stop-color="#48a5d5"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="960" height="540" fill="url(#pr-sky)"/>
+  <circle cx="830" cy="88" r="58" fill="#ffd668" opacity=".35"/>
+  <circle cx="830" cy="88" r="40" fill="#ffd668"/>
+
+  <g fill="#fff">
+    <g class="cloud" data-speed="14" opacity=".92">
+      <ellipse cx="150" cy="86" rx="46" ry="18"/><ellipse cx="185" cy="74" rx="34" ry="15"/><ellipse cx="118" cy="76" rx="28" ry="13"/>
+    </g>
+    <g class="cloud" data-speed="22" opacity=".85">
+      <ellipse cx="520" cy="132" rx="40" ry="15"/><ellipse cx="552" cy="122" rx="28" ry="12"/>
+    </g>
+    <g class="cloud" data-speed="10" opacity=".9">
+      <ellipse cx="700" cy="60" rx="38" ry="14"/><ellipse cx="730" cy="50" rx="26" ry="11"/><ellipse cx="672" cy="52" rx="24" ry="10"/>
+    </g>
+  </g>
+  <g fill="none" stroke="#7d93a4" stroke-width="2.5" stroke-linecap="round">
+    <path class="bird" d="M0 0 Q7 -7 14 0 Q21 -7 28 0" transform="translate(520 128)"/>
+    <path class="bird" d="M0 0 Q6 -6 12 0 Q18 -6 24 0" transform="translate(300 96)"/>
+  </g>
+
+  <rect y="420" width="960" height="50" fill="url(#pr-sea)"/>
+  <path id="pr-wavesA" fill="none" stroke="#fff" stroke-width="3" opacity=".5"/>
+  <path id="pr-wavesB" fill="none" stroke="#fff" stroke-width="2.5" opacity=".3"/>
+  <rect y="470" width="960" height="70" fill="#ecd0a2"/>
+  <rect y="470" width="960" height="8" fill="#d9b078"/>
+  <rect y="477" width="960" height="2" fill="#b98d52" opacity=".8"/>
+  <g id="pr-planks" stroke="#c9a066" stroke-width="3" opacity=".55"></g>
+
+  <g stroke="#a9c6d8" stroke-width="5" opacity=".65">
+    <line class="speed-line" x1="150" y1="344" x2="215" y2="344"/>
+    <line class="speed-line" x1="128" y1="380" x2="205" y2="380" style="animation-delay:.25s"/>
+    <line class="speed-line" x1="150" y1="414" x2="215" y2="414" style="animation-delay:.5s"/>
+  </g>
+
+  <ellipse id="pr-shadow" cx="470" cy="477" rx="235" ry="10" fill="#1f3647" opacity=".14"/>
+
+  <!-- far crank, far pedal, far leg -->
+  <line id="pr-crankF" x1="452" y1="394" x2="452" y2="426" stroke="#454c56" stroke-width="9" stroke-linecap="round"/>
+  <rect id="pr-pedalF" x="-15" y="-4" width="30" height="8" rx="3" fill="#2c3238"/>
+  <g fill="none" stroke-linecap="round">
+    <path id="pr-thighF" stroke="#d08428" stroke-width="13"/>
+    <path id="pr-shinF" stroke="#d08428" stroke-width="11"/>
+  </g>
+  <path id="pr-footF" fill="#c47b22"/>
+
+  <!-- rear wheel -->
+  <circle cx="300" cy="394" r="76" fill="none" stroke="#2f333a" stroke-width="13"/>
+  <circle cx="300" cy="394" r="64" fill="none" stroke="#aeb6c2" stroke-width="4"/>
+  <g id="pr-spokesR" stroke="#c2c9d2" stroke-width="2.5"></g>
+  <circle cx="300" cy="394" r="9" fill="#3a4149"/>
+  <circle cx="300" cy="394" r="11" fill="none" stroke="#3a4149" stroke-width="4"/>
+  <line id="pr-chainT" x1="311" y1="384" x2="444" y2="372" stroke="#3a4149" stroke-width="3.5" stroke-dasharray="5 4"/>
+  <line id="pr-chainB" x1="311" y1="404" x2="444" y2="416" stroke="#3a4149" stroke-width="3.5" stroke-dasharray="5 4"/>
+
+  <!-- front wheel -->
+  <circle cx="636" cy="394" r="76" fill="none" stroke="#2f333a" stroke-width="13"/>
+  <circle cx="636" cy="394" r="64" fill="none" stroke="#aeb6c2" stroke-width="4"/>
+  <g id="pr-spokesF" stroke="#c2c9d2" stroke-width="2.5"></g>
+  <circle cx="636" cy="394" r="9" fill="#3a4149"/>
+
+  <!-- frame -->
+  <g stroke="#e2504c" stroke-width="10" stroke-linecap="round" fill="none">
+    <path d="M300 394 L452 394 L398 252 L300 394"/>
+    <path d="M398 252 L608 246"/>
+    <path d="M452 394 L622 262"/>
+    <path d="M602 232 L626 278" stroke-width="12"/>
+    <path d="M626 278 L636 394"/>
+    <path d="M602 232 L596 212"/>
+    <path d="M596 212 Q586 205 574 211 L566 218" stroke-width="8"/>
+  </g>
+  <circle cx="566" cy="219" r="6" fill="#3a4149"/>
+  <path d="M362 240 Q358 230 370 229 L414 229 Q424 230 420 239 Q416 245 406 245 L372 245 Q364 245 362 240 Z" fill="#2f333a"/>
+  <circle cx="452" cy="394" r="24" fill="none" stroke="#3a4149" stroke-width="5"/>
+  <circle cx="452" cy="394" r="5" fill="#3a4149"/>
+
+  <!-- near crank, near pedal, near leg -->
+  <line id="pr-crankN" x1="452" y1="394" x2="484" y2="394" stroke="#5b6470" stroke-width="9" stroke-linecap="round"/>
+  <rect id="pr-pedalN" x="-15" y="-4" width="30" height="8" rx="3" fill="#3a4149"/>
+  <g fill="none" stroke-linecap="round">
+    <path id="pr-thighN" stroke="#f2a24b" stroke-width="13"/>
+    <path id="pr-shinN" stroke="#f2a24b" stroke-width="11"/>
+  </g>
+  <path id="pr-footN" fill="#e8912f"/>
+
+  <!-- pelican -->
+  <g id="pr-bodyG">
+    <g id="pr-tailG" fill="#e7dcc6">
+      <path d="M314 198 L260 180 L306 168 Z"/>
+      <path d="M312 208 L262 200 L304 184 Z"/>
+    </g>
+    <ellipse cx="372" cy="206" rx="80" ry="54" fill="#f9f5ec" transform="rotate(-12 372 206)"/>
+    <ellipse cx="372" cy="228" rx="58" ry="22" fill="#eee3cd" opacity=".8"/>
+    <path d="M396 188 C458 168 532 194 568 218 C540 234 478 238 434 224 C412 216 400 204 396 188 Z" fill="#f1e9d7"/>
+    <path d="M512 214 Q544 208 566 219 Q542 231 514 227 Z" fill="#dccfae"/>
+    <path d="M474 220 Q500 214 520 224 Q498 233 478 230 Z" fill="#e4d8bc"/>
+    <g id="pr-headG">
+      <path d="M424 188 C418 152 446 126 480 116" fill="none" stroke="#f9f5ec" stroke-width="22" stroke-linecap="round"/>
+      <circle cx="492" cy="110" r="18" fill="#f9f5ec"/>
+      <path d="M506 112 C514 146 546 160 576 144 C592 136 600 130 604 125 L505 112 Z" id="pr-pouch" fill="#f8bc66"/>
+      <path d="M503 101 Q560 106 604 120 L603 126 Q556 116 503 111 Z" fill="#f2a24b"/>
+      <path d="M512 106 L546 110" stroke="#d98c33" stroke-width="2" stroke-linecap="round"/>
+      <g class="eye">
+        <circle cx="498" cy="104" r="3.2" fill="#2b2b33"/>
+        <circle cx="499.2" cy="102.6" r="1.1" fill="#fff"/>
+      </g>
+      <path d="M474 99 Q490 74 508 96 Q492 88 478 104 Z" fill="#e2504c"/>
+      <circle cx="491" cy="78" r="4.5" fill="#fdfdfd"/>
+    </g>
+  </g>
+</svg>
+<script>
+(function () {
+  const root = document.getElementById('pelican-ride');
+  const svg = root.querySelector('svg');
+  const $ = (id) => svg.querySelector('#pr-' + id);
+  const NS = 'http://www.w3.org/2000/svg';
+
+  function makeLine(parent, x1, y1, x2, y2) {
+    const el = document.createElementNS(NS, 'line');
+    el.setAttribute('x1', x1); el.setAttribute('y1', y1);
+    el.setAttribute('x2', x2); el.setAttribute('y2', y2);
+    parent.appendChild(el);
+  }
+  const spokesR = $('spokesR'), spokesF = $('spokesF');
+  for (const [g, cx] of [[spokesR, 300], [spokesF, 636]]) {
+    for (let i = 0; i < 9; i++) {
+      const a = i * Math.PI * 2 / 9;
+      makeLine(g, cx + Math.cos(a) * 10, 394 + Math.sin(a) * 10,
+                  cx + Math.cos(a) * 61, 394 + Math.sin(a) * 61);
+    }
+  }
+  const planks = $('planks');
+  for (let x = -72; x < 1104; x += 72) makeLine(planks, x, 486, x, 534);
+  function wavePath(y, amp) {
+    let d = 'M-160 ' + y;
+    for (let x = -160; x < 1120; x += 80) d += ' q40 ' + (-amp) + ' 80 0';
+    return d;
+  }
+  $('wavesA').setAttribute('d', wavePath(436, 7));
+  $('wavesB').setAttribute('d', wavePath(454, 5));
+
+  const el = {};
+  for (const id of ['bodyG', 'headG', 'pouch', 'tailG', 'shadow', 'crankN', 'crankF',
+    'pedalN', 'pedalF', 'thighN', 'shinN', 'footN', 'thighF', 'shinF', 'footF',
+    'chainT', 'chainB', 'wavesA', 'wavesB', 'planks']) el[id] = $(id);
+
+  // Rig: crank center, crank radius, hip on the saddle, thigh/shin lengths.
+  const BB = { x: 452, y: 394 }, CR = 32;
+  const H0 = { x: 408, y: 234 }, L1 = 104, L2 = 106;
+  const WHEEL_R = 76, WHEEL_W = 4.6, GEAR = 13 / 24, SCROLL = 0.55;
+
+  function leg(H, P) {
+    let dx = P.x - H.x, dy = P.y - H.y;
+    let d = Math.hypot(dx, dy) || 0.001;
+    const ux = dx / d, uy = dy / d;
+    d = Math.min(d, L1 + L2 - 0.5);
+    const F = { x: H.x + ux * d, y: H.y + uy * d };
+    const a = (L1 * L1 - L2 * L2 + d * d) / (2 * d);
+    const h = Math.sqrt(Math.max(0, L1 * L1 - a * a));
+    return { K: { x: H.x + ux * a - uy * h, y: H.y + uy * a + ux * h }, F };
+  }
+  function drawLeg(thigh, shin, foot, H, P) {
+    const { K, F } = leg(H, P);
+    thigh.setAttribute('d', 'M' + H.x + ' ' + H.y + ' L' + K.x.toFixed(1) + ' ' + K.y.toFixed(1));
+    shin.setAttribute('d', 'M' + K.x.toFixed(1) + ' ' + K.y.toFixed(1) + ' L' + F.x.toFixed(1) + ' ' + F.y.toFixed(1));
+    foot.setAttribute('d', 'M' + (F.x - 15).toFixed(1) + ' ' + (F.y - 4).toFixed(1) +
+      ' L' + (F.x + 19).toFixed(1) + ' ' + (F.y - 7).toFixed(1) +
+      ' L' + (F.x + 3).toFixed(1) + ' ' + (F.y - 15).toFixed(1) + ' Z');
+  }
+  const pedal = (th) => ({ x: BB.x + CR * Math.cos(th), y: BB.y + CR * Math.sin(th) });
+
+  function pose(th, bob) {
+    el.bodyG.setAttribute('transform', 'translate(0 ' + bob.toFixed(2) + ')');
+    el.headG.setAttribute('transform', 'rotate(' + (2.4 * Math.sin(2 * th + 0.5)).toFixed(2) + ' 424 186)');
+    el.pouch.setAttribute('transform', 'translate(504 114) scale(1 ' +
+      (1 + 0.05 * Math.sin(2 * th + 1.2)).toFixed(3) + ') translate(-504 -114)');
+    el.tailG.setAttribute('transform', 'rotate(' + (3 * Math.sin(2 * th + 1.6)).toFixed(2) + ' 312 196)');
+    const H = { x: H0.x, y: H0.y + bob };
+    const P1 = pedal(th), P2 = pedal(th + Math.PI);
+    drawLeg(el.thighN, el.shinN, el.footN, H, P1);
+    drawLeg(el.thighF, el.shinF, el.footF, H, P2);
+    el.crankN.setAttribute('x2', P1.x.toFixed(1)); el.crankN.setAttribute('y2', P1.y.toFixed(1));
+    el.crankF.setAttribute('x2', P2.x.toFixed(1)); el.crankF.setAttribute('y2', P2.y.toFixed(1));
+    el.pedalN.setAttribute('transform', 'translate(' + P1.x.toFixed(1) + ' ' + P1.y.toFixed(1) + ')');
+    el.pedalF.setAttribute('transform', 'translate(' + P2.x.toFixed(1) + ' ' + P2.y.toFixed(1) + ')');
+    el.shadow.setAttribute('rx', (235 - 4 * bob).toFixed(1));
+    el.shadow.setAttribute('opacity', (0.14 - 0.01 * bob).toFixed(3));
+  }
+
+  const clouds = [...root.querySelectorAll('.cloud')].map((g) => ({ g, speed: +g.dataset.speed, x: 0 }));
+  const birdHome = [[520, 128], [300, 96]];
+  const birds = [...root.querySelectorAll('.bird')].map((p, i) => ({
+    p, x: birdHome[i][0], y: birdHome[i][1], speed: 20,
+  }));
+
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  if (reduce) { pose(1.05, 1.2); return; }
+
+  let last = performance.now(), wheel = 0, chain = 0, wave = 0, t = 0;
+  function tick(now) {
+    const dt = Math.min(0.05, (now - last) / 1000); last = now;
+    t += dt;
+    wheel += WHEEL_W * dt;
+    const th = wheel * GEAR;
+    pose(th, 3 * Math.sin(2 * th + 0.8));
+
+    const deg = (wheel * 180 / Math.PI) % 360;
+    spokesR.setAttribute('transform', 'rotate(' + deg.toFixed(1) + ' 300 394)');
+    spokesF.setAttribute('transform', 'rotate(' + deg.toFixed(1) + ' 636 394)');
+
+    chain += WHEEL_R * WHEEL_W * dt;
+    const off = -(chain % 9);
+    el.chainT.setAttribute('stroke-dashoffset', off);
+    el.chainB.setAttribute('stroke-dashoffset', off);
+
+    wave += 30 * dt;
+    el.wavesA.setAttribute('transform', 'translate(' + -(wave % 160) + ' 0)');
+    el.wavesB.setAttribute('transform', 'translate(' + -(wave % 120) + ' 0)');
+    el.planks.setAttribute('transform', 'translate(' + (-(wheel * WHEEL_R * SCROLL) % 72).toFixed(1) + ' 0)');
+
+    for (const c of clouds) {
+      c.x -= c.speed * dt;
+      if (c.x < -340) c.x += 1300;
+      c.g.setAttribute('transform', 'translate(' + c.x.toFixed(1) + ' 0)');
+    }
+    for (const b of birds) {
+      b.x -= b.speed * dt;
+      if (b.x < -60) b.x = 1020;
+      b.p.setAttribute('transform', 'translate(' + b.x.toFixed(1) + ' ' +
+        (b.y + 4 * Math.sin(t * 3 + b.x * 0.01)).toFixed(1) + ')');
+    }
+    requestAnimationFrame(tick);
+  }
+  requestAnimationFrame(tick);
+})();
+</script>
+</div>
+</body>
+</html>

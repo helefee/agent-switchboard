@@ -94,7 +94,7 @@ fn request_path(protocol: UpstreamProtocol) -> &'static str {
     }
 }
 
-fn parse_base(base_url: &str, protocol: UpstreamProtocol) -> Result<Url, String> {
+fn parse_service_base(base_url: &str) -> Result<Url, String> {
     let invalid = || "服务地址必须是无凭据、查询参数或片段的完整 HTTP(S) 地址".to_string();
     let authority = base_url.split_once("://").map(|(_, rest)| rest);
     if base_url.trim() != base_url
@@ -114,6 +114,11 @@ fn parse_base(base_url: &str, protocol: UpstreamProtocol) -> Result<Url, String>
     {
         return Err(invalid());
     }
+    Ok(url)
+}
+
+fn parse_base(base_url: &str, protocol: UpstreamProtocol) -> Result<Url, String> {
+    let url = parse_service_base(base_url)?;
     if url
         .path()
         .trim_end_matches('/')
@@ -133,11 +138,27 @@ fn parse_base(base_url: &str, protocol: UpstreamProtocol) -> Result<Url, String>
     // request path. A version-prefixed base would silently double to
     // `/v1/v1/messages`, so it is rejected instead of guessed away.
     if protocol == UpstreamProtocol::AnthropicMessages
-        && url.path().trim_end_matches('/').rsplit('/').next() == Some("v1")
+        && version_prefix_root(url.path()).is_some()
     {
         return Err("服务地址应填写服务根地址，不要包含 /v1 版本前缀".into());
     }
     Ok(url)
+}
+
+fn version_prefix_root(path: &str) -> Option<&str> {
+    path.trim_end_matches('/').strip_suffix("/v1")
+}
+
+/// Repairs one terminal `/v1` on an otherwise valid Anthropic service base.
+/// The original URL syntax and the resulting root use the normal validators;
+/// unrelated malformed inputs must not be normalized by repair.
+pub fn strip_anthropic_version_prefix(base_url: &str) -> Option<String> {
+    let mut url = parse_service_base(base_url).ok()?;
+    let path = version_prefix_root(url.path())?.to_owned();
+    url.set_path(if path.is_empty() { "/" } else { &path });
+    let root = url.to_string();
+    validate_base_url(&root, UpstreamProtocol::AnthropicMessages).ok()?;
+    Some(root)
 }
 
 fn parse_full_url(endpoint: &str) -> Result<String, String> {
@@ -231,6 +252,78 @@ mod tests {
             upstream_endpoint("https://example.test/v1beta", protocol).unwrap(),
             "https://example.test/v1beta/v1/messages"
         );
+    }
+
+    #[test]
+    fn version_prefix_repair_returns_valid_roots_for_current_request_paths() {
+        let protocol = UpstreamProtocol::AnthropicMessages;
+        for (base, expected_root, prefix) in [
+            (
+                "https://example.test/v1",
+                "https://example.test/",
+                "https://example.test",
+            ),
+            (
+                "https://example.test/v1/",
+                "https://example.test/",
+                "https://example.test",
+            ),
+            (
+                "https://example.test/proxy/v1",
+                "https://example.test/proxy",
+                "https://example.test/proxy",
+            ),
+            (
+                "https://example.test/proxy/v1///",
+                "https://example.test/proxy",
+                "https://example.test/proxy",
+            ),
+        ] {
+            assert!(validate_base_url(base, protocol).is_err());
+            assert!(upstream_endpoint(base, protocol).is_err());
+            assert!(models_endpoint(base, protocol).is_err());
+            let root = strip_anthropic_version_prefix(base).unwrap();
+            assert_eq!(root, expected_root);
+            assert!(validate_base_url(&root, protocol).is_ok());
+            assert_eq!(
+                upstream_endpoint(&root, protocol).unwrap(),
+                format!("{prefix}/v1/messages")
+            );
+            assert_eq!(
+                models_endpoint(&root, protocol).unwrap(),
+                format!("{prefix}/v1/models")
+            );
+        }
+        for base in [
+            "https://example.test",
+            "https://example.test/v1beta",
+            "https://example.test/api/v2",
+            "https://v1",
+        ] {
+            assert_eq!(strip_anthropic_version_prefix(base), None);
+        }
+    }
+
+    #[test]
+    fn version_prefix_repair_rejects_other_invalid_url_shapes() {
+        for base in [
+            " https://example.test/v1",
+            "https://example.test/v1 ",
+            "https://exa\nmple.test/v1",
+            "https://example.test/v1\t",
+            "https://example.test\\proxy/v1",
+            "https://user:password@example.test/v1",
+            "https://example.test/v1?key=value",
+            "https://example.test/v1#fragment",
+            "https:///example.test/v1",
+            "https:example.test/v1",
+            "ftp://example.test/v1",
+            "https://example.test/v1/v1",
+            "https://example.test/v1/messages/v1",
+        ] {
+            assert!(validate_base_url(base, UpstreamProtocol::AnthropicMessages).is_err());
+            assert_eq!(strip_anthropic_version_prefix(base), None, "{base:?}");
+        }
     }
 
     #[test]

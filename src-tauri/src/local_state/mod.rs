@@ -13,7 +13,7 @@ mod workspace;
 
 
 pub(crate) use paths::user_home_dir;
-pub(crate) use settings::DesktopSettingsError;
+pub(crate) use settings::{DesktopSettingsError, ThemePreference};
 #[allow(unused_imports)] // public contract mirror of the frontend settings type
 pub use settings::{
     AppSettings, CloseBehavior, CloudBackupSettings, LanguagePreference, StartupPage, WorkspacePage,

@@ -203,7 +203,7 @@ function HistoryDetail({ history, onReuseQuestion }: {
         <p className="asb-codex-probe-meta">
           {t("codex.probe.configPrefix")}{configSummary(batch, t)}{batch.cliVersion && ` · CLI ${batch.cliVersion}`}
         </p>
-        <div className="asb-codex-probe-custom">
+        <div className="asb-codex-probe-question">
           <p className="asb-codex-probe-meta">
             {t(batch.gradingVersion !== "1" ? "codex.probe.visual.questionMeta" : "codex.history.questionMeta", {
               label: batch.question.label,

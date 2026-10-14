@@ -1,5 +1,5 @@
 use super::*;
-use crate::codex_probe::{resolve_question, tests::write_rollout, ProbeRunOutcome, QUESTIONS};
+use crate::codex_probe::{resolve_question, tests::write_rollout, ProbeRunOutcome};
 use std::sync::Mutex;
 
 const ID: &str = "11111111-1111-4111-8111-111111111111";
@@ -44,7 +44,7 @@ fn runner_uses_the_final_answer_file_and_the_emitted_session_id() {
     }
     let previous = std::env::var_os("ASB_TEST_CODEX_BIN");
     std::env::set_var("ASB_TEST_CODEX_BIN", &stub);
-    let question = resolve_question(QUESTIONS[0].id, None, None, None).unwrap();
+    let question = resolve_question("divisible-or-contains-3", None, None, None).unwrap();
     let reported: Arc<Mutex<Vec<String>>> = Arc::new(Mutex::new(Vec::new()));
     let sink = Arc::clone(&reported);
     let hook: Arc<dyn Fn(&str) + Send + Sync> = Arc::new(move |id| {
@@ -74,7 +74,7 @@ fn only_a_successful_final_answer_passes_regardless_of_diagnostics() {
     write_rollout(&home, ID, 190);
     let workdir = Workdir::create().unwrap();
     let answer = workdir.0.join("answer.txt");
-    let question = resolve_question(QUESTIONS[0].id, None, None, None).unwrap();
+    let question = resolve_question("divisible-or-contains-3", None, None, None).unwrap();
     for (text, success, timeout, expected) in [
         ("45\n", true, false, ProbeRunOutcome::Passed), ("44", true, false, ProbeRunOutcome::Failed),
         ("-45", true, false, ProbeRunOutcome::Failed), ("45.5", true, false, ProbeRunOutcome::Failed),
@@ -97,7 +97,7 @@ fn missing_answer_or_incomplete_protocol_cannot_pass() {
     write_rollout(&home, ID, 190);
     let workdir = Workdir::create().unwrap();
     let answer = workdir.0.join("answer.txt");
-    let question = resolve_question(QUESTIONS[0].id, None, None, None).unwrap();
+    let question = resolve_question("divisible-or-contains-3", None, None, None).unwrap();
     let missing = collect_result(&question, &answer, &events(), "45",
         exit_status(true), false, Instant::now(), None);
     assert_eq!(missing.outcome, ProbeRunOutcome::Undetermined);
@@ -118,7 +118,7 @@ fn missing_usage_stays_unknown_without_changing_the_answer_verdict() {
     let workdir = Workdir::create().unwrap();
     let answer = workdir.0.join("answer.txt");
     std::fs::write(&answer, "45").unwrap();
-    let question = resolve_question(QUESTIONS[0].id, None, None, None).unwrap();
+    let question = resolve_question("divisible-or-contains-3", None, None, None).unwrap();
     let result = collect_result(&question, &answer, &events(), "",
         exit_status(true), false, Instant::now(), None);
     assert_eq!(result.outcome, ProbeRunOutcome::Passed);
@@ -162,7 +162,7 @@ fn a_broken_stdout_still_reports_the_early_session_id() {
     let workdir = Workdir::create().unwrap();
     let answer = workdir.0.join("answer.txt");
     std::fs::write(&answer, "45").unwrap();
-    let question = resolve_question(QUESTIONS[0].id, None, None, None).unwrap();
+    let question = resolve_question("divisible-or-contains-3", None, None, None).unwrap();
     let broken = format!("not json{{\"type\":\"thread.started\",\"thread_id\":\"{ID}\"}}");
     let result = collect_result(&question, &answer, &broken, "",
         exit_status(true), false, Instant::now(), Some(ID));
@@ -182,7 +182,7 @@ fn session_ids_are_extracted_only_from_thread_started_lines() {
 
 #[test]
 fn cancelled_before_start_never_launches_a_process() {
-    let question = resolve_question(QUESTIONS[0].id, None, None, None).unwrap();
+    let question = resolve_question("divisible-or-contains-3", None, None, None).unwrap();
     assert!(matches!(
         run_once(&question, &AtomicBool::new(true), &idle_session_hook(), &|| Ok(())),
         Err(ProbeAbort::Cancelled)

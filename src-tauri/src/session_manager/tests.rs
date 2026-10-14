@@ -142,7 +142,7 @@ fn extracts_messages_only_when_a_record_has_a_role_and_content() {
         ),
     );
 
-    let messages = read_messages(&path).expect("read messages");
+    let messages = collect_messages(&path).expect("read messages");
     assert_eq!(messages.len(), 2);
     assert_eq!(messages[0].content, "你好");
     assert_eq!(messages[1].role, "assistant");

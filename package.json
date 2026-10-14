@@ -5,9 +5,10 @@
   "scripts": {
     "dev": "cross-env ASB_WEB_DEVELOPMENT=1 tauri dev",
     "dev:desktop": "cross-env ASB_WEB_DEVELOPMENT= CARGO_TARGET_DIR=target-dev tauri dev",
-    "dev:frontend": "vite",
+    "dev:frontend": "npm run fonts:sync && vite",
+    "fonts:sync": "node scripts/sync-fonts.mjs",
     "icons:sync": "node scripts/sync-app-icons.mjs",
-    "build": "tsc --noEmit && vite build",
+    "build": "npm run fonts:sync && tsc --noEmit && vite build",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit",
     "ci": "node scripts/ci.mjs",

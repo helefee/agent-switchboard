@@ -23,7 +23,7 @@
 
 .asb-information-trigger:hover,
 .asb-information-trigger[aria-expanded="true"] {
-  background: var(--asb-content-muted);
+  background: var(--asb-chrome-hover);
 }
 
 .asb-information-summary {
@@ -61,7 +61,7 @@
 .asb-information-dialog {
   display: flex;
   flex-direction: column;
-  max-height: min(var(--asb-information-height), calc(100dvh - var(--asb-sidebar-width) - var(--asb-space-4)));
+  max-height: min(var(--asb-information-height), calc(100dvh - var(--asb-titlebar-height) - var(--asb-space-4)));
   min-height: 0;
 }
 

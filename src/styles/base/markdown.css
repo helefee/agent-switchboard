@@ -1,0 +1,93 @@
+/* Markdown content renders as GitHub-flavored markdown (react-markdown +
+   remark-gfm) through the shared MarkdownContent viewer. `.asb-markdown` is
+   the one element-style scope: block children get the token spacing steps,
+   and headings stay at the section step so a document title inside a surface
+   never shouts over that surface's own headings. Containers own only their
+   layout (font, wrapping, margins). */
+.asb-markdown > :first-child {
+  margin-top: 0;
+}
+
+.asb-markdown > :last-child {
+  margin-bottom: 0;
+}
+
+.asb-markdown p {
+  margin: var(--asb-space-1) 0;
+}
+
+.asb-markdown h1,
+.asb-markdown h2,
+.asb-markdown h3,
+.asb-markdown h4,
+.asb-markdown h5,
+.asb-markdown h6 {
+  margin: var(--asb-space-2) 0 var(--asb-space-1);
+  font: var(--asb-text-section);
+}
+
+.asb-markdown ul,
+.asb-markdown ol {
+  margin: var(--asb-space-1) 0;
+  padding-left: calc(var(--asb-space-3) + var(--asb-space-1));
+}
+
+.asb-markdown li {
+  margin: var(--asb-space-hairline) 0;
+}
+
+.asb-markdown code {
+  padding: 0 var(--asb-space-hairline);
+  border-radius: var(--asb-radius);
+  background: var(--asb-code-bg);
+  font: var(--asb-text-code);
+}
+
+.asb-markdown pre {
+  margin: var(--asb-space-1) 0;
+  padding: var(--asb-space-2);
+  border: 1px solid var(--asb-hairline);
+  border-radius: var(--asb-radius);
+  background: var(--asb-code-bg);
+  overflow-x: auto;
+}
+
+.asb-markdown pre code {
+  padding: 0;
+  background: transparent;
+  white-space: pre;
+}
+
+.asb-markdown blockquote {
+  margin: var(--asb-space-1) 0;
+  padding-left: var(--asb-space-2);
+  border-left: 2px solid var(--asb-hairline-strong);
+  color: var(--asb-text-muted);
+}
+
+.asb-markdown table {
+  margin: var(--asb-space-1) 0;
+  border-collapse: collapse;
+  font: var(--asb-text-label);
+}
+
+.asb-markdown th,
+.asb-markdown td {
+  padding: var(--asb-space-unit) var(--asb-space-1);
+  border: 1px solid var(--asb-hairline);
+  text-align: left;
+}
+
+.asb-markdown a {
+  color: var(--asb-link);
+}
+
+.asb-markdown img {
+  max-width: 100%;
+}
+
+.asb-markdown hr {
+  margin: var(--asb-space-2) 0;
+  border: 0;
+  border-top: 1px solid var(--asb-hairline);
+}

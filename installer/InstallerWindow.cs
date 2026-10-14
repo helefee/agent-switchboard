@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel;
+using System.Globalization;
 using System.IO;
 using System.Reflection;
 using System.Windows;
@@ -7,6 +8,7 @@ using System.Windows.Controls;
 using System.Windows.Input;
 using System.Windows.Interop;
 using System.Windows.Markup;
+using System.Windows.Media;
 using System.Windows.Shell;
 
 namespace AgentSwitchboard.Installer
@@ -36,7 +38,11 @@ namespace AgentSwitchboard.Installer
         private Button close;
         private Button browse;
         private CheckBox launch;
-        private ProgressBar progress;
+        private Grid progressRing;
+        private System.Windows.Shapes.Path arc;
+        private TextBlock percent;
+        private TextBlock phase;
+        private TextBlock detail;
         private string installedDirectory;
         private InstallerViewState viewState = InstallerViewState.Ready;
         private bool restartFailed;
@@ -111,7 +117,10 @@ namespace AgentSwitchboard.Installer
                 bool update = invocation.IsUpdate || InstallerEngine.IsInstalledDirectory(directory.Text);
                 var request = InstallationRequest.Create(directory.Text, update);
                 installedDirectory = request.Directory;
-                var result = await InstallerEngine.Run(request, invocation);
+                var result = await InstallerEngine.Run(
+                    request,
+                    invocation,
+                    new Progress<InstallProgress>(OnInstallProgress));
                 EnterCompletedState(result);
             }
             catch (Exception error)
@@ -138,12 +147,50 @@ namespace AgentSwitchboard.Installer
             summary.Text = copy.InstallingStatus;
             diagnostic.Visibility = Visibility.Collapsed;
             launch.Visibility = Visibility.Collapsed;
-            progress.Value = SystemParameters.ClientAreaAnimation ? 0 : 35;
-            progress.IsIndeterminate = SystemParameters.ClientAreaAnimation;
-            progress.Visibility = Visibility.Visible;
+            percent.Text = "0%";
+            arc.Data = ArcGeometry(0);
+            phase.Text = String.Empty;
+            phase.Visibility = Visibility.Collapsed;
+            detail.Text = copy.ProgressFacts(copy.Version(InstallerProductMetadata.Version), null, directory.Text);
+            detail.Visibility = Visibility.Visible;
+            progressRing.Visibility = Visibility.Visible;
             primary.IsEnabled = false;
             cancel.Visibility = Visibility.Collapsed;
             close.IsEnabled = false;
+        }
+
+        /// Progress<T> marshals every report onto the UI thread; the ring, the
+        /// percentage, the phase and the data line all render from one report.
+        private void OnInstallProgress(InstallProgress progress)
+        {
+            if (viewState != InstallerViewState.Installing) return;
+            double fraction = Math.Max(0.0, Math.Min(1.0, progress.Fraction));
+            percent.Text = Math.Round(fraction * 100.0).ToString(CultureInfo.CurrentCulture) + "%";
+            arc.Data = ArcGeometry(fraction);
+            phase.Text = copy.Phase(progress.Phase);
+            phase.Visibility = Visibility.Visible;
+            detail.Text = ProgressDetail(progress);
+        }
+
+        private string ProgressDetail(InstallProgress progress)
+        {
+            string bytes = null;
+            switch (progress.Phase)
+            {
+                case InstallPhase.RuntimeDownload:
+                    if (progress.TotalBytes.HasValue) bytes = copy.Downloaded(progress.Bytes, progress.TotalBytes.Value);
+                    break;
+                case InstallPhase.EngineExtract:
+                    if (progress.TotalBytes.HasValue) bytes = copy.Extracted(progress.Bytes, progress.TotalBytes.Value);
+                    break;
+                case InstallPhase.EngineInstall:
+                    bytes = copy.Written(progress.Bytes);
+                    break;
+            }
+            return copy.ProgressFacts(
+                copy.Version(InstallerProductMetadata.Version),
+                bytes,
+                installedDirectory ?? directory.Text);
         }
 
         private void EnterCompletedState(InstallResult result)
@@ -152,8 +199,9 @@ namespace AgentSwitchboard.Installer
             ExitCode = 0;
             locationCard.Visibility = Visibility.Collapsed;
             version.Visibility = Visibility.Collapsed;
-            progress.IsIndeterminate = false;
-            progress.Visibility = Visibility.Collapsed;
+            progressRing.Visibility = Visibility.Collapsed;
+            phase.Visibility = Visibility.Collapsed;
+            detail.Visibility = Visibility.Collapsed;
             title.Text = copy.CompleteTitle;
             summary.Foreground = Brush("Muted");
             summary.Text = copy.CompleteStatus;
@@ -183,8 +231,9 @@ namespace AgentSwitchboard.Installer
             viewState = InstallerViewState.Failure;
             restartFailed = false;
             version.Visibility = Visibility.Collapsed;
-            progress.IsIndeterminate = false;
-            progress.Visibility = Visibility.Collapsed;
+            progressRing.Visibility = Visibility.Collapsed;
+            phase.Visibility = Visibility.Collapsed;
+            detail.Visibility = Visibility.Collapsed;
             locationCard.Visibility = FailureUsesLocation(error)
                 ? Visibility.Visible
                 : Visibility.Collapsed;

@@ -67,6 +67,9 @@
     <EmbeddedResource Include="assets\installer-background.wdp">
       <LogicalName>AgentSwitchboard.Installer.Assets.InstallerBackground.wdp</LogicalName>
     </EmbeddedResource>
+    <EmbeddedResource Include="..\src-tauri\icons\128x128@2x.png">
+      <LogicalName>AgentSwitchboard.Installer.Assets.BrandIcon.png</LogicalName>
+    </EmbeddedResource>
     <EmbeddedResource Include="$(InstallerEnginePath)" Condition=" '$(InstallerEnginePath)' != '' ">
       <LogicalName>AgentSwitchboard.Installer.Engine.payload</LogicalName>
     </EmbeddedResource>

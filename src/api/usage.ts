@@ -321,7 +321,8 @@ export interface CodexProbeQuestion {
   label: string;
   text: string;
   gradingVersion: CodexProbeGradingVersion;
-  sourceUrl: string | null;
+  /** A hand-made reference rendering; never a grading baseline. */
+  referenceVisual: string | null;
 }
 
 export type CodexProbeBatchStatus =
@@ -485,8 +486,8 @@ export function getCodexProbeBatch(batchId: string): Promise<CodexProbeBatch | n
 
 /** Deletes finished batches and their runs — only the radar's own records;
  * Codex sessions and the real usage ledger stay untouched. */
-export function deleteCodexProbeBatches(batchIds: string[]): Promise<{ deleted: number }> {
-  return invoke<{ deleted: number }>("delete_codex_probe_batches", {
+export function deleteCodexProbeBatches(batchIds: string[]): Promise<{ deleted: number; warning: string | null }> {
+  return invoke<{ deleted: number; warning: string | null }>("delete_codex_probe_batches", {
     request: { batchIds },
   });
 }

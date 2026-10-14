@@ -4,7 +4,6 @@ import { useI18n } from "../i18n";
 import type { Page } from "./navigation";
 import { SideNav } from "./SideNav";
 import { PinTopButton } from "../components/PinTopButton";
-import { UpdateButton } from "../components/UpdateButton";
 import { GlobalInformation } from "../components/GlobalInformation";
 import { WindowControls } from "../components/WindowControls";
 import { isBrowserDevelopment } from "../lib/runtime";
@@ -25,16 +24,14 @@ interface AppShellProps {
   onRepairStore: () => void;
   /** Always-on-top toggle state; null until settings load. */
   pin: { active: boolean; onToggle: () => void } | null;
-  /** Update indicator; present only while a newer release is known. */
-  update: { latestVersion: string; onOpen: () => void } | null;
+  /** Sidebar update entry above the settings item; App owns the check state. */
+  update: { checking: boolean; latestVersion: string | null; onCheck: () => void; onOpen: () => void };
   children: ReactNode;
 }
 
-/** Application frame: one full-window canvas beneath a frosted-glass chrome —
- * the left navigation rail and the slim titlebar, which owns the drag region
- * and the window actions. Page content scrolls under the chrome and is
- * blurred by it. Page geometry never changes when banners appear or
- * disappear. */
+/** One native glass frame surrounds the bounded, rounded workspace. The rail
+ * and titlebar reserve their own grid cells; page scrolling stays inside the
+ * workspace and cannot pass beneath navigation or window actions. */
 export function AppShell({
   page,
   onPageChange,
@@ -52,7 +49,7 @@ export function AppShell({
   return (
     <div className={`asb-shell${collapsed ? " is-collapsed" : ""}`}>
       <SideNav page={page} onPageChange={onPageChange} collapsed={collapsed}
-        onToggle={() => setCollapsed((value) => !value)} />
+        onToggle={() => setCollapsed((value) => !value)} update={update} />
       <header className="asb-titlebar" data-tauri-drag-region>
         <span className="asb-titlebar-brand" data-tauri-drag-region>
           <img className="asb-titlebar-icon" src={appIcon} alt="" data-tauri-drag-region />
@@ -62,9 +59,6 @@ export function AppShell({
           onRepairStore={onRepairStore} onRepairSettings={onRepairSettings} />
         <div className="asb-titlebar-actions">
           {isBrowserDevelopment ? <span className="asb-web-development-badge">{t("shell.devBadge")}</span> : null}
-          {update ? (
-            <UpdateButton latestVersion={update.latestVersion} onOpen={update.onOpen} />
-          ) : null}
           {pin ? (
             <PinTopButton active={pin.active} disabled={busy} onToggle={pin.onToggle} />
           ) : null}

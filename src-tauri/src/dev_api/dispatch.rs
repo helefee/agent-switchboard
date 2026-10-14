@@ -24,6 +24,9 @@ pub(super) fn dispatch(app: &AppHandle, request: InvokeRequest) -> Result<Value,
         if let Some(result) = super::extensions_dispatch::dispatch(app, &request).await? {
             return Ok(result);
         }
+        if let Some(result) = super::sessions_dispatch::dispatch(app, &request).await? {
+            return Ok(result);
+        }
         macro_rules! command {
             ($future:expr) => {
                 as_json($future.await)
@@ -421,54 +424,6 @@ pub(super) fn dispatch(app: &AppHandle, request: InvokeRequest) -> Result<Value,
                 app.clone(),
                 argument::<UsageHistoryRequest>(&request.args, "request")?,
             )),
-            "search_sessions" => command!(commands::search_sessions(
-                app.clone(),
-                argument::<crate::session_manager::SessionSearchRequest>(&request.args, "request")?,
-            )),
-            "update_session_organization" => command!(commands::update_session_organization(
-                app.clone(),
-                argument::<Vec<crate::session_manager::SessionDeleteRequest>>(&request.args, "requests")?,
-                argument::<crate::session_manager::SessionOrganizationChange>(&request.args, "change")?,
-            )),
-            "export_session_markdown" => command!(commands::export_session_markdown(
-                app.clone(),
-                argument::<AppKind>(&request.args, "app")?,
-                argument(&request.args, "sessionId")?,
-            )),
-            "list_session_bookmarks" => command!(commands::list_session_bookmarks(app.clone())),
-            "save_session_bookmark" => command!(commands::save_session_bookmark(
-                app.clone(),
-                argument::<AppKind>(&request.args, "app")?,
-                argument(&request.args, "sessionId")?,
-                argument(&request.args, "messageId")?,
-            )),
-            "delete_session_bookmark" => command!(commands::delete_session_bookmark(
-                app.clone(),
-                argument(&request.args, "id")?,
-            )),
-            "get_session_metadata" => command!(commands::get_session_metadata(
-                app.clone(),
-                argument::<AppKind>(&request.args, "app")?,
-                argument(&request.args, "sessionId")?,
-            )),
-            "get_session_messages" => command!(commands::get_session_messages(
-                argument::<AppKind>(&request.args, "app")?,
-                argument(&request.args, "sessionId")?,
-            )),
-            "resume_session" => command!(commands::resume_session(
-                argument::<AppKind>(&request.args, "app")?,
-                argument(&request.args, "sessionId")?,
-            )),
-            "delete_session" => command!(commands::delete_session(
-                app.clone(),
-                argument::<AppKind>(&request.args, "app")?,
-                argument(&request.args, "sessionId")?,
-            )),
-            "delete_sessions" => command!(commands::delete_sessions(app.clone(), argument::<
-                Vec<crate::session_manager::SessionDeleteRequest>,
-            >(
-                &request.args, "requests"
-            )?)),
             _ => Err(CommandError::keyed(
                 "web-command-unavailable",
                 "errors.misc.webCommandUnavailable",

@@ -10,6 +10,7 @@ import {
   trayReady,
   type TraySnapshot,
 } from "../api/client";
+import { queryCodexOfficialQuota, queryProfileUsage } from "../api/usage";
 import appIcon from "../assets/app-icon.svg";
 import { Button } from "@/components/Button";
 import { ClientLogo } from "@/components/ClientLogo";
@@ -25,10 +26,10 @@ const TRAY_MAX_HEIGHT = 560;
 
 type TrayApp = "codex" | "claude";
 
-/** In-flight tray action. A provider switch carries the row id so that row
- * can show the switching state; panel commands (open/manage/quit) share one
- * shape. The two kinds never share an id namespace. */
-type PendingAction = { kind: "switch"; providerId: string } | { kind: "panel" };
+/** In-flight tray action. A provider switch or usage refresh carries the row
+ * id so that row can show its in-flight state; panel commands (open/manage/
+ * quit) share one shape. The three kinds never share an id namespace. */
+type PendingAction = { kind: "switch" | "refresh"; providerId: string } | { kind: "panel" };
 
 interface TrayGroupProps {
   app: TrayApp;
@@ -36,10 +37,12 @@ interface TrayGroupProps {
   loaded: boolean;
   busy: boolean;
   switchingId: string | null;
+  refreshingId: string | null;
   onSwitch: (providerId: string) => void;
+  onRefreshUsage: (provider: TraySnapshot["providers"][number]) => void;
 }
 
-function TrayGroup({ app, providers, loaded, busy, switchingId, onSwitch }: TrayGroupProps) {
+function TrayGroup({ app, providers, loaded, busy, switchingId, refreshingId, onSwitch, onRefreshUsage }: TrayGroupProps) {
   const label = app === "codex" ? "Codex" : "Claude Code";
   const { t } = useI18n();
   return (
@@ -52,7 +55,9 @@ function TrayGroup({ app, providers, loaded, busy, switchingId, onSwitch }: Tray
           provider={provider}
           busy={busy}
           switchingId={switchingId}
+          refreshingId={refreshingId}
           onSwitch={() => onSwitch(provider.id)}
+          onRefreshUsage={() => onRefreshUsage(provider)}
         />
       ))}
     </section>
@@ -144,9 +149,19 @@ function TrayPanelContent({ snapshot, readError, initialized, refresh }: {
   const error = actionError ?? readError ?? snapshot?.error;
   const providers = snapshot?.providers ?? [];
   const switchingId = pending?.kind === "switch" ? pending.providerId : null;
+  const refreshingId = pending?.kind === "refresh" ? pending.providerId : null;
   const switchProvider = (providerId: string) => {
     void run({ kind: "switch", providerId }, async () => {
       await switchTrayProvider(providerId);
+      await refresh();
+    });
+  };
+  /** The forced manual path: the same backend executors the main window's
+   * refresh buttons use, then one snapshot re-read through the shared cache. */
+  const refreshUsage = (provider: TraySnapshot["providers"][number]) => {
+    void run({ kind: "refresh", providerId: provider.id }, async () => {
+      if (provider.usage?.kind === "official") await queryCodexOfficialQuota(provider.id);
+      else await queryProfileUsage(provider.app, provider.id);
       await refresh();
     });
   };
@@ -169,7 +184,9 @@ function TrayPanelContent({ snapshot, readError, initialized, refresh }: {
               loaded={snapshot !== null}
               busy={busy}
               switchingId={switchingId}
+              refreshingId={refreshingId}
               onSwitch={switchProvider}
+              onRefreshUsage={refreshUsage}
             />
           ))}
         </div>

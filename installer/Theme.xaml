@@ -11,10 +11,8 @@
   <SolidColorBrush x:Key="Muted" Color="#A8B4C7" />
   <SolidColorBrush x:Key="Line" Color="#2E3C55" />
   <SolidColorBrush x:Key="Action" Color="#0071E3" />
-  <SolidColorBrush x:Key="BrandBlue" Color="#0A84FF" />
   <SolidColorBrush x:Key="ActionHover" Color="#2997FF" />
   <SolidColorBrush x:Key="Hover" Color="#263754" />
-  <SolidColorBrush x:Key="Violet" Color="#8B7CFF" />
   <SolidColorBrush x:Key="Error" Color="#FF6961" />
 
   <FontFamily x:Key="InterfaceFont">Segoe UI Variable Text, Segoe UI, Microsoft YaHei UI</FontFamily>
@@ -268,55 +266,6 @@
               <Setter TargetName="Box" Property="Background" Value="{StaticResource Action}" />
               <Setter TargetName="Box" Property="BorderBrush" Value="{StaticResource Action}" />
               <Setter TargetName="Tick" Property="Visibility" Value="Visible" />
-            </Trigger>
-          </ControlTemplate.Triggers>
-        </ControlTemplate>
-      </Setter.Value>
-    </Setter>
-  </Style>
-
-  <Style TargetType="ProgressBar">
-    <Setter Property="Height" Value="4" />
-    <Setter Property="Foreground" Value="{StaticResource Action}" />
-    <Setter Property="Template">
-      <Setter.Value>
-        <ControlTemplate TargetType="ProgressBar">
-          <Grid ClipToBounds="True">
-            <Border Background="{StaticResource Line}" CornerRadius="2" />
-            <Border x:Name="PART_Track" />
-            <Border
-              x:Name="PART_Indicator"
-              HorizontalAlignment="Left"
-              Background="{TemplateBinding Foreground}"
-              CornerRadius="2" />
-            <Border
-              x:Name="Activity"
-              Width="132"
-              HorizontalAlignment="Left"
-              Background="{TemplateBinding Foreground}"
-              CornerRadius="2"
-              Visibility="Collapsed">
-              <Border.RenderTransform>
-                <TranslateTransform x:Name="Slide" X="-132" />
-              </Border.RenderTransform>
-            </Border>
-          </Grid>
-          <ControlTemplate.Triggers>
-            <Trigger Property="IsIndeterminate" Value="True">
-              <Setter TargetName="PART_Indicator" Property="Visibility" Value="Collapsed" />
-              <Setter TargetName="Activity" Property="Visibility" Value="Visible" />
-              <Trigger.EnterActions>
-                <BeginStoryboard>
-                  <Storyboard RepeatBehavior="Forever">
-                    <DoubleAnimation
-                      Storyboard.TargetName="Slide"
-                      Storyboard.TargetProperty="X"
-                      From="-132"
-                      To="620"
-                      Duration="0:0:1.6" />
-                  </Storyboard>
-                </BeginStoryboard>
-              </Trigger.EnterActions>
             </Trigger>
           </ControlTemplate.Triggers>
         </ControlTemplate>

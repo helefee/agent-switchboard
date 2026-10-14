@@ -1,6 +1,16 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 512 512" role="img" aria-labelledby="title desc">
   <title id="title">Agent Switchboard</title>
-  <desc id="desc">Two minimal crossing paths that represent switching between clients.</desc>
-  <path d="M120 168C202 168 204 256 256 256C308 256 310 344 392 344" fill="none" stroke="#0A84FF" stroke-width="56" stroke-linecap="round" stroke-linejoin="round"/>
-  <path d="M120 344C202 344 204 256 256 256C308 256 310 168 392 168" fill="none" stroke="#8B7CFF" stroke-width="56" stroke-linecap="round" stroke-linejoin="round"/>
+  <desc id="desc">Two opposing folded routes form an S, flowing from blue and violet through pink to orange.</desc>
+  <defs>
+    <linearGradient id="route" x1="104" y1="408" x2="400" y2="104" gradientUnits="userSpaceOnUse">
+      <stop stop-color="#3279F6"/>
+      <stop offset=".36" stop-color="#8055ED"/>
+      <stop offset=".68" stop-color="#ED68AB"/>
+      <stop offset="1" stop-color="#FFB36B"/>
+    </linearGradient>
+  </defs>
+  <g fill="url(#route)">
+    <path d="M360 64H224C144.47 64 80 128.47 80 208V232C80 267.35 108.65 296 144 296H184L264 216H168V208C168 172.65 196.65 144 232 144H360C382.09 144 400 126.09 400 104S382.09 64 360 64Z"/>
+    <path d="M152 448H288C367.53 448 432 383.53 432 304V280C432 244.65 403.35 216 368 216H328L248 296H344V304C344 339.35 315.35 368 280 368H152C129.91 368 112 385.91 112 408S129.91 448 152 448Z"/>
+  </g>
 </svg>

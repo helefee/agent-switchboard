@@ -1,6 +1,7 @@
 # Agent Note: 外壳铬件毛玻璃化
 
 Status: implemented
+Archived: 2026-10-14
 
 ## Problem
 

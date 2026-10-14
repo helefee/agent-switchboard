@@ -13,7 +13,7 @@ import type { ActiveProfileRef } from "../lib/current-provider-name";
 import { useI18n } from "../i18n";
 import { ProviderEditor } from "../components/ProviderEditor";
 import { ProviderList } from "../components/ProviderList";
-import { ProviderWorkspaceShell } from "../components/ProviderWorkspaceShell";
+import { ProviderWorkspaceShell, type ClientRouteDirection } from "../components/ProviderWorkspaceShell";
 import { UsageQueryWorkspace } from "../components/UsageQueryWorkspace";
 import type { ProviderEditorSession } from "../app/useProviders";
 
@@ -21,6 +21,12 @@ interface ProvidersPageProps {
   view: ProviderView;
   onViewChange: (view: ProviderView) => void;
   active: boolean;
+  /** Direction of the client-tab switch that mounted this workspace's list. */
+  routeDirection: ClientRouteDirection;
+  /** Consumes the entry direction once the slide has played. */
+  onRouteAnimationEnd: () => void;
+  /** Keeps the list mounted for one exit cycle while a tab switch replaces it. */
+  leaving: boolean;
   profiles: ProviderProfile[];
   activeProfileId: string | null;
   statuses: ConfigFileStatus[] | null;
@@ -108,6 +114,9 @@ function ProviderListView({
     <ProviderWorkspaceShell
       ariaLabel={t("providers.workspace.aria")}
       app="claude"
+      routeDirection={props.routeDirection}
+      onRouteAnimationEnd={props.onRouteAnimationEnd}
+      leaving={props.leaving}
       onSelectApp={props.onSelectApp}
       busy={busy}
       statuses={props.statuses}
@@ -173,7 +182,7 @@ export function ProvidersPage(props: ProvidersPageProps) {
       </div>
     );
   }
-  return props.active ? (
+  return props.active || props.leaving ? (
     <ProviderListView
       {...props}
       onConfigureUsage={(profile) =>

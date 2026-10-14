@@ -10,26 +10,32 @@ import { ClientLogo } from "../../components/ClientLogo";
 import { Input } from "../../components/Input";
 import { Tabs } from "../../components/Tabs";
 import { WorkspaceHeader } from "../../components/WorkspaceHeader";
-import { CloseIcon, PlusIcon, SearchIcon, UpdateIcon } from "../../components/icons";
+import { CloseIcon, McpKindIcon, PlusIcon, SearchIcon, SkillKindIcon, UpdateIcon } from "../../components/icons";
 import { Download } from "lucide-react";
 import { Tooltip } from "../../components/Tooltip";
 import { MANAGEMENT_CLIENTS } from "../../components/extensions/client-presentation";
 import { pendingDeployment } from "./pending-deployment";
 import type { ExtensionWorkspace } from "./useExtensionWorkspace";
 
+const KIND_ICONS = { skill: SkillKindIcon, mcp: McpKindIcon } as const;
+
 function extensionTabs(workspace: ExtensionWorkspace, t: TFunction) {
-  return EXTENSION_SECTIONS.map((tab) => ({
-    ...tab,
-    label: (
-      <>
-        <span>{t(tab.labelKey)}</span>
-        <span className="asb-ext-tab-count asb-num">
-          {workspace.items.filter((item) => item.kind === tab.value).length}
-        </span>
-      </>
-    ),
-    controls: `ext-workspace-${tab.value}-panel`,
-  }));
+  return EXTENSION_SECTIONS.map((tab) => {
+    const KindIcon = KIND_ICONS[tab.value];
+    return {
+      ...tab,
+      label: (
+        <>
+          <KindIcon />
+          <span>{t(tab.labelKey)}</span>
+          <span className="asb-ext-tab-count asb-num">
+            {workspace.items.filter((item) => item.kind === tab.value).length}
+          </span>
+        </>
+      ),
+      controls: `ext-workspace-${tab.value}-panel`,
+    };
+  });
 }
 
 /** The library filter row keeps search beside bulk deployment actions,

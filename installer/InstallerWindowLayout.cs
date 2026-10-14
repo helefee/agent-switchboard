@@ -9,12 +9,14 @@ using System.Windows.Data;
 using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using System.Windows.Shell;
-using ShapePath = System.Windows.Shapes.Path;
 
 namespace AgentSwitchboard.Installer
 {
     internal sealed partial class InstallerWindow
     {
+        private const double RingSize = 116;
+        private const double RingStroke = 8;
+
         private FrameworkElement BuildLayout()
         {
             var layout = new Grid { Margin = new Thickness(32, 8, 32, 28) };
@@ -174,8 +176,24 @@ namespace AgentSwitchboard.Installer
         private FrameworkElement BuildProgressArea()
         {
             var content = new StackPanel { Margin = new Thickness(0, 18, 0, 0) };
-            progress = new ProgressBar { Visibility = Visibility.Collapsed };
-            content.Children.Add(progress);
+            content.Children.Add(BuildProgressRing());
+
+            phase = Text(String.Empty, "LabelSize");
+            phase.Foreground = Brush("Muted");
+            phase.HorizontalAlignment = HorizontalAlignment.Center;
+            phase.Margin = new Thickness(0, 14, 0, 0);
+            phase.Visibility = Visibility.Collapsed;
+            content.Children.Add(phase);
+
+            detail = Text(String.Empty, "CaptionSize");
+            detail.Foreground = Brush("Muted");
+            detail.HorizontalAlignment = HorizontalAlignment.Center;
+            detail.Margin = new Thickness(0, 4, 0, 0);
+            detail.MaxWidth = 540;
+            detail.TextTrimming = TextTrimming.CharacterEllipsis;
+            detail.TextWrapping = TextWrapping.NoWrap;
+            detail.Visibility = Visibility.Collapsed;
+            content.Children.Add(detail);
 
             diagnostic = Text(String.Empty, "CaptionSize");
             diagnostic.Foreground = Brush("Muted");
@@ -231,6 +249,86 @@ namespace AgentSwitchboard.Installer
             return footer;
         }
 
+        /// The install progress ring: a hairline track, the accent arc that
+        /// opens clockwise from 12 o'clock, and the live percentage in the
+        /// center. Deterministic — every state change comes from a progress
+        /// report, so it renders identically with system animations off.
+        private FrameworkElement BuildProgressRing()
+        {
+            var ring = new Grid
+            {
+                Width = RingSize,
+                Height = RingSize,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                Visibility = Visibility.Collapsed,
+            };
+            double radius = (RingSize - RingStroke) / 2.0;
+            ring.Children.Add(new System.Windows.Shapes.Path
+            {
+                Data = CircleGeometry(radius),
+                Stroke = Brush("Line"),
+                StrokeThickness = RingStroke,
+            });
+            arc = new System.Windows.Shapes.Path
+            {
+                Data = new StreamGeometry(),
+                Stroke = Brush("Action"),
+                StrokeThickness = RingStroke,
+                StrokeStartLineCap = PenLineCap.Round,
+                StrokeEndLineCap = PenLineCap.Round,
+            };
+            ring.Children.Add(arc);
+            percent = new TextBlock
+            {
+                Text = "0%",
+                FontSize = 26,
+                FontFamily = Font("DisplayFont"),
+                FontWeight = FontWeights.SemiBold,
+                HorizontalAlignment = HorizontalAlignment.Center,
+                VerticalAlignment = VerticalAlignment.Center,
+            };
+            ring.Children.Add(percent);
+            progressRing = ring;
+            return ring;
+        }
+
+        private static Geometry CircleGeometry(double radius)
+        {
+            double center = radius + RingStroke / 2.0;
+            var geometry = new EllipseGeometry(new Point(center, center), radius, radius);
+            geometry.Freeze();
+            return geometry;
+        }
+
+        /// The arc for `fraction` (0..1): a clockwise sweep starting at the
+        /// top; near-zero collapses to an empty geometry, near-one to the full
+        /// circle, avoiding degenerate single-point arcs at both ends.
+        internal static Geometry ArcGeometry(double fraction)
+        {
+            double radius = (RingSize - RingStroke) / 2.0;
+            if (fraction <= 0.002) return new StreamGeometry();
+            if (fraction >= 0.998) return CircleGeometry(radius);
+            double angle = 2.0 * Math.PI * fraction;
+            double center = radius + RingStroke / 2.0;
+            var figure = new PathFigure
+            {
+                StartPoint = new Point(center, center - radius),
+                IsClosed = false,
+            };
+            figure.Segments.Add(new ArcSegment
+            {
+                Point = new Point(
+                    center + radius * Math.Sin(angle),
+                    center - radius * Math.Cos(angle)),
+                Size = new Size(radius, radius),
+                IsLargeArc = angle > Math.PI,
+                SweepDirection = SweepDirection.Clockwise,
+            });
+            var geometry = new PathGeometry(new[] { figure });
+            geometry.Freeze();
+            return geometry;
+        }
+
         private Brush BackgroundBrush()
         {
             try
@@ -261,32 +359,24 @@ namespace AgentSwitchboard.Installer
             }
         }
 
-        /// The brand mark mirrors the two crossing switch paths of
-        /// src/assets/app-icon.svg; keep this geometry in sync with that
-        /// master when the icon changes.
-        private FrameworkElement CreateBrandMark(double size)
+        private static FrameworkElement CreateBrandMark(double size)
         {
-            var artwork = new Grid { Width = 512, Height = 512, SnapsToDevicePixels = true };
-            artwork.Children.Add(SwitchPath(
-                "M 120,168 C 202,168 204,256 256,256 C 308,256 310,344 392,344",
-                Brush("BrandBlue")));
-            artwork.Children.Add(SwitchPath(
-                "M 120,344 C 202,344 204,256 256,256 C 308,256 310,168 392,168",
-                Brush("Violet")));
-            return new Viewbox { Width = size, Height = size, Stretch = Stretch.Uniform, Child = artwork };
-        }
-
-        private static ShapePath SwitchPath(string data, Brush stroke)
-        {
-            return new ShapePath
+            using (Stream stream = Assembly.GetExecutingAssembly().GetManifestResourceStream(
+                "AgentSwitchboard.Installer.Assets.BrandIcon.png"))
             {
-                Data = Geometry.Parse(data),
-                Stroke = stroke,
-                StrokeThickness = 56,
-                StrokeStartLineCap = PenLineCap.Round,
-                StrokeEndLineCap = PenLineCap.Round,
-                StrokeLineJoin = PenLineJoin.Round,
-            };
+                if (stream == null) throw new InvalidOperationException("Installer brand icon is missing.");
+                var decoder = new PngBitmapDecoder(
+                    stream, BitmapCreateOptions.PreservePixelFormat, BitmapCacheOption.OnLoad);
+                var source = decoder.Frames[0];
+                source.Freeze();
+                var mark = new Image
+                {
+                    Width = size, Height = size, Source = source,
+                    Stretch = Stretch.Uniform, SnapsToDevicePixels = true,
+                };
+                RenderOptions.SetBitmapScalingMode(mark, BitmapScalingMode.HighQuality);
+                return mark;
+            }
         }
 
         private Button MakeButton(string label, bool primaryButton)

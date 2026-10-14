@@ -1,7 +1,8 @@
-import { useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import { searchSessions, type SessionSearchPage, type SessionSearchRequest } from "../../api/client";
 import { useMessageState } from "../../i18n/use-message-state";
 import type { ClientFilterValue } from "../ClientFilter";
+import { useSessionReadQueue } from "./use-session-read-queue";
 
 export const SESSION_PAGE_SIZE = 50;
 
@@ -21,15 +22,14 @@ export function useSessionSearch(active: boolean) {
   const [result, setResult] = useState<SessionSearchPage | null>(null);
   const [busy, setBusy] = useState(false);
   const [error, setError] = useMessageState();
-  const pending = useRef<Promise<unknown>>(Promise.resolve());
+  const enqueue = useSessionReadQueue();
 
   useEffect(() => {
-    if (!active) return;
+    if (!active) { setResult(null); setBusy(false); return; }
     let current = true;
     setBusy(true);
     setError(null);
     setResult(null);
-    // A newer request waits for the current disk scan and replaces queued work.
     const run = async () => {
       if (!current) return;
       try {
@@ -40,15 +40,13 @@ export function useSessionSearch(active: boolean) {
         const lastPage = Math.max(1, Math.ceil(next.total / SESSION_PAGE_SIZE));
         if (page > lastPage) setPage(lastPage);
         else setResult(next);
-      } catch (caught) {
-        if (current) setError(caught);
       } finally {
         if (current) setBusy(false);
       }
     };
-    pending.current = pending.current.then(run, run);
-    return () => { current = false; };
-  }, [active, query, filter, page, revision, project, tag, pinnedOnly, dates, setError]);
+    const cancel = enqueue(run, (caught) => { if (current) setError(caught); });
+    return () => { current = false; cancel(); };
+  }, [active, query, filter, page, revision, project, tag, pinnedOnly, dates, setError, enqueue]);
 
   const submit = () => { setQuery(draft.trim()); setPage(1); setRevision((value) => value + 1); };
   const changeFilter = (value: ClientFilterValue) => { setFilter(value); setProject(null); setTag(null); setProjects([]); setTags([]); setPage(1); };

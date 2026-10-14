@@ -20,7 +20,7 @@ import type {
   ConfigFileStatus,
   LockStatus,
 } from "../api/client";
-import type { ReactNode } from "react";
+import type { AnimationEvent, ReactNode } from "react";
 import type { ActiveProfileRef } from "../lib/current-provider-name";
 import { useI18n } from "../i18n";
 import { Button } from "./Button";
@@ -31,11 +31,26 @@ import { Tooltip } from "./Tooltip";
 import { WorkspaceHeader } from "./WorkspaceHeader";
 import "../styles/base/provider-workspace.css";
 
+/** Navigation direction of the client-tab switch that mounted a provider
+ * workspace. "forward" enters the right-hand tab (Claude), "back" the
+ * left-hand tab (Codex); "none" marks every mount that is not a tab switch. */
+export type ClientRouteDirection = "forward" | "back" | "none";
+
 interface ProviderWorkspaceShellProps {
   /** Distinguishes the two client views for assistive technology; the visible
    * heading and toolbar are identical on both. */
   ariaLabel: string;
   app: AppKind;
+  /** Direction of the client-tab switch that mounted this workspace;
+   * "none" (any mount that is not a tab switch) skips the enter animation. */
+  routeDirection: ClientRouteDirection;
+  /** Consumes the one-shot entry: raised when the entry animation finishes,
+   * so the workspace clears the direction and no later mount can replay it. */
+  onRouteAnimationEnd: () => void;
+  /** True while this workspace is being replaced by a tab switch: it stays
+   * mounted for one exit cycle, overlays the entering workspace, and ignores
+   * pointers and assistive technology until the parent unmounts it. */
+  leaving: boolean;
   onSelectApp: (app: AppKind) => void;
   busy: boolean;
   statuses: ConfigFileStatus[] | null;
@@ -54,6 +69,9 @@ interface ProviderWorkspaceShellProps {
 export function ProviderWorkspaceShell({
   ariaLabel,
   app,
+  routeDirection,
+  onRouteAnimationEnd,
+  leaving,
   onSelectApp,
   busy,
   statuses,
@@ -65,8 +83,26 @@ export function ProviderWorkspaceShell({
   children,
 }: ProviderWorkspaceShellProps) {
   const { t } = useI18n();
+  // Leaving workspaces slide out toward their own tab side, so both shells
+  // travel the same direction by the same distance: one continuous track.
+  const routeClass = leaving
+    ? app === "codex" ? " asb-route-out-left" : " asb-route-out-right"
+    : routeDirection === "none"
+      ? ""
+      : routeDirection === "forward" ? " asb-route-in-right" : " asb-route-in-left";
+  const handleAnimationEnd = (event: AnimationEvent<HTMLElement>) => {
+    // The route animations live on the list inside this shell, and other
+    // animations (route-card flow) bubble through here; settle the route
+    // only for our own keyframes.
+    if (event.animationName.startsWith("asb-provider-route-")) onRouteAnimationEnd();
+  };
   return (
-    <section className="asb-provider-workspace" aria-label={ariaLabel}>
+    <section
+      className={`asb-provider-workspace${routeClass}`}
+      aria-hidden={leaving || undefined}
+      onAnimationEnd={routeDirection === "none" && !leaving ? undefined : handleAnimationEnd}
+      aria-label={ariaLabel}
+    >
         <WorkspaceHeader
           title={t("nav.page.providers")}
           primary={
@@ -165,7 +201,7 @@ interface ProviderRowShellProps {
   primaryAction?: ReactNode;
   /** Secondary explicit action, such as official re-login. */
   secondaryAction?: ReactNode;
-  /** Secondary icon actions, visible beside or beneath the primary data row. */
+  /** Secondary icon actions sharing the row's hover/focus visibility rule. */
   actions?: ReactNode;
   /** Expansion blocks rendered below the data row. */
   children?: ReactNode;
@@ -209,7 +245,7 @@ export function ProviderRowShell({
           <Tooltip label={dragLabel}>
             <Button
               variant="unstyled"
-              className="asb-row-grip"
+              className="asb-row-grip asb-row-action"
               aria-label={dragLabel}
               {...attributes}
               {...listeners}
@@ -222,14 +258,14 @@ export function ProviderRowShell({
           <span className="asb-avatar" aria-hidden="true">{initial}</span>
           <span className="asb-row-identity-copy">
             <span className="asb-row-name" title={name}>{name}</span>
+            {active && <span className="asb-row-applied">{t("providers.label.applied")}</span>}
           </span>
         </div>
         <span className="asb-row-model">
           <span className="asb-row-model-value" title={typeof model === "string" ? model : undefined}>{model ?? t("providers.label.defaultModel")}</span>
-          {active && <span className="asb-row-applied">{t("providers.label.applied")}</span>}
         </span>
         <span className="asb-row-endpoint">{endpoint}</span>
-        <span className="asb-row-controls">
+        <span className="asb-row-controls asb-row-action">
           {primaryAction}
           {secondaryAction}
           {actions && <span className="asb-iconcluster" role="group" aria-label={t("providers.row.actionsAria", { name })}>{actions}</span>}

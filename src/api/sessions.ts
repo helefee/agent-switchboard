@@ -1,5 +1,7 @@
 import { invoke } from "./client";
 import type { AppKind } from "./shared";
+import type { StorageReclaimOutcome } from "./storage";
+import type { LocalizedMessage } from "./switching";
 
 /** Read-only local session metadata. The backend never exposes source paths. */
 export interface SessionMeta {
@@ -16,12 +18,34 @@ export interface SessionMeta {
   tags: string[];
 }
 
-export interface SessionMessage {
+export interface SessionMessagePreview {
   id: string;
   role: string;
   content: string;
+  contentLength: number;
   at: string | null;
+  bookmarked: boolean | null;
 }
+
+export interface SessionMessagePage {
+  items: SessionMessagePreview[];
+  offset: number;
+  total: number;
+  pageSize: number;
+  bookmarkIssue: LocalizedMessage | null;
+}
+
+export interface SessionContentPage {
+  content: string;
+  offset: number;
+  total: number;
+  pageSize: number;
+}
+
+export type SessionCopySource = { kind: "session"; app: AppKind; sessionId: string; messageId: string }
+  | { kind: "bookmark"; id: string };
+
+export const getSessionCopyText = (source: SessionCopySource): Promise<string> => invoke("get_session_copy_text", { source });
 
 export interface SessionIssue {
   app: AppKind;
@@ -31,6 +55,7 @@ export interface SessionIssue {
 export interface SessionSearchHit {
   session: SessionMeta;
   messageId: string | null;
+  contentOffset: number;
   excerpt: string;
 }
 
@@ -83,7 +108,7 @@ export function updateSessionOrganization(
   return invoke("update_session_organization", { requests, change });
 }
 
-export interface SessionBookmark {
+export interface SessionBookmarkSummary {
   id: string;
   app: AppKind;
   sessionId: string;
@@ -91,24 +116,33 @@ export interface SessionBookmark {
   projectDir: string | null;
   messageId: string;
   role: string;
-  content: string;
+  excerpt: string;
+  contentLength: number;
+  contentOffset: number;
   at: string | null;
   savedAt: string;
+}
+
+export interface SessionBookmarkPage {
+  items: SessionBookmarkSummary[];
+  offset: number;
+  total: number;
+  pageSize: number;
 }
 
 export function exportSessionMarkdown(app: AppKind, sessionId: string): Promise<string | null> {
   return invoke("export_session_markdown", { app, sessionId });
 }
 
-export function listSessionBookmarks(): Promise<SessionBookmark[]> {
-  return invoke("list_session_bookmarks");
+export function searchSessionBookmarks(query: string, app: AppKind | null, offset: number): Promise<SessionBookmarkPage> {
+  return invoke("search_session_bookmarks", { request: { query, app, offset } });
 }
 
-export function saveSessionBookmark(app: AppKind, sessionId: string, messageId: string): Promise<SessionBookmark> {
+export function saveSessionBookmark(app: AppKind, sessionId: string, messageId: string): Promise<SessionBookmarkSummary> {
   return invoke("save_session_bookmark", { app, sessionId, messageId });
 }
 
-export function deleteSessionBookmark(id: string): Promise<void> {
+export function deleteSessionBookmark(id: string): Promise<StorageReclaimOutcome> {
   return invoke("delete_session_bookmark", { id });
 }
 
@@ -116,8 +150,16 @@ export function getSessionMetadata(app: AppKind, sessionId: string): Promise<Ses
   return invoke("get_session_metadata", { app, sessionId });
 }
 
-export function getSessionMessages(app: AppKind, sessionId: string): Promise<SessionMessage[]> {
-  return invoke<SessionMessage[]>("get_session_messages", { app, sessionId });
+export function getSessionMessagePage(app: AppKind, sessionId: string, offset: number, anchorId: string | null): Promise<SessionMessagePage> {
+  return invoke("get_session_message_page", { request: { app, sessionId, offset, anchorId } });
+}
+
+export function getSessionMessageContent(app: AppKind, sessionId: string, messageId: string, offset: number): Promise<SessionContentPage> {
+  return invoke("get_session_message_content", { request: { app, sessionId, messageId, offset } });
+}
+
+export function getSessionBookmarkContent(id: string, offset: number): Promise<SessionContentPage> {
+  return invoke("get_session_bookmark_content", { id, offset });
 }
 
 export function resumeSession(app: AppKind, sessionId: string): Promise<SessionResume> {

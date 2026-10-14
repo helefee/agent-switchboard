@@ -51,6 +51,7 @@ fn builtin_questions_have_unique_ids_and_answers_matching_their_format() {
     ids.sort_unstable();
     ids.dedup();
     assert_eq!(ids.len(), QUESTIONS.len());
+    assert_eq!(QUESTIONS[0].id, "pelican-riding-bicycle");
 }
 
 #[test]
@@ -104,8 +105,9 @@ fn linuxdo_animation_keeps_its_full_prompt_and_html_output_contract() {
     assert_eq!(question.prompt, "生成html，内容是svg绘制鹈鹕骑自行车2D动画，不用进行测试。\n直接在最终回答中输出完整 HTML 源码，不要只返回文件路径或完成说明。");
     assert_eq!(question.execution_prompt(), question.prompt);
     assert!(question.expected_answer.is_empty());
-    assert_eq!(QUESTIONS.iter().find(|item| item.id == question.id).unwrap().source_url,
-        Some("https://linux.do/t/topic/2702004"));
+    assert!(QUESTIONS.iter().find(|item| item.id == question.id)
+        .unwrap().reference_visual.is_some());
+    assert_eq!(QUESTIONS.iter().filter(|item| item.reference_visual.is_some()).count(), 1);
     let custom = resolve_question(CUSTOM_QUESTION_ID, Some(question.prompt.clone()),
         None, Some(question.grading)).unwrap();
     assert_eq!(custom.execution_prompt(), question.execution_prompt());

@@ -62,7 +62,7 @@ reqwest = { version = "0.12", default-features = false, features = [
 # applier for exported provider SQL. `bundled` compiles libsqlite3-sys with
 # the system cc (scoop gcc on this windows-gnu host); `hooks` powers the
 # statement authorizer.
-rusqlite = { version = "0.32", features = ["bundled", "backup", "hooks"], default-features = false }
+rusqlite = { version = "0.32", features = ["bundled", "backup", "hooks", "limits"], default-features = false }
 rquickjs = "0.12.2"
 serde = { workspace = true }
 serde_json = { workspace = true }
@@ -109,8 +109,10 @@ zbus = "5.19"
 # Windows keeps user/system environment variables in the registry; the Claude
 # environment-conflict check reads, backs up, and removes `ANTHROPIC*` there.
 [target.'cfg(windows)'.dependencies]
+webview2-com = "0.38.2"
+windows = { version = "0.61", default-features = false }
 winreg = "0.55"
-windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Globalization", "Win32_Security", "Win32_System_JobObjects", "Win32_System_Threading", "Win32_System_Diagnostics_ToolHelp"] }
+windows-sys = { version = "0.61", features = ["Win32_Foundation", "Win32_Globalization", "Win32_Security", "Win32_Storage_FileSystem", "Win32_System_JobObjects", "Win32_System_Threading", "Win32_System_Diagnostics_ToolHelp"] }
 
 [target.'cfg(unix)'.dependencies]
 libc = "0.2"

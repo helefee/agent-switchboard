@@ -113,7 +113,7 @@ fn visual_answers_survive_reopening_and_share_history_deletion() {
         assert_eq!(history.items[0].judged_count, 0);
         assert_eq!(history.items[0].passed_count, 0);
         assert_eq!(history.items[0].total_tokens, Some(210));
-        assert_eq!(reopened.delete_batches(&["visual".into()]).unwrap(), 1);
+        assert_eq!(reopened.delete_batches(&["visual".into()]).unwrap().removed, 1);
         assert!(reopened.current_batch().unwrap().is_none());
         assert!(reopened.load_runs("visual").unwrap().is_empty());
     }
@@ -250,11 +250,39 @@ fn deletion_refuses_running_batches_and_removes_only_probe_records() {
     // The refused request deleted nothing.
     assert!(ledger.load_batch("finished").unwrap().is_some());
 
-    assert_eq!(ledger.delete_batches(&["finished".into()]).unwrap(), 1);
+    assert_eq!(ledger.delete_batches(&["finished".into()]).unwrap().removed, 1);
     assert!(ledger.load_batch("finished").unwrap().is_none());
     assert!(ledger.load_runs("finished").unwrap().is_empty());
     assert!(ledger.load_batch("live").unwrap().is_some());
-    assert_eq!(ledger.delete_batches(&["finished".into()]).unwrap(), 0);
+    assert_eq!(ledger.delete_batches(&["finished".into()]).unwrap().removed, 0);
+}
+
+#[test]
+fn archival_retains_running_and_cutoff_batches_and_exports_removed_runs() {
+    let (_directory, ledger) = temp_ledger();
+    let old = "2020-01-01T00:00:00Z";
+    let cutoff = chrono::DateTime::parse_from_rfc3339("2020-02-01T00:00:00Z").unwrap().with_timezone(&chrono::Utc);
+    ledger.insert_batch(&batch("live", old, None)).unwrap();
+    ledger.start_run("live", 1).unwrap();
+    for (id, at) in [("finished", old), ("protected", "2020-02-01T00:00:00Z")] {
+        ledger.insert_batch(&batch(id, at, None)).unwrap();
+        ledger.start_run(id, 1).unwrap();
+        ledger.save_run_result(id, &passed_run(1, Some(9))).unwrap();
+        ledger.finish_batch(id, ProbeBatchStatus::Completed, None, &[]).unwrap();
+    }
+    let mut output = Vec::new();
+    let preview = ledger.archive_digest(cutoff, &mut output).unwrap();
+    assert_eq!(preview.records, 2);
+    let entries = String::from_utf8(output).unwrap().lines().map(|line|
+        serde_json::from_str::<serde_json::Value>(line).unwrap()).collect::<Vec<_>>();
+    assert_eq!(entries[0]["kind"], "probeBatch");
+    assert_eq!(entries[1]["record"]["batchId"], "finished");
+    assert_eq!(entries[1]["record"]["entry"]["totalTokens"], 9);
+    assert_eq!(ledger.prune_archived(cutoff, &preview).unwrap().removed, 2);
+    assert!(ledger.load_batch("finished").unwrap().is_none());
+    assert!(ledger.load_runs("finished").unwrap().is_empty());
+    assert!(ledger.load_batch("live").unwrap().is_some());
+    assert!(ledger.load_batch("protected").unwrap().is_some());
 }
 
 #[test]

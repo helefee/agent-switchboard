@@ -117,6 +117,7 @@ export function SessionDetail({ detail, session, bookmarks, deleting, onDelete, 
     {actions.error && <p className="asb-warn-text" role="alert">{actions.error}</p>}
     {detail.busy && <p role="status">{t("sessions.transcript.loading.aria")}</p>}
     {detail.error && <p className="asb-warn-text" role="alert">{detail.error}</p>}
-    {detail.messages && <SessionTranscript session={session} messages={detail.messages} target={detail.target} bookmarks={bookmarks} />}
+    {detail.page && <SessionTranscript key={`${session.app}:${session.sessionId}:${detail.page.offset}`}
+      session={session} detail={detail} bookmarks={bookmarks} />}
   </section>;
 }

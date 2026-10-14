@@ -29,7 +29,8 @@ body {
   margin: 0;
   font: var(--asb-text-body);
   color: var(--asb-text);
-  background: var(--asb-canvas);
+  /* The native window material remains visible through the shared shell. */
+  background: transparent;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -63,7 +64,13 @@ h6 {
  * (DESIGN.md §6). One owner block covers every scroll surface (workspace,
  * config preview, textareas). Transparent track and buttons; the thumb is a
  * slim ink pill drawn inside the gutter via a transparent border, keeping the
- * full gutter as the drag hit area. Values live in tokens.css.
+ * full gutter as the drag hit area. The gutter itself stays reserved
+ * (`scrollbar-gutter: stable` on each surface), so reveal never reflows.
+ * At rest the thumb is invisible; it appears only while the surface scrolls
+ * (`data-scrolling`, owned by useScrollActivityMarker in app/global-effects.ts)
+ * or the pointer sits on the thumb. Chromium cannot transition
+ * `::-webkit-scrollbar-*`, so the toggle is instant by platform limit.
+ * Values live in tokens.css.
  */
 ::-webkit-scrollbar {
   width: var(--asb-scrollbar-gutter);
@@ -82,10 +89,14 @@ h6 {
 ::-webkit-scrollbar-thumb {
   border: 3px solid transparent;
   border-radius: var(--asb-radius-pill);
-  background-color: var(--asb-scrollbar-thumb);
+  background-color: transparent;
   background-clip: padding-box;
   min-height: var(--asb-scrollbar-thumb-min);
   min-width: var(--asb-scrollbar-thumb-min);
+}
+
+[data-scrolling]::-webkit-scrollbar-thumb {
+  background-color: var(--asb-scrollbar-thumb);
 }
 
 ::-webkit-scrollbar-thumb:hover {

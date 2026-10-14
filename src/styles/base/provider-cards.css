@@ -192,7 +192,8 @@
   touch-action: none;
   transition:
     background-color var(--asb-motion-press) var(--asb-easing),
-    color var(--asb-motion-press) var(--asb-easing);
+    color var(--asb-motion-press) var(--asb-easing),
+    opacity var(--asb-motion-node) var(--asb-easing);
 }
 
 .asb-row-grip:hover {

@@ -20,7 +20,13 @@
         "minWidth": 1080,
         "minHeight": 640,
         "visible": false,
-        "decorations": false
+        "decorations": false,
+        "transparent": true,
+        "backgroundColor": "#00000000",
+        "windowEffects": {
+          "effects": ["underWindowBackground", "acrylic"],
+          "state": "active"
+        }
       },
       {
         "label": "tray",
@@ -55,6 +61,9 @@
     "publisher": "y4Nkk",
     "homepage": "https://github.com/y4Nkk/agent-switchboard",
     "copyright": "Copyright (c) 2026 y4Nkk",
+    "resources": {
+      "../CHANGELOG.md": "CHANGELOG.md"
+    },
     "icon": [
       "icons/32x32.png",
       "icons/128x128.png",

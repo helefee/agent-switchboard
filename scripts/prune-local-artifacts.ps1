@@ -89,13 +89,25 @@ $rustGroups = @(
 )
 $rustToRemove = @()
 $rustBudget = [long]($MaxRustGiB * 1GB)
+$rustCaches = @()
 foreach ($group in $rustGroups) {
   $entries = @($group.Paths | ForEach-Object { Get-CacheEntry $_ } | Where-Object { $null -ne $_ })
   if (-not $entries.Count) { continue }
   $bytes = [long](($entries | Measure-Object Bytes -Sum).Sum)
   $latest = ($entries | Measure-Object Latest -Maximum).Maximum
-  if ($bytes -gt $rustBudget -and $latest -le $rustCutoff) { $rustToRemove += $entries }
+  $rustCaches += [pscustomobject]@{ Name = $group.Name; Entries = $entries; Bytes = $bytes; Latest = $latest }
   Write-Output "$($group.Name): $([math]::Round($bytes / 1GB, 2)) GiB; latest $latest"
+}
+$rustBytes = [long](($rustCaches | Measure-Object Bytes -Sum).Sum)
+foreach ($cache in @($rustCaches | Sort-Object Latest, Name)) {
+  if ($rustBytes -le $rustBudget) { break }
+  if ($cache.Latest -gt $rustCutoff) { continue }
+  $rustToRemove += $cache.Entries
+  $rustBytes -= $cache.Bytes
+}
+Write-Output "Combined Rust cache: $([math]::Round((($rustCaches | Measure-Object Bytes -Sum).Sum) / 1GB, 2)) GiB; budget $MaxRustGiB GiB"
+if ($rustBytes -gt $rustBudget) {
+  Write-Output "Recent Rust caches remain above budget: $([math]::Round($rustBytes / 1GB, 2)) GiB; protected for $MinRustAgeDays day(s)."
 }
 
 Write-Output "Known verification browser profiles: $([math]::Round((($sandboxes | Measure-Object Bytes -Sum).Sum) / 1GB, 2)) GiB"

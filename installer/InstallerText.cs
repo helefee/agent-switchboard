@@ -141,6 +141,51 @@ namespace AgentSwitchboard.Installer
             return T("版本 ", "Version ") + version;
         }
 
+        internal string Phase(InstallPhase phase)
+        {
+            switch (phase)
+            {
+                case InstallPhase.RuntimeDownload:
+                    return T("正在下载 WebView2 运行时", "Downloading the WebView2 runtime");
+                case InstallPhase.RuntimeInstall:
+                    return T("正在安装 WebView2 运行时", "Installing the WebView2 runtime");
+                case InstallPhase.EngineExtract:
+                    return T("正在释放安装引擎", "Preparing the installation engine");
+                default:
+                    return T("正在写入应用文件", "Writing application files");
+            }
+        }
+
+        internal string Downloaded(long bytes, long total)
+        {
+            return T("已下载 ", "Downloaded ") + Megabytes(bytes) + " / " + Megabytes(total);
+        }
+
+        internal string Extracted(long bytes, long total)
+        {
+            return T("已释放 ", "Extracted ") + Megabytes(bytes) + " / " + Megabytes(total);
+        }
+
+        internal string Written(long bytes)
+        {
+            return T("已写入 ", "Written ") + Megabytes(bytes);
+        }
+
+        internal string ProgressFacts(string version, string bytes, string directory)
+        {
+            return Join(" · ", version, bytes, directory);
+        }
+
+        internal static string Megabytes(long bytes)
+        {
+            return (bytes / 1048576.0).ToString("0.0", CultureInfo.CurrentCulture) + " MB";
+        }
+
+        private static string Join(string separator, params string[] parts)
+        {
+            return String.Join(separator, Array.FindAll(parts, part => !String.IsNullOrEmpty(part)));
+        }
+
         internal string FailureTitle(Exception error)
         {
             var installerError = error as InstallerException;

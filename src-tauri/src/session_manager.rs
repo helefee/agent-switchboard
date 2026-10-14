@@ -14,14 +14,22 @@ mod bookmarks;
 mod search;
 mod export;
 mod organization;
+mod messages;
+mod text;
+mod copy;
+pub use copy::{load_copy_text, SessionCopySource};
 
-pub use bookmarks::{delete_bookmark, list_bookmarks, save_bookmark, SessionBookmark};
+pub use bookmarks::{delete_bookmark, load_bookmark_content, save_bookmark, search_bookmarks,
+    BookmarkPage, BookmarkSearchRequest, BookmarkSummary};
+pub use messages::{load_content, load_page, ContentPage, MessageContentRequest, MessagePage, MessagePageRequest};
 pub use export::export_markdown;
 pub use search::{search_sessions, SessionSearchPage, SessionSearchRequest};
 pub use organization::{update_session_organization, SessionOrganizationChange};
 
 use asb_core::contracts::AppKind;
-use parser::{parse_session, read_messages};
+use parser::parse_session;
+#[cfg(test)]
+use parser::collect_messages;
 use resume::{launch_terminal, resume_arguments, resume_command};
 use serde::{Deserialize, Serialize};
 use std::collections::{HashMap, HashSet};
@@ -98,11 +106,6 @@ pub fn load_metadata(root: &Path, app: AppKind, session_id: &str) -> Result<Sess
     let mut meta = resolve_session(app, session_id)?.meta;
     organization::apply(&mut meta, &organization::load(root)?);
     Ok(meta)
-}
-
-pub fn load_messages(app: AppKind, session_id: &str) -> Result<Vec<SessionMessage>, String> {
-    let source = resolve_session(app, session_id)?;
-    read_messages(&source.path)
 }
 
 /// Opens the selected local session in a new terminal window. The renderer

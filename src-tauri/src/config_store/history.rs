@@ -2,10 +2,10 @@
 //! `history/{client}.json`. Only real client-file writes append here; saving
 //! providers or client settings never does.
 
-use super::{
-    parse_strict, read_optional, write_json_atomic, ConfigStore, ProfileStoreError,
-    StoreOperationError,
-};
+mod read;
+mod write;
+mod archive;
+use super::{ConfigStore, ProfileStoreError, StoreOperationError};
 use asb_core::contracts::{AppKind, ConfigWriteRecord, WriteOperation};
 use serde::{Deserialize, Serialize};
 
@@ -59,22 +59,19 @@ pub(crate) fn validate_write_record(
 }
 
 impl ConfigStore {
+    pub(crate) fn visit_history(&self, app: AppKind,
+        mut visitor: impl FnMut(ConfigWriteRecord) -> Result<(), String>) -> Result<(), StoreOperationError> {
+        self.ensure_layout()?;
+        read::visit(&self.history_path(app), app, &mut visitor)
+    }
+
     pub(crate) fn load_history(
         &self,
         app: AppKind,
     ) -> Result<Vec<ConfigWriteRecord>, ProfileStoreError> {
-        self.ensure_layout()?;
-        match read_optional(&self.history_path(app))? {
-            None => Ok(vec![]),
-            Some(text) => {
-                let file: HistoryFile = parse_strict(&text)?;
-                for record in &file.records {
-                    validate_write_record(app, record)
-                        .map_err(|_| ProfileStoreError::Unsupported)?;
-                }
-                Ok(file.records)
-            }
-        }
+        let mut records = Vec::new();
+        self.visit_history(app, |record| { records.push(record); Ok(()) }).map_err(store_error)?;
+        Ok(records)
     }
 
     /// Appends one completed real client-file write. Provider and client
@@ -82,12 +79,7 @@ impl ConfigStore {
     pub fn record_config_write(&self, entry: ConfigWriteRecord) -> Result<(), StoreOperationError> {
         let app = entry.app;
         validate_write_record(app, &entry)?;
-        let mut records = self.load_history(app)?;
-        records.push(entry);
-        let json = serde_json::to_string_pretty(&HistoryFile { records })
-            .map_err(|_| StoreOperationError::Invalid("写入历史序列化失败".to_string()))?;
-        write_json_atomic(&self.history_path(app), &json)?;
-        Ok(())
+        self.rewrite_history(app, |_| true, Some(&entry))
     }
 
     /// Removes one transaction-owned write fact only when it is still the
@@ -99,17 +91,17 @@ impl ConfigStore {
         entry: &ConfigWriteRecord,
     ) -> Result<bool, StoreOperationError> {
         validate_write_record(entry.app, entry)?;
-        let mut records = self.load_history(entry.app)?;
-        let Some(last) = records.last() else {
+        let mut count = 0;
+        let mut latest = None;
+        self.visit_history(entry.app, |record| { count += 1; latest = Some(record); Ok(()) })?;
+        let Some(last) = latest.as_ref() else {
             return Ok(false);
         };
         if last != entry {
             return Err("配置写入历史已被后续操作更新，拒绝删除恢复记录".into());
         }
-        records.pop();
-        let json = serde_json::to_string_pretty(&HistoryFile { records })
-            .map_err(|_| StoreOperationError::Invalid("写入历史序列化失败".to_string()))?;
-        write_json_atomic(&self.history_path(entry.app), &json)?;
+        let mut index = 0;
+        self.rewrite_history(entry.app, |_| { index += 1; index < count }, None)?;
         Ok(true)
     }
 
@@ -118,8 +110,14 @@ impl ConfigStore {
         &self,
         app: AppKind,
     ) -> Result<Option<ConfigWriteRecord>, ProfileStoreError> {
-        Ok(self.load_history(app)?.pop())
+        let mut latest = None;
+        self.visit_history(app, |record| { latest = Some(record); Ok(()) }).map_err(store_error)?;
+        Ok(latest)
     }
+}
+
+fn store_error(error: StoreOperationError) -> ProfileStoreError {
+    match error { StoreOperationError::Store(error) => error, _ => ProfileStoreError::Unsupported }
 }
 
 #[cfg(test)]
@@ -160,7 +158,8 @@ mod tests {
         assert_eq!(latest.profile_id.as_deref(), Some("p2"));
         let persisted = std::fs::read_to_string(store.history_path(AppKind::Codex)).unwrap();
         assert!(persisted.contains("\"records\""));
-        assert!(persisted.contains("\"profileId\": \"p1\""));
+        let stored: serde_json::Value = serde_json::from_str(&persisted).unwrap();
+        assert_eq!(stored["records"][0]["profileId"], "p1");
 
         let claude = store
             .latest_config_write(AppKind::Claude)

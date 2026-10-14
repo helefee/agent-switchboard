@@ -6,6 +6,10 @@ use tauri::AppHandle;
 
 pub(super) async fn dispatch(app: &AppHandle, request: &InvokeRequest) -> Result<Option<Value>, CommandError> {
     let result = match request.command.as_str() {
+        "storage_usage" => as_json(commands::storage::storage_usage(app.clone()).await),
+        "clear_webview_cache" => as_json(commands::storage::clear_webview_cache(app.clone()).await),
+        "preview_history_archive" => as_json(commands::storage::preview_history_archive(app.clone(), argument(&request.args, "cutoff")?).await),
+        "archive_history" => as_json(commands::storage::archive_history(app.clone(), argument(&request.args, "plan")?).await),
         "get_app_settings" => as_json(commands::get_app_settings(app.clone()).await),
         "set_app_settings" => as_json(commands::set_app_settings(
             app.clone(), argument::<AppSettings>(&request.args, "settings")?,

@@ -1,43 +1,42 @@
-/* Glass chrome floats above one full-window canvas: the rail and titlebar
-   blur the page scrolling beneath them (DESIGN.md §视觉语言). Paint order
-   follows DOM order — sidebar, titlebar, then the canvas they overlay. */
+/* One tint over the native window material joins the rail and titlebar.
+   Grid cells reserve chrome space; only the rounded workspace scrolls. */
 .asb-shell {
   position: relative;
   z-index: 1;
+  display: grid;
+  grid-template-columns: var(--asb-sidebar-width) minmax(0, 1fr);
+  grid-template-rows: var(--asb-titlebar-height) minmax(0, 1fr);
   height: 100%;
+  overflow: hidden;
+  background: var(--asb-chrome-bg);
+  transition: grid-template-columns var(--asb-motion-navigation) var(--asb-easing);
 }
 
 .asb-shell.is-collapsed {
   --asb-sidebar-width: var(--asb-sidebar-collapsed-width);
 }
 
-/* The canvas fills the window; .asb-main inside it owns page geometry. */
+/* Every page shares this opaque boundary, including fixed editor bars. */
 .asb-workspace {
-  position: absolute;
-  inset: 0;
+  grid-area: 2 / 2;
   display: flex;
   flex-direction: column;
-  overflow: clip;
+  min-width: 0;
+  min-height: 0;
+  margin: 0 var(--asb-space-unit) var(--asb-space-unit) 0;
+  overflow: hidden;
+  border-radius: var(--asb-radius-panel);
   background: var(--asb-content);
 }
 
-/* The rail is a full-height glass strip over the canvas's left edge. */
 .asb-sidebar {
-  position: absolute;
-  top: 0;
-  bottom: 0;
-  left: 0;
-  z-index: 2;
+  grid-area: 1 / 1 / 3 / 2;
   display: flex;
   flex-direction: column;
-  width: var(--asb-sidebar-width);
+  min-width: 0;
   min-height: 0;
   user-select: none;
   -webkit-user-select: none;
-  border-right: 1px solid var(--asb-hairline);
-  background: var(--asb-chrome-bg);
-  backdrop-filter: var(--asb-chrome-blur);
-  transition: width var(--asb-motion-navigation) var(--asb-easing);
 }
 
 .asb-sidebar-top {
@@ -72,26 +71,35 @@
 }
 
 .asb-sidenav-footer {
+  display: flex;
+  flex-direction: column;
   flex: none;
+  gap: var(--asb-space-unit);
   margin: 0;
   padding: var(--asb-space-2) 0 0;
   list-style: none;
 }
 
+/* Each entry li owns the rail inset; its only child (the shared tooltip
+   anchor) stretches to the padded li and the entry button fills it with
+   width: 100%. The minmax(0, 1fr) track never grows with content, so the
+   collapsed rail shrinks entries instead of overflowing it. */
 .asb-sidenav-group > li,
 .asb-sidenav-footer > li {
   display: grid;
-  place-items: center;
+  grid-template-columns: minmax(0, 1fr);
+  align-items: center;
   flex: none;
+  padding-inline: calc(var(--asb-space-3) / 2);
 }
 
 .asb-sidenav-item {
   display: flex;
   align-items: center;
   flex: none;
-  width: min(100%, calc(var(--asb-sidebar-width) - var(--asb-space-3)));
+  width: 100%;
   height: var(--asb-touch-target);
-  padding: 0 var(--asb-space-1);
+  padding: 0 calc((var(--asb-sidebar-collapsed-width) - var(--asb-space-3) - var(--asb-icon-size-xl)) / 2);
   gap: var(--asb-space-2);
   overflow: hidden;
   border: 0;
@@ -102,24 +110,22 @@
   transition:
     background-color var(--asb-motion-press) var(--asb-easing),
     color var(--asb-motion-press) var(--asb-easing),
-    width var(--asb-motion-navigation) var(--asb-easing),
     gap var(--asb-motion-navigation) var(--asb-easing);
 }
 
 .asb-sidenav-label {
+  flex: 1;
   min-width: 0;
-  width: calc(var(--asb-sidebar-expanded-width) - var(--asb-row-min-height));
   overflow: hidden;
   white-space: nowrap;
   text-align: left;
   font: var(--asb-text-label);
   opacity: 1;
-  transition: width var(--asb-motion-navigation) var(--asb-easing),
-    opacity var(--asb-motion-navigation) var(--asb-easing);
+  transition: opacity var(--asb-motion-navigation) var(--asb-easing);
 }
 
 .asb-shell.is-collapsed .asb-sidenav-item { gap: 0; }
-.asb-shell.is-collapsed .asb-sidenav-label { width: 0; opacity: 0; }
+.asb-shell.is-collapsed .asb-sidenav-label { opacity: 0; }
 
 .asb-sidenav-item > svg {
   display: block;
@@ -129,7 +135,7 @@
 }
 
 .asb-sidenav-item:hover {
-  background: var(--asb-sidebar-hover);
+  background: var(--asb-chrome-hover);
   color: var(--asb-text);
 }
 
@@ -144,16 +150,10 @@
   outline-offset: -2px;
 }
 
-/* The titlebar is the top glass strip, from the rail's right edge to the
-   window's right edge; it pairs global information with stable window
-   actions and tracks the rail so collapse stays seamless. */
 .asb-titlebar {
-  position: absolute;
-  top: 0;
-  left: var(--asb-sidebar-width);
-  right: 0;
-  z-index: 2;
+  grid-area: 1 / 2;
   display: flex;
+  min-width: 0;
   height: var(--asb-titlebar-height);
   align-items: center;
   justify-content: flex-end;
@@ -161,10 +161,6 @@
   padding: var(--asb-space-2);
   user-select: none;
   -webkit-user-select: none;
-  border-bottom: 1px solid var(--asb-hairline);
-  background: var(--asb-chrome-bg);
-  backdrop-filter: var(--asb-chrome-blur);
-  transition: left var(--asb-motion-navigation) var(--asb-easing);
 }
 
 /* The app mark and product name travel together as one brand unit. */
@@ -228,7 +224,7 @@
 }
 
 .asb-winbtn:hover {
-  background: var(--asb-row-selected);
+  background: var(--asb-chrome-hover);
   color: var(--asb-text);
 }
 
@@ -243,28 +239,106 @@
   color: var(--asb-action);
 }
 
-/* Update-available indicator in the titlebar: rendered only while a newer
-   release is known, so it always reads as action-blue (cascade order keeps
-   the blue ahead of .asb-winbtn:hover). */
-.asb-winbtn.asb-updatebtn {
+/* Sidebar update entry above the settings item, always mounted: neutral while
+   idle (click runs a check), action-blue spinner while checking, green while a
+   release is known. Shares the nav item's geometry so its icon keeps the
+   rail's shared center axis. */
+.asb-updatebtn {
   position: relative;
-  width: auto;
-  min-width: var(--asb-button-min-width);
-  gap: var(--asb-space-1);
-  padding: 0 var(--asb-space-2);
-  color: var(--asb-action);
-  font: var(--asb-text-body);
+  display: flex;
+  align-items: center;
+  flex: none;
+  width: 100%;
+  height: var(--asb-touch-target);
+  padding: 0 calc((var(--asb-sidebar-collapsed-width) - var(--asb-space-3) - var(--asb-icon-size-xl)) / 2);
+  gap: var(--asb-space-2);
+  overflow: hidden;
+  border: 0;
+  border-radius: var(--asb-radius-navigation);
+  background: transparent;
+  color: var(--asb-text-muted);
+  cursor: pointer;
+  font: var(--asb-text-label);
   font-weight: 600;
+  transition:
+    background-color var(--asb-motion-press) var(--asb-easing),
+    color var(--asb-motion-press) var(--asb-easing),
+    gap var(--asb-motion-navigation) var(--asb-easing);
+}
+
+.asb-updatebtn:hover {
+  background: var(--asb-chrome-hover);
+  color: var(--asb-text);
+}
+
+/* Declared after :hover so the state colors survive it. */
+.asb-updatebtn.is-available {
+  color: var(--asb-safe);
+}
+
+.asb-updatebtn.is-checking {
+  color: var(--asb-action);
+  /* The global disabled dim would fade the spinner that explains the wait. */
+  opacity: 1;
+}
+
+.asb-updatebtn.is-checking > svg {
+  animation: asb-updatebtn-spin 1s linear infinite;
+}
+
+@keyframes asb-updatebtn-spin {
+  to { transform: rotate(360deg); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .asb-updatebtn.is-checking > svg { animation: none; }
+}
+
+:root[data-motion="reduce"] .asb-updatebtn.is-checking > svg { animation: none; }
+
+.asb-updatebtn:disabled {
+  cursor: default;
+}
+
+.asb-updatebtn:disabled:hover {
+  background: transparent;
+}
+
+.asb-updatebtn:focus-visible {
+  /* Keep the focus ring inside the narrow footer's paint area. */
+  outline-offset: -2px;
+}
+
+.asb-updatebtn > svg {
+  display: block;
+  flex: none;
+  width: var(--asb-icon-size-xl);
+  height: var(--asb-icon-size-xl);
 }
 
 .asb-updatebtn-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-align: left;
   line-height: 1;
+  transition: opacity var(--asb-motion-navigation) var(--asb-easing);
 }
 
+.asb-shell.is-collapsed .asb-updatebtn { gap: 0; }
+.asb-shell.is-collapsed .asb-updatebtn-label { opacity: 0; }
+
+/* The badge pins to the icon's top-right corner, so it stays readable in the
+   collapsed rail where no room beside the icon remains. */
 .asb-updatebtn-dot {
+  position: absolute;
+  top: calc(50% - var(--asb-icon-size-xl) / 2);
+  left: calc((var(--asb-sidebar-collapsed-width) - var(--asb-space-3) - var(--asb-icon-size-xl)) / 2 + var(--asb-icon-size-xl));
   width: calc(var(--asb-space-unit) + var(--asb-space-hairline));
   height: calc(var(--asb-space-unit) + var(--asb-space-hairline));
   border-radius: var(--asb-radius-pill);
   background: var(--asb-safe);
   box-shadow: 0 0 0 2px var(--asb-chrome-bg);
+  transform: translate(-50%, -50%);
 }

@@ -1,8 +1,12 @@
 mod filters;
 pub use filters::{SessionProject, SessionSearchRequest};
 use filters::{catalog, Filters};
-use super::{organization, parser::read_messages, scan_sources, SessionIssue, SessionMeta, SessionSource};
+use super::{messages::aligned_content_offset, organization, parser::visit_messages, scan_sources,
+    text::{raw_offset, TextQuery}, SessionIssue, SessionMeta, SessionSource};
+#[cfg(test)]
+use super::parser::collect_messages;
 use serde::Serialize;
+use std::ops::ControlFlow;
 use std::path::Path;
 
 const PAGE_SIZE: usize = 50;
@@ -12,6 +16,7 @@ const PAGE_SIZE: usize = 50;
 pub struct SessionSearchHit {
     pub session: SessionMeta,
     pub message_id: Option<String>,
+    pub content_offset: usize,
     pub excerpt: String,
 }
 
@@ -53,7 +58,7 @@ fn search_sources(
             .then_with(|| left.meta.app.cmp(&right.meta.app))
             .then_with(|| left.meta.session_id.cmp(&right.meta.session_id))
     });
-    let query = normalize(&filters.request.query);
+    let query = TextQuery::new(&filters.request.query);
     let mut results = Vec::with_capacity(PAGE_SIZE);
     let mut total = 0;
     for source in sources {
@@ -65,25 +70,25 @@ fn search_sources(
             continue;
         }
         let before = total;
-        match read_messages(&source.path) {
-            Ok(messages) => {
-                for message in messages {
-                    if normalize(&message.content).contains(&query) {
-                        if total >= offset && results.len() < PAGE_SIZE {
-                            results.push(SessionSearchHit {
-                                excerpt: excerpt(&message.content, &query),
-                                message_id: Some(message.id),
-                                session: source.meta.clone(),
-                            });
-                        }
-                        total += 1;
-                    }
+        let saved = results.len();
+        let scan = visit_messages(&source.path, |message| {
+            if let Some(position) = query.find(&message.content) {
+                if total >= offset && results.len() < PAGE_SIZE {
+                    let raw = raw_offset(&message.content, position).ok_or("搜索正文位置无效")?;
+                    results.push(SessionSearchHit { excerpt: query.excerpt(&message.content),
+                        message_id: Some(message.id), content_offset: aligned_content_offset(raw), session: source.meta.clone() });
                 }
+                total += 1;
             }
-            Err(message) => issues.push(SessionIssue { app: source.meta.app, message }),
+            Ok(ControlFlow::Continue(()))
+        });
+        if let Err(message) = scan {
+            results.truncate(saved);
+            total = before;
+            issues.push(SessionIssue { app: source.meta.app, message });
         }
         if total == before && metadata_fields(&source.meta)
-            .iter().any(|field| normalize(field).contains(&query)) {
+            .iter().any(|field| query.find(field).is_some()) {
             if total >= offset && results.len() < PAGE_SIZE {
                 results.push(metadata_hit(&source.meta, &query));
             }
@@ -100,34 +105,11 @@ fn metadata_fields(meta: &SessionMeta) -> Vec<&str> {
     fields
 }
 
-fn metadata_hit(meta: &SessionMeta, query: &str) -> SessionSearchHit {
+fn metadata_hit(meta: &SessionMeta, query: &TextQuery) -> SessionSearchHit {
     let text = metadata_fields(meta).into_iter()
-        .find(|text| !query.is_empty() && normalize(text).contains(query))
+        .find(|text| !query.is_empty() && query.find(text).is_some())
         .unwrap_or(&meta.summary);
-    SessionSearchHit { session: meta.clone(), message_id: None, excerpt: excerpt(text, query) }
-}
-
-fn normalize(text: &str) -> String {
-    text.split_whitespace().collect::<Vec<_>>().join(" ").to_lowercase()
-}
-
-fn excerpt(text: &str, query: &str) -> String {
-    let compact = text.split_whitespace().collect::<Vec<_>>().join(" ");
-    let mut lowered = String::new();
-    let mut positions = Vec::new();
-    for (index, character) in compact.chars().enumerate() {
-        for lower in character.to_lowercase() {
-            positions.extend(std::iter::repeat_n(index, lower.len_utf8()));
-            lowered.push(lower);
-        }
-    }
-    let hit = lowered.find(query).and_then(|byte| positions.get(byte)).copied().unwrap_or(0);
-    let start = hit.saturating_sub(70);
-    let length = query.chars().count().saturating_add(140).max(220);
-    let chars = compact.chars().collect::<Vec<_>>();
-    let end = start.saturating_add(length).min(chars.len());
-    format!("{}{}{}", if start > 0 { "…" } else { "" },
-        chars[start..end].iter().collect::<String>(), if end < chars.len() { "…" } else { "" })
+    SessionSearchHit { session: meta.clone(), message_id: None, content_offset: 0, excerpt: query.excerpt(text) }
 }
 
 #[cfg(test)]

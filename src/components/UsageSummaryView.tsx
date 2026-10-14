@@ -55,7 +55,7 @@ export function UsageSummaryView({ name, readings, at, querying, error, stale, e
         {previous && <span className="asb-usage-stale">{error ? t("usage.summary.previousFailed") : t("usage.summary.previous")}</span>}
         {at && <span>{t("usage.summary.updatedAt")}<Time iso={at} mode="relative" /></span>}
         <Tooltip label={error ? t("usage.summary.retryAria", { name }) : t("usage.summary.refreshAria", { name })}>
-          <Button variant="icon" disabled={querying} aria-label={error ? t("usage.summary.retryAria", { name }) : t("usage.summary.refreshAria", { name })}
+          <Button variant="icon" className="asb-row-action" disabled={querying} aria-label={error ? t("usage.summary.retryAria", { name }) : t("usage.summary.refreshAria", { name })}
             onClick={() => void run()}><RefreshCw size={14} /></Button>
         </Tooltip>
         {querying && <span role="status">{t("usage.summary.updating")}</span>}

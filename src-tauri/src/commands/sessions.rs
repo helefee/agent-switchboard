@@ -53,13 +53,6 @@ pub async fn export_session_markdown(
 ) -> Result<Option<String>, CommandError> {
     let local = state(&app_handle)?;
     blocking(move || {
-        let markdown = session_manager::export_markdown(local.root(), app, &session_id)
-            .map_err(|message| CommandError::localized(
-                "session-export-failed",
-                "errors.sessions.exportFailed",
-                message.clone(),
-                serde_json::json!({ "detail": message }),
-            ))?;
         let filename_id: String = session_id
             .chars()
             .filter(|character| character.is_ascii_alphanumeric() || matches!(*character, '-' | '_'))
@@ -82,7 +75,7 @@ pub async fn export_session_markdown(
                 serde_json::json!({ "detail": error.to_string() }),
             )
         })?;
-        std::fs::write(&path, markdown).map_err(|error| {
+        session_manager::export_markdown(local.root(), app, &session_id, &path).map_err(|error| {
             CommandError::localized(
                 "session-export-failed",
                 "errors.sessions.exportWriteFailed",
@@ -96,12 +89,13 @@ pub async fn export_session_markdown(
 }
 
 #[tauri::command]
-pub async fn list_session_bookmarks(
+pub async fn search_session_bookmarks(
     app_handle: AppHandle,
-) -> Result<Vec<session_manager::SessionBookmark>, CommandError> {
+    request: session_manager::BookmarkSearchRequest,
+) -> Result<session_manager::BookmarkPage, CommandError> {
     let local = state(&app_handle)?;
     blocking(move || {
-        session_manager::list_bookmarks(local.root())
+        session_manager::search_bookmarks(local.root(), request)
             .map_err(|message| CommandError::localized(
                 "session-bookmarks-unavailable",
                 "errors.sessions.bookmarksUnavailable",
@@ -118,7 +112,7 @@ pub async fn save_session_bookmark(
     app: AppKind,
     session_id: String,
     message_id: String,
-) -> Result<session_manager::SessionBookmark, CommandError> {
+) -> Result<session_manager::BookmarkSummary, CommandError> {
     let local = state(&app_handle)?;
     blocking(move || {
         session_manager::save_bookmark(local.root(), app, &session_id, &message_id)
@@ -136,7 +130,7 @@ pub async fn save_session_bookmark(
 pub async fn delete_session_bookmark(
     app_handle: AppHandle,
     id: String,
-) -> Result<(), CommandError> {
+) -> Result<crate::storage::ReclaimOutcome, CommandError> {
     let local = state(&app_handle)?;
     blocking(move || {
         session_manager::delete_bookmark(local.root(), &id)
@@ -153,12 +147,13 @@ pub async fn delete_session_bookmark(
 /// Loads one transcript after resolving its source from the approved session
 /// roots. No session file is created, modified, or deleted by this command.
 #[tauri::command]
-pub async fn get_session_messages(
-    app: AppKind,
-    session_id: String,
-) -> Result<Vec<crate::session_manager::SessionMessage>, CommandError> {
+pub async fn get_session_message_page(
+    app_handle: AppHandle,
+    request: session_manager::MessagePageRequest,
+) -> Result<session_manager::MessagePage, CommandError> {
+    let local = state(&app_handle)?;
     blocking(move || {
-        crate::session_manager::load_messages(app, &session_id)
+        session_manager::load_page(local.root(), request)
             .map_err(|message| CommandError::localized(
                 "session-unavailable",
                 "errors.sessions.unavailable",
@@ -167,6 +162,35 @@ pub async fn get_session_messages(
             ))
     })
     .await
+}
+
+#[tauri::command]
+pub async fn get_session_message_content(
+    request: session_manager::MessageContentRequest,
+) -> Result<session_manager::ContentPage, CommandError> {
+    blocking(move || session_manager::load_content(request).map_err(session_content_error)).await
+}
+
+#[tauri::command]
+pub async fn get_session_bookmark_content(
+    app_handle: AppHandle,
+    id: String,
+    offset: usize,
+) -> Result<session_manager::ContentPage, CommandError> {
+    let local = state(&app_handle)?;
+    blocking(move || session_manager::load_bookmark_content(local.root(), &id, offset)
+        .map_err(session_content_error)).await
+}
+
+fn session_content_error(message: String) -> CommandError {
+    CommandError::localized("session-unavailable", "errors.sessions.unavailable", message.clone(),
+        serde_json::json!({ "detail": message }))
+}
+
+#[tauri::command]
+pub async fn get_session_copy_text(app_handle: AppHandle, source: session_manager::SessionCopySource) -> Result<String, CommandError> {
+    let local = state(&app_handle)?;
+    blocking(move || session_manager::load_copy_text(local.root(), source).map_err(session_content_error)).await
 }
 
 /// Starts the selected session in the platform terminal. The session source

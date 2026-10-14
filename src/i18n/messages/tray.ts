@@ -13,6 +13,8 @@ export const messages = {
   "tray.state.signInRequired": ["待登录", "Sign-in required"],
   "tray.state.reauthRequired": ["需重新登录", "Re-authentication required"],
   "tray.state.stale": ["上次读数", "Last reading"],
+  "tray.usage.refresh": ["刷新用量", "Refresh usage"],
+  "tray.usage.lastReading": ["上次读数：{time}", "Last reading: {time}"],
   "tray.actionFailed": ["托盘操作失败，请打开主界面检查。", "The tray action failed; open the main window to check."],
   "tray.provider.active": ["{name}，当前供应商", "{name}, current provider"],
   "tray.provider.switchTo": ["切换到 {name}", "Switch to {name}"],

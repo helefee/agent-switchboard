@@ -29,6 +29,7 @@ import { messages as probeVisual } from "./messages/probe-visual.ts";
 import { messages as providerDiagnostics } from "./messages/provider-diagnostics.ts";
 import { messages as providerDiagnosticsBackend } from "./messages/provider-diagnostics-backend.ts";
 import { messages as sessions } from "./messages/sessions.ts";
+import { messages as storage } from "./messages/storage.ts";
 import { messages as skillWorkbench } from "./messages/skill-workbench.ts";
 import { messages as settings } from "./messages/settings.ts";
 import { messages as tray } from "./messages/tray.ts";
@@ -59,6 +60,7 @@ export const messages = Object.freeze({
   ...providerDiagnostics,
   ...providerDiagnosticsBackend,
   ...sessions,
+  ...storage,
   ...settings,
   ...skillWorkbench,
   ...tray,

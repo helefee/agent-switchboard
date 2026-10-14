@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import type { SessionMeta } from "../api/client";
 import { useI18n } from "../i18n";
 import { Button } from "./Button";
@@ -21,9 +21,16 @@ export function SessionManager({ active }: { active: boolean }) {
   const [view, setView] = useState<"history" | "bookmarks">("history");
   const [bookmarkQuery, setBookmarkQuery] = useState("");
   const [bookmarkFilter, setBookmarkFilter] = useState<ClientFilterValue>("all");
-  const search = useSessionSearch(active && view === "history");
-  const detail = useSessionDetail();
-  const bookmarks = useSessionBookmarks(active);
+  const [visible, setVisible] = useState(() => document.visibilityState === "visible");
+  useEffect(() => {
+    const sync = () => setVisible(document.visibilityState === "visible");
+    document.addEventListener("visibilitychange", sync);
+    return () => document.removeEventListener("visibilitychange", sync);
+  }, []);
+  const current = active && visible;
+  const search = useSessionSearch(current && view === "history");
+  const detail = useSessionDetail(current && view === "history");
+  const bookmarks = useSessionBookmarks(current && view === "bookmarks", bookmarkQuery, bookmarkFilter);
   const deletion = useSessionDeletion((removed) => {
     if (detail.selected && removed.has(sessionKey(detail.selected))) detail.clear();
     search.refresh();
@@ -32,13 +39,13 @@ export function SessionManager({ active }: { active: boolean }) {
     detail.updateMetadata(updated); deletion.updateMetadata(updated); search.refresh();
   });
   const busy = deletion.busy || organization.busy;
-  const open = (session: SessionMeta, messageId: string | null = null) => {
+  const open = (session: SessionMeta, messageId: string | null = null, contentOffset = 0) => {
     setView("history");
-    void detail.select(session, messageId);
+    detail.select(session, messageId, contentOffset);
   };
   const refresh = () => {
     search.refresh(); bookmarks.refresh();
-    if (detail.selected) void detail.select(detail.selected);
+    detail.refresh();
   };
   const changeView = (next: "history" | "bookmarks") => {
     if (next === "bookmarks") {
@@ -75,8 +82,7 @@ export function SessionManager({ active }: { active: boolean }) {
         deletion={deletion} onOpen={open} />
     </div>
     <div className="asb-session-panel" id="sessions-bookmarks-panel" role="tabpanel" aria-labelledby="sessions-bookmarks-tab" hidden={view !== "bookmarks"}>
-      <SessionBookmarksPane bookmarks={bookmarks} onOpen={open}
-        query={bookmarkQuery} filter={bookmarkFilter} />
+      <SessionBookmarksPane bookmarks={bookmarks} onOpen={open} />
     </div>
   </div>;
 }

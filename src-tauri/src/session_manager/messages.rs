@@ -1,0 +1,130 @@
+use super::{bookmarks, parser, resolve_session, SessionMessage};
+use asb_core::contracts::{AppKind, LocalizedMessage};
+use serde::{Deserialize, Serialize};
+use std::ops::ControlFlow;
+use std::path::Path;
+
+const PAGE_SIZE: usize = 25;
+pub(super) const PREVIEW_CHARS: usize = 1200;
+pub(super) const CONTENT_PAGE_CHARS: usize = 16_384;
+
+pub(super) fn aligned_content_offset(offset: usize) -> usize {
+    offset / CONTENT_PAGE_CHARS * CONTENT_PAGE_CHARS
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct MessagePageRequest {
+    pub app: AppKind,
+    pub session_id: String,
+    pub offset: usize,
+    pub anchor_id: Option<String>,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MessagePreview {
+    pub id: String,
+    pub role: String,
+    pub content: String,
+    pub content_length: usize,
+    pub at: Option<String>,
+    pub bookmarked: Option<bool>,
+}
+
+impl From<SessionMessage> for MessagePreview {
+    fn from(message: SessionMessage) -> Self {
+        Self { id: message.id, role: message.role, at: message.at, bookmarked: None,
+            content_length: message.content.chars().count(),
+            content: message.content.chars().take(PREVIEW_CHARS).collect() }
+    }
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct MessagePage {
+    pub items: Vec<MessagePreview>,
+    pub total: usize,
+    pub offset: usize,
+    pub page_size: usize,
+    pub bookmark_issue: Option<LocalizedMessage>,
+}
+
+#[derive(Debug, Clone, Deserialize)]
+#[serde(rename_all = "camelCase", deny_unknown_fields)]
+pub struct MessageContentRequest {
+    pub app: AppKind,
+    pub session_id: String,
+    pub message_id: String,
+    pub offset: usize,
+}
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ContentPage {
+    pub content: String,
+    pub offset: usize,
+    pub total: usize,
+    pub page_size: usize,
+}
+
+impl ContentPage {
+    pub(super) fn from_part(content: String, offset: usize, total: usize) -> Result<Self, String> {
+        if offset % CONTENT_PAGE_CHARS != 0 || (offset != 0 && offset >= total)
+            || content.chars().count() != total.saturating_sub(offset).min(CONTENT_PAGE_CHARS) {
+            return Err("正文页码无效；请重新打开消息".into());
+        }
+        Ok(Self { content, offset, total, page_size: CONTENT_PAGE_CHARS })
+    }
+}
+
+pub(super) fn content_page(content: &str, offset: usize) -> Result<ContentPage, String> {
+    let total = content.chars().count();
+    ContentPage::from_part(content.chars().skip(offset).take(CONTENT_PAGE_CHARS).collect(), offset, total)
+}
+
+pub fn load_content(request: MessageContentRequest) -> Result<ContentPage, String> {
+    let source = resolve_session(request.app, &request.session_id)?;
+    content_page(&parser::find_message(&source.path, &request.message_id)?.content, request.offset)
+}
+
+pub fn load_page(root: &Path, request: MessagePageRequest) -> Result<MessagePage, String> {
+    if request.offset % PAGE_SIZE != 0 { return Err("消息页码无效".into()); }
+    let source = resolve_session(request.app, &request.session_id)?;
+    let mut page = scan_page(&source.path, request.offset, request.anchor_id.as_deref())?;
+    if let Err(detail) = bookmarks::mark_messages(root, request.app, &request.session_id, &mut page.items) {
+        for item in &mut page.items { item.bookmarked = None; }
+        page.bookmark_issue = Some(LocalizedMessage::new("sessions.bookmarks.readUnavailable",
+            serde_json::json!({"detail":detail}), format!("会话可继续阅读，收藏状态不可用：{detail}")));
+    }
+    Ok(page)
+}
+
+fn scan_page(path: &Path, requested_offset: usize, anchor: Option<&str>) -> Result<MessagePage, String> {
+    let mut page = MessagePage { items: Vec::new(), total: 0, offset: requested_offset,
+        page_size: PAGE_SIZE, bookmark_issue: None };
+    let mut bucket = Vec::with_capacity(PAGE_SIZE);
+    let mut bucket_offset = 0;
+    let mut found_anchor = false;
+    parser::visit_messages(path, |message| {
+        if bucket.len() == PAGE_SIZE {
+            if bucket_offset == page.offset && (anchor.is_none() || found_anchor) {
+                page.items = std::mem::take(&mut bucket);
+            } else { bucket.clear(); }
+            bucket_offset = page.total;
+        }
+        if anchor == Some(message.id.as_str()) { page.offset = bucket_offset; found_anchor = true; }
+        bucket.push(message.into());
+        page.total += 1;
+        Ok(ControlFlow::Continue(()))
+    })?;
+    if anchor.is_some() && !found_anchor { return Err("原消息已改变或不存在；请重新搜索会话".into()); }
+    if bucket_offset == page.offset || (anchor.is_none() && page.offset >= page.total) {
+        page.items = bucket;
+        page.offset = bucket_offset;
+    }
+    Ok(page)
+}
+
+#[cfg(test)]
+mod tests;

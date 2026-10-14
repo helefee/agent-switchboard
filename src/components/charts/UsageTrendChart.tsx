@@ -1,4 +1,4 @@
-import { useId, useMemo, useState } from "react";
+import { useEffect, useId, useMemo, useState } from "react";
 import { Area, ComposedChart, Line, Tooltip, XAxis, YAxis } from "recharts";
 import { useCountUp } from "@/hooks/use-count-up";
 import { useI18n, type TFunction } from "../../i18n";
@@ -86,6 +86,8 @@ function TrendCard({
   const { t } = useI18n();
   const gradientId = useId();
   const [activeIndex, setActiveIndex] = useState<number | null>(null);
+  // A refresh can arrive mid-hover; stale indices must not survive it.
+  useEffect(() => setActiveIndex(null), [prepared]);
   const compact = size === "compact";
 
   const rows = mergeSeriesRows(prepared);
