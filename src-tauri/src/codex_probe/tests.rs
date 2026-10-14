@@ -52,6 +52,10 @@ fn builtin_questions_have_unique_ids_and_answers_matching_their_format() {
     ids.dedup();
     assert_eq!(ids.len(), QUESTIONS.len());
     assert_eq!(QUESTIONS[0].id, "pelican-riding-bicycle");
+    assert_eq!(QUESTIONS[0].max_runs, 1);
+    for question in QUESTIONS.iter().skip(1) {
+        assert_eq!(question.max_runs, super::MAX_RUN_COUNT);
+    }
 }
 
 #[test]

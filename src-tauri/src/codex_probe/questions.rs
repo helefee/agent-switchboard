@@ -41,6 +41,9 @@ pub(crate) struct ProbeQuestion {
     /// A hand-made reference rendering shown in the UI; never used for
     /// grading — visual answers stay human-observed.
     pub(crate) reference_visual: Option<&'static str>,
+    /// Upper bound of runs per batch for this question, owned by the
+    /// catalog: one human-observed animation is enough for the pelican.
+    pub(crate) max_runs: u32,
 }
 
 pub(crate) const QUESTIONS: [ProbeQuestion; 4] = [
@@ -51,6 +54,7 @@ pub(crate) const QUESTIONS: [ProbeQuestion; 4] = [
         expected_answer: "",
         grading: ProbeGrading::HtmlVisual,
         reference_visual: Some(include_str!("pelican-reference.html")),
+        max_runs: 1,
     },
     ProbeQuestion {
         id: "divisible-or-contains-3",
@@ -59,6 +63,7 @@ pub(crate) const QUESTIONS: [ProbeQuestion; 4] = [
         expected_answer: "45",
         grading: ProbeGrading::Integer,
         reference_visual: None,
+        max_runs: super::MAX_RUN_COUNT,
     },
     ProbeQuestion {
         id: "mountain-round-trip",
@@ -67,6 +72,7 @@ pub(crate) const QUESTIONS: [ProbeQuestion; 4] = [
         expected_answer: "14",
         grading: ProbeGrading::Integer,
         reference_visual: None,
+        max_runs: super::MAX_RUN_COUNT,
     },
     ProbeQuestion {
         id: "round-table-neighbours",
@@ -75,6 +81,7 @@ pub(crate) const QUESTIONS: [ProbeQuestion; 4] = [
         expected_answer: "12",
         grading: ProbeGrading::Integer,
         reference_visual: None,
+        max_runs: super::MAX_RUN_COUNT,
     },
 ];
 
@@ -87,6 +94,7 @@ pub(crate) struct ResolvedQuestion {
     pub(super) prompt: String,
     pub(super) expected_answer: String,
     pub(crate) grading: ProbeGrading,
+    pub(crate) max_runs: u32,
 }
 
 impl ResolvedQuestion {
@@ -126,6 +134,7 @@ pub(crate) fn resolve_question(
             prompt,
             expected_answer: answer,
             grading,
+            max_runs: super::MAX_RUN_COUNT,
         });
     }
     let question = QUESTIONS
@@ -138,6 +147,7 @@ pub(crate) fn resolve_question(
         prompt: question.prompt.to_string(),
         expected_answer: question.expected_answer.to_string(),
         grading: question.grading,
+        max_runs: question.max_runs,
     })
 }
 

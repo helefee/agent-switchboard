@@ -323,6 +323,8 @@ export interface CodexProbeQuestion {
   gradingVersion: CodexProbeGradingVersion;
   /** A hand-made reference rendering; never a grading baseline. */
   referenceVisual: string | null;
+  /** Upper bound of runs per batch for this question. */
+  maxRuns: number;
 }
 
 export type CodexProbeBatchStatus =

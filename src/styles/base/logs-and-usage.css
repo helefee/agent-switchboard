@@ -119,6 +119,21 @@
   margin: 0;
 }
 
+.asb-run-count {
+  display: flex;
+  align-items: center;
+  gap: var(--asb-space-2);
+}
+
+.asb-run-count-label {
+  color: var(--asb-text-muted);
+  font: var(--asb-text-label);
+}
+
+.asb-run-count .asb-input {
+  width: 4.5rem;
+}
+
 .asb-model-usage-notice,
 .asb-model-usage-issues {
   margin: 0 0 var(--asb-space-3);
@@ -307,13 +322,16 @@
 .asb-probe-html {
   display: block;
   width: 100%;
-  height: 18rem;
   object-fit: contain;
   border: 1px solid var(--asb-hairline);
   border-radius: var(--asb-radius);
   background: var(--asb-image-canvas);
 }
 
+.asb-probe-svg {
+  height: 18rem;
+}
+
 .asb-probe-html {
-  height: 28rem;
+  aspect-ratio: 16 / 9;
 }

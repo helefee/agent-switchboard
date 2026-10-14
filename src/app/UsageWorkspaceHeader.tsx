@@ -1,6 +1,7 @@
 import type { ReactNode } from "react";
 import { CUSTOM_PROBE_QUESTION_ID, type ModelUsageRange } from "../api/client";
 import { Button } from "../components/Button";
+import { Input } from "../components/Input";
 import type { CodexProbeFormState } from "../components/CodexProbePanel";
 import { RadioOption } from "../components/RadioOption";
 import { Select } from "../components/Select";
@@ -32,6 +33,10 @@ interface RadarControlsProps {
 function RadarControls({ active, probe, form, onQuestionChange, runCount, onRunCountChange, onOpenHistory }: RadarControlsProps) {
   const { t } = useI18n();
   const custom = form.questionId === CUSTOM_PROBE_QUESTION_ID;
+  const questions = probe.questions ?? [];
+  const catalogMax = Math.max(1, ...questions.map((question) => question.maxRuns));
+  const maxRuns = questions.find((question) => question.id === form.questionId)?.maxRuns ?? catalogMax;
+  const effectiveRuns = Math.min(runCount, maxRuns);
   const ready = !custom || (form.customQuestion.trim().length > 0
     && (form.customGradingVersion !== "1" || /^\d+$/.test(form.customAnswer.trim())));
   const locked = !active || probe.running || probe.starting || !!probe.status?.persistPending;
@@ -42,11 +47,15 @@ function RadarControls({ active, probe, form, onQuestionChange, runCount, onRunC
         { value: CUSTOM_PROBE_QUESTION_ID, label: t("usage.radar.customQuestion") },
       ]} placeholder={probe.questions === null ? t("usage.radar.questionsLoading") : t("usage.radar.selectQuestion")}
         ariaLabel={t("usage.radar.questionAria")} disabled={locked} onChange={onQuestionChange} />
-      <div className="asb-segments" role="radiogroup" aria-label={t("usage.radar.runCountAria")}>
-        {[...new Set([3, 5, runCount])].sort((a, b) => a - b).map((count) => <RadioOption key={count} name="codex-probe-run-count"
-          checked={runCount === count} disabled={locked} label={t("usage.radar.runCount", { count })}
-          onChange={() => onRunCountChange(count)} />)}
-      </div>
+      {probe.questions !== null && <div className="asb-run-count">
+        <span className="asb-run-count-label">{t("usage.radar.runCount")}</span>
+        <Input type="number" min={1} max={maxRuns} step={1} value={effectiveRuns}
+          disabled={locked || maxRuns === 1} aria-label={t("usage.radar.runCountAria")}
+          onChange={(event) => {
+            const next = Number.parseInt(event.target.value, 10);
+            if (!Number.isNaN(next)) onRunCountChange(Math.min(maxRuns, Math.max(1, next)));
+          }} />
+      </div>}
       {probe.running ? (
         <Button variant="secondary" disabled={probe.cancelling || probe.starting} onClick={() => void probe.cancel()}>
           {probe.cancelling ? t("usage.radar.cancelling") : t("usage.radar.cancel")}
@@ -55,7 +64,7 @@ function RadarControls({ active, probe, form, onQuestionChange, runCount, onRunC
         <Button variant="primary" disabled={locked || form.questionId === null || !ready}
           onClick={() => {
             if (form.questionId === null) return;
-            void probe.start({ runCount, questionId: form.questionId,
+            void probe.start({ runCount: effectiveRuns, questionId: form.questionId,
               customQuestion: custom ? form.customQuestion.trim() : undefined,
               customAnswer: custom && form.customGradingVersion === "1" ? form.customAnswer.trim() : undefined,
               customGradingVersion: custom ? form.customGradingVersion : undefined });

@@ -29,6 +29,7 @@ export const messages = {
   "errors.misc.logDirOpenFailed": ["无法打开应用日志文件夹", "Failed to open the app log folder"],
   // commands/codex_probe.rs
   "errors.misc.probeInvalidCount": ["检测次数必须在 1 到 {max} 之间", "The probe run count must be between 1 and {max}"],
+  "errors.misc.probeRunLimit": ["该题目最多检测 {max} 次", "This question allows at most {max} run(s)"],
   "errors.misc.probeUnknownStatus": ["未知的检测状态：{status}", "Unknown probe status: {status}"],
   // commands/window.rs
   "errors.misc.mainWindowConfigMissing": ["缺少主窗口配置", "The main window configuration is missing"],

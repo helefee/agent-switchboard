@@ -20,6 +20,7 @@ pub struct CodexProbeQuestionDto<'a> {
     text: &'a str,
     grading_version: ProbeGrading,
     reference_visual: Option<&'a str>,
+    max_runs: u32,
 }
 
 #[tauri::command]
@@ -32,6 +33,7 @@ pub async fn list_codex_probe_questions() -> Result<Vec<CodexProbeQuestionDto<'s
             text: question.prompt,
             grading_version: question.grading,
             reference_visual: question.reference_visual,
+            max_runs: question.max_runs,
         })
         .collect())
 }
@@ -67,6 +69,14 @@ pub async fn start_codex_probe(
         request.custom_grading_version,
     )
     .map_err(|message| CommandError::new("codex-probe-invalid-question", message))?;
+    if request.run_count > question.max_runs {
+        return Err(CommandError::localized(
+            "codex-probe-question-run-limit",
+            "errors.misc.probeRunLimit",
+            format!("该题目最多检测 {} 次", question.max_runs),
+            serde_json::json!({ "max": question.max_runs }),
+        ));
+    }
     let local = state(&app)?;
     let registry = app.state::<ProbeRegistry>().inner().clone();
     let gateway = app

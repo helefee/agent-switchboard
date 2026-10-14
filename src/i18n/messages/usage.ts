@@ -35,7 +35,7 @@ export const messages = {
 	"usage.radar.selectQuestion": ["选择题目", "Select a question"],
 	"usage.radar.questionAria": ["探针题目", "Probe question"],
 	"usage.radar.runCountAria": ["检测次数", "Probe run count"],
-	"usage.radar.runCount": ["{count} 次", "{count} runs"],
+	"usage.radar.runCount": ["次数", "Runs"],
 	"usage.radar.cancelling": ["正在取消…", "Cancelling…"],
 	"usage.radar.cancel": ["取消检测", "Cancel probe"],
 	"usage.radar.starting": ["正在启动…", "Starting…"],
