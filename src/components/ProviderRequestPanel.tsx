@@ -1,8 +1,10 @@
+import { useState } from "react";
 import type { ProviderDiagnostic, ProviderDiagnosticKind, ProviderRequestTarget, ProviderRequestOutcome } from "../api/client";
 import type { MessageKey } from "../i18n";
 import { useI18n } from "../i18n";
 import { protocolLabel } from "../lib/protocol";
 import { Button } from "./Button";
+import { CollapsibleSection } from "./Collapsible";
 import { Input } from "./Input";
 import { ModelPicker } from "./ModelPicker";
 import { Time } from "./Time";
@@ -48,6 +50,7 @@ const PHASE_TITLES: Record<RequestView["phase"], MessageKey> = {
 
 function DiagnosticDetails({ diagnostic }: { diagnostic: ProviderDiagnostic }) {
   const { t } = useI18n();
+  const [bodyOpen, setBodyOpen] = useState(false);
   return (
     <div className="asb-request-diagnostic">
       <p>{diagnostic.message}</p>
@@ -57,10 +60,10 @@ function DiagnosticDetails({ diagnostic }: { diagnostic: ProviderDiagnostic }) {
         <div><dt>{t("providers.request.detail.httpStatus")}</dt><dd>{diagnostic.status === null ? t("providers.request.detail.noHttpResponse") : `HTTP ${diagnostic.status}`}</dd></div>
         <div><dt>Request ID</dt><dd>{diagnostic.requestId ?? t("providers.request.detail.noRequestId")}</dd></div>
       </dl>
-      {diagnostic.body !== null && <details>
-        <summary>{t("providers.request.detail.upstreamBody")}{diagnostic.bodyTruncated ? t("providers.request.detail.bodyTruncated") : ""}</summary>
+      {diagnostic.body !== null && <CollapsibleSection quiet open={bodyOpen} onOpenChange={setBodyOpen}
+        label={<>{t("providers.request.detail.upstreamBody")}{diagnostic.bodyTruncated ? t("providers.request.detail.bodyTruncated") : ""}</>}>
         <pre>{diagnostic.body || t("providers.request.detail.emptyBody")}</pre>
-      </details>}
+      </CollapsibleSection>}
     </div>
   );
 }

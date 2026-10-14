@@ -8,6 +8,7 @@ import type {
 import { usesClaudeManagedAuth } from "../../api/claude-accounts";
 import { useI18n } from "../../i18n";
 import { Button } from "../Button";
+import { Collapsible } from "../Collapsible";
 import { ConnectivityIcon } from "../icons";
 import { ProviderTestPanel } from "../ProviderTestPanel";
 
@@ -53,15 +54,15 @@ export function ProviderConnectionTest({
     <div className="asb-editor-section-fields">
       <div className="asb-editor-action-row">
         <Button ref={trigger} variant="secondary" disabled={busy} aria-expanded={open && active}
-          aria-controls={id} onClick={() => setOpen((value) => !value)}>
+          aria-controls={open && active ? id : undefined} onClick={() => setOpen((value) => !value)}>
           <ConnectivityIcon />{open ? t("providers.editor.test.collapse") : t("providers.editor.test.open")}
         </Button>
         {!open && !target && <span className="asb-field-help">{t("providers.editor.test.needFields")}</span>}
       </div>
-      {active && <div className={`asb-provider-test-disclosure${open ? " is-open" : ""}`} aria-hidden={!open}>
+      {active && <Collapsible open={open}>
         <ProviderTestPanel id={id} name={t("providers.test.draftName")} url={baseUrl?.trim() || null} target={target}
           onClose={() => { setOpen(false); trigger.current?.focus(); }} />
-      </div>}
+      </Collapsible>}
     </div>
   </section>;
 }

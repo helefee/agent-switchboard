@@ -1,8 +1,10 @@
-import type { ReactNode } from "react";
+import { useEffect, useState, type ReactNode } from "react";
 import { openUrl } from "@tauri-apps/plugin-opener";
-import type { UpdateChannel, UpdateCheck } from "../api/client";
+import { getChangelogSection, type UpdateChannel, type UpdateCheck } from "../api/client";
 import type { UpdateDownloadProgress } from "../app/useUpdateCheck";
+import { MarkdownContent } from "./Markdown";
 import { Button } from "./Button";
+import { CollapsibleSection } from "./Collapsible";
 import { Time } from "./Time";
 import { useI18n } from "../i18n";
 import { tr } from "../i18n/current";
@@ -10,32 +12,13 @@ import { toast, toastMessage } from "./use-toast";
 
 const releasesUrl = "https://github.com/y4Nkk/agent-switchboard/releases/latest";
 
+/** Renders one changelog through the shared markdown viewer; no parsing or
+ * format logic lives here. */
 function ReleaseNotes({ notes, version }: { notes: string; version: string }) {
   const { t } = useI18n();
-  const sections = notes
-    .split(/\r?\n(?=### )/)
-    .map((section) => {
-      const [heading, ...lines] = section.trim().split(/\r?\n/);
-      return {
-        title: heading.replace(/^###\s+/, ""),
-        items: lines
-          .map((line) => line.replace(/^-\s+/, "").trim())
-          .filter(Boolean),
-      };
-    })
-    .filter((section) => section.title && section.items.length > 0);
-
-  if (sections.length === 0) {
-    return <p className="asb-update-notes-text">{notes}</p>;
-  }
   return (
-    <div className="asb-update-notes" aria-label={t("backup.update.notesAria", { version })}>
-      {sections.map((section) => (
-        <section key={section.title} className="asb-update-notes-section">
-          <h4 className="asb-section-title">{section.title}</h4>
-          <ul>{section.items.map((item) => <li key={item}>{item}</li>)}</ul>
-        </section>
-      ))}
+    <div className="asb-update-notes asb-markdown" aria-label={t("backup.update.notesAria", { version })}>
+      <MarkdownContent text={notes} />
     </div>
   );
 }
@@ -78,6 +61,25 @@ export function UpdateSection({
   onRestart: () => void;
 }) {
   const { t } = useI18n();
+  /** Current-build notes, loaded once per reported version. `null` while the
+   * version is unknown or the bundled changelog has no section for it; a
+   * missing section simply leaves the disclosure out. */
+  const [currentNotes, setCurrentNotes] = useState<{ version: string; notes: string } | null>(null);
+  const [changelogOpen, setChangelogOpen] = useState(false);
+  useEffect(() => {
+    if (appVersion === null) return;
+    let cancelled = false;
+    getChangelogSection(appVersion)
+      .then((notes) => {
+        if (!cancelled) setCurrentNotes(notes ? { version: appVersion, notes } : null);
+      })
+      .catch(() => {
+        if (!cancelled) setCurrentNotes(null);
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [appVersion]);
   const openReleasePage = () => {
     void openUrl(releasesUrl).catch(() => {
       toast({
@@ -146,6 +148,12 @@ export function UpdateSection({
           <span className="asb-checkbox-label">{label}</span>
           {detail ? <span className="asb-app-setting-detail">{detail}</span> : null}
           {result?.releaseNotes ? <ReleaseNotes notes={result.releaseNotes} version={result.latestVersion} /> : null}
+          {currentNotes ? (
+            <CollapsibleSection quiet open={changelogOpen} onOpenChange={setChangelogOpen}
+              label={t("backup.update.currentNotes")}>
+              <ReleaseNotes notes={currentNotes.notes} version={currentNotes.version} />
+            </CollapsibleSection>
+          ) : null}
         </div>
         <div className="asb-panel-actions">
           {restartRequired ? (

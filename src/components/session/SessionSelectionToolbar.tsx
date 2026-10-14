@@ -1,6 +1,7 @@
 import { useEffect, useId, useState } from "react";
 import { useI18n } from "../../i18n";
 import { Button } from "../Button";
+import { Collapsible } from "../Collapsible";
 import { SessionTagInput } from "./SessionTagInput";
 import type { SessionDeletionState } from "./SessionDeletion";
 import type { SessionSearch } from "./use-session-search";
@@ -45,13 +46,15 @@ export function SessionSelectionToolbar({ search, selection, organization }: {
           onClick={selection.toggleMode}>{t("sessions.batch.exit")}</Button>
       </div>
     </div>
-    {tagging && <div id={tagPanelId} className="asb-session-selection-tags">
-      <SessionTagInput tags={tags} disabled={disabled} onChange={setTags} />
-      <Button variant="secondary" disabled={disabled || !tags.length}
-        onClick={() => void organization.save(sessions, { kind: "addTags", tags })}>{t("sessions.organize.addTags")}</Button>
-      <Button variant="secondary" disabled={disabled || !tags.length}
-        onClick={() => void organization.save(sessions, { kind: "removeTags", tags })}>{t("sessions.organize.removeTags")}</Button>
-    </div>}
+    <Collapsible open={tagging} id={tagPanelId}>
+      <div className="asb-session-selection-tags">
+        <SessionTagInput tags={tags} disabled={disabled} onChange={setTags} />
+        <Button variant="secondary" disabled={disabled || !tags.length}
+          onClick={() => void organization.save(sessions, { kind: "addTags", tags })}>{t("sessions.organize.addTags")}</Button>
+        <Button variant="secondary" disabled={disabled || !tags.length}
+          onClick={() => void organization.save(sessions, { kind: "removeTags", tags })}>{t("sessions.organize.removeTags")}</Button>
+      </div>
+    </Collapsible>
     {overLimit && <p className="asb-warn-text">{t("sessions.organize.batchLimit")}</p>}
   </div>;
 }

@@ -22,7 +22,7 @@
 .asb-client-settings-panel .asb-client-configuration-review,
 .asb-client-settings-panel .asb-client-settings-reset-preview,
 .asb-client-settings-panel .asb-official-directory,
-.asb-client-settings-panel .asb-client-settings-disclosure.is-instructions .asb-client-settings-disclosure-content {
+.asb-client-settings-panel .asb-collapsible.is-instructions .asb-client-settings-instructions {
   border-color: var(--asb-settings-module-border);
   background: var(--asb-settings-module-bg);
 }
@@ -38,7 +38,9 @@
   height: var(--asb-touch-target);
 }
 
-.asb-client-settings-panel .asb-client-settings-disclosure.is-instructions .asb-client-settings-disclosure-content {
+/* The global-instructions editor rides the module surface as a boxed group;
+   the fold itself is the shared .asb-collapsible primitive. */
+.asb-client-settings-panel .asb-collapsible.is-instructions .asb-client-settings-instructions {
   display: grid;
   gap: var(--asb-space-3);
   margin-bottom: var(--asb-space-4);
@@ -47,40 +49,7 @@
   border-radius: var(--asb-radius);
 }
 
-.asb-client-settings-disclosure {
-  display: grid;
-  grid-template-rows: 0fr;
-  min-height: 0;
-  overflow: clip;
-  visibility: hidden;
-  opacity: 0;
-  transition:
-    grid-template-rows var(--asb-motion-node) var(--asb-easing),
-    opacity var(--asb-motion-fast) var(--asb-easing),
-    visibility 0s linear var(--asb-motion-node);
-}
-
-.asb-client-settings-disclosure[data-open="true"] {
-  grid-template-rows: 1fr;
-  visibility: visible;
-  opacity: 1;
-  transition:
-    grid-template-rows var(--asb-motion-node) var(--asb-easing),
-    opacity var(--asb-motion-fast) var(--asb-easing);
-}
-
-.asb-client-settings-disclosure-content {
-  min-height: 0;
-  overflow: hidden;
-  transform: translateY(calc(-1 * var(--asb-space-1)));
-  transition: transform var(--asb-motion-node) var(--asb-easing);
-}
-
-.asb-client-settings-disclosure[data-open="true"] .asb-client-settings-disclosure-content {
-  transform: translateY(0);
-}
-
-.asb-client-settings-disclosure .asb-prompt-actions {
+.asb-client-settings-panel .asb-collapsible.is-instructions .asb-prompt-actions {
   margin-bottom: var(--asb-space-4);
 }
 

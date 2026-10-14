@@ -162,14 +162,6 @@
   overflow-wrap: anywhere;
 }
 
-.asb-mcp-metadata > summary {
-  min-height: var(--asb-control-height);
-  padding-block: var(--asb-space-2);
-  cursor: pointer;
-  color: var(--asb-text-muted);
-  font: var(--asb-text-label);
-}
-
 .asb-mcp-metadata-fields {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

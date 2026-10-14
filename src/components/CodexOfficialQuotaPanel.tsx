@@ -6,7 +6,6 @@ import { QuotaWindowsTable } from "./QuotaWindowsTable";
 import type { CachedQuery } from "./use-cached-query";
 
 interface Props {
-  id: string;
   quota: CachedQuery<CodexOfficialQuota>;
   profileName: string;
   /** Backend auto-refresh cadence in minutes; 0 disables automatic queries. */
@@ -71,7 +70,6 @@ function QuotaRefreshInterval({
 
 /** Row summary and details consume the same read; only the row owns polling. */
 export function CodexOfficialQuotaPanel({
-  id,
   quota,
   profileName,
   refreshIntervalMinutes,
@@ -81,7 +79,7 @@ export function CodexOfficialQuotaPanel({
   const { data: reading } = quota;
   const showsWindows = (reading?.windows.length ?? 0) > 0;
   return (
-    <section id={id} className="asb-official-quota" aria-label={t("codex.quota.panelAria", { name: profileName })}>
+    <section className="asb-official-quota" aria-label={t("codex.quota.panelAria", { name: profileName })}>
       <header className="asb-provider-usage-head">
         <div className="asb-provider-usage-title">
           <h3 className="asb-section-title">{t("codex.quota.title")}</h3>

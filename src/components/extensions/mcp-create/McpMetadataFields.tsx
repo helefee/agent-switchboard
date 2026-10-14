@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { useI18n } from "../../../i18n";
+import { CollapsibleSection } from "../../Collapsible";
 import { Input } from "../../Input";
 import { Textarea } from "../../Textarea";
 import type { MetadataDraft } from "./metadata";
@@ -15,8 +16,8 @@ export function McpMetadataFields({ value, busy, onChange }: {
       <Input aria-label={t("mcp.field.displayName")} value={value.displayName} disabled={busy} placeholder={t("mcp.placeholder.optional")}
         onChange={(event) => change("displayName", event.target.value)} />
     </label>
-    <details className="asb-mcp-metadata" open={expanded} onToggle={(event) => setExpanded(event.currentTarget.open)}>
-      <summary>{t("mcp.field.metadataSummary")}</summary>
+    <CollapsibleSection quiet open={expanded} onOpenChange={setExpanded}
+      label={t("mcp.field.metadataSummary")}>
       <div className="asb-mcp-metadata-fields">
         <label className="asb-field asb-mcp-description"><span>{t("mcp.field.description")}</span>
           <Textarea aria-label={t("mcp.field.description")} value={value.description} rows={2} disabled={busy}
@@ -32,6 +33,6 @@ export function McpMetadataFields({ value, busy, onChange }: {
               onChange={(event) => change(key, event.target.value)} />
           </label>)}
       </div>
-    </details>
+    </CollapsibleSection>
   </>;
 }

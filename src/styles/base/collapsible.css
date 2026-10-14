@@ -1,0 +1,137 @@
+/* The single fold grammar (DESIGN.md §8): every expand/collapse in the app
+   is a grid track animating 0fr → 1fr with opacity and offset as one set,
+   owned here and rendered through components/Collapsible.tsx. Screens style
+   their surfaces around the primitive; none re-declare height, visibility,
+   or chevron behavior. Content unmounts when closed, so the collapsed state
+   cancels completely — no hidden DOM, no residual gap lane. */
+.asb-collapsible {
+  display: grid;
+  grid-template-rows: 0fr;
+  min-width: 0;
+  visibility: hidden;
+  pointer-events: none;
+  opacity: 0;
+  transform: translateY(calc(-1 * var(--asb-space-unit)));
+  transition:
+    grid-template-rows var(--asb-motion-node) var(--asb-easing),
+    margin-top var(--asb-motion-node) var(--asb-easing),
+    visibility 0s linear var(--asb-motion-node),
+    opacity var(--asb-motion-node) var(--asb-easing),
+    transform var(--asb-motion-node) var(--asb-easing);
+}
+
+.asb-collapsible.is-open {
+  grid-template-rows: 1fr;
+  visibility: visible;
+  pointer-events: auto;
+  opacity: 1;
+  transform: translateY(0);
+  transition:
+    grid-template-rows var(--asb-motion-node) var(--asb-easing),
+    margin-top var(--asb-motion-node) var(--asb-easing),
+    visibility 0s linear 0s,
+    opacity var(--asb-motion-node) var(--asb-easing),
+    transform var(--asb-motion-node) var(--asb-easing);
+}
+
+/* The grid track collapses only when the item can shrink below its content;
+   body padding therefore lives inside this clipper, never on it. */
+.asb-collapsible-content {
+  min-height: 0;
+  min-width: 0;
+  overflow: hidden;
+}
+
+/* Self-contained section: one summary row above the shared animated body.
+   `unstyled` is a zero-style marker — the row owns every visual property,
+   including the UA button chrome reset (border, background, radius). */
+.asb-collapsible-section {
+  min-width: 0;
+}
+
+.asb-collapsible-summary {
+  display: flex;
+  align-items: center;
+  gap: var(--asb-space-2);
+  width: 100%;
+  min-height: var(--asb-touch-target);
+  padding: var(--asb-space-3) 0;
+  border: 0;
+  border-radius: 0;
+  background: transparent;
+  font: var(--asb-text-label);
+  font-weight: 600;
+  color: var(--asb-text);
+  text-align: left;
+  cursor: pointer;
+}
+
+/* The summary owns chevron placement: standard folds pin it to the row end;
+   quiet rows and caller-built triggers keep it adjacent to the label. */
+.asb-collapsible-summary > .asb-collapsible-chevron {
+  margin-inline-start: auto;
+}
+
+.asb-collapsible-summary-label {
+  min-width: 0;
+}
+
+.asb-collapsible-summary-value {
+  color: var(--asb-text-muted);
+  font-weight: 400;
+  overflow-wrap: anywhere;
+}
+
+.asb-collapsible-chevron {
+  display: block;
+  flex: none;
+  color: var(--asb-text-muted);
+  transition: transform var(--asb-motion-fast) var(--asb-easing);
+}
+
+.asb-collapsible-chevron svg {
+  display: block;
+}
+
+.asb-collapsible-chevron.is-open {
+  transform: rotate(180deg);
+}
+
+.asb-collapsible-body {
+  min-width: 0;
+  padding-bottom: var(--asb-space-4);
+}
+
+/* Quiet tone: secondary evidence rows (code evidence, changelogs, resource
+   facts) read as muted compact entries, not section headings — the row hugs
+   its label and the chevron follows it, never spanning the full column. */
+.asb-collapsible-section.is-quiet .asb-collapsible-summary {
+  width: fit-content;
+  min-height: var(--asb-control-height-compact);
+  padding: var(--asb-space-2) 0;
+  color: var(--asb-text-muted);
+  font-weight: 400;
+}
+
+.asb-collapsible-section.is-quiet .asb-collapsible-summary:hover {
+  color: var(--asb-text);
+}
+
+.asb-collapsible-section.is-quiet .asb-collapsible-summary > .asb-collapsible-chevron {
+  margin-inline-start: 0;
+}
+
+.asb-collapsible-section.is-quiet .asb-collapsible-body {
+  padding-bottom: 0;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .asb-collapsible,
+  .asb-collapsible-chevron {
+    transition: none;
+  }
+
+  .asb-collapsible {
+    transform: none;
+  }
+}

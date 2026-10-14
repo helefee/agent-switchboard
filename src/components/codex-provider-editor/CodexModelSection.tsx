@@ -5,11 +5,11 @@ import { useI18n } from "../../i18n";
 import { localizedMessageText } from "../../i18n/errors";
 import { Button } from "../Button";
 import { Checkbox } from "../Checkbox";
-import { ChevronDownIcon, PlusIcon, TrashIcon } from "../icons";
+import { CollapsibleSection } from "../Collapsible";
 import { Input } from "../Input";
 import { Select } from "../Select";
 import { Tooltip } from "../Tooltip";
-import { UpdateIcon } from "../icons";
+import { PlusIcon, TrashIcon, UpdateIcon } from "../icons";
 import {
   REASONING_LEVELS,
   REASONING_LEVEL_LABELS,
@@ -194,46 +194,42 @@ function ModelMapping({ editor, busy }: { editor: CodexEditorState; busy: boolea
         routeIndex === index ? { clientModel, upstreamModel } : route),
     }));
   return (
-    <details className="asb-provider-disclosure" open={expanded}
-      onToggle={(event) => setExpanded(event.currentTarget.open)}>
-      <summary><span>{t("codex.model.mapping")}</span><span className="asb-provider-disclosure-value">
-        {draft.modelRoutes.length > 0 ? t("codex.model.mappingCount", { count: draft.modelRoutes.length }) : t("codex.model.mappingNone")}
-      </span><ChevronDownIcon /></summary>
-      <div className="asb-provider-disclosure-body">
-        <p className="asb-scope-note">{t("codex.model.mappingNote")}</p>
-        <div className="asb-provider-mapping-list">
-          {draft.modelRoutes.map((route, index) => (
-            <div className="asb-provider-mapping-row" key={index} aria-label={t("codex.model.mapping")}>
-              <Select ariaLabel={t("codex.model.mappingClientAria", { index: index + 1 })} value={route.clientModel} disabled={busy}
-                options={draft.catalog.map((entry) => ({ value: entry.id, label: entry.id }))}
-                onChange={(value) => update(index, value, route.upstreamModel)} />
-              <span className="asb-provider-mapping-arrow" aria-hidden="true">→</span>
-              <Input code aria-label={t("codex.model.mappingUpstreamAria", { index: index + 1 })} value={route.upstreamModel}
-                disabled={busy} onChange={(event) => update(index, route.clientModel, event.target.value)} />
-              <Button variant="danger" aria-label={t("codex.model.mappingDeleteAria", { index: index + 1 })} disabled={busy}
-                onClick={() => setDraft((current) => ({
-                  ...current,
-                  modelRoutes: current.modelRoutes.filter((_, routeIndex) => routeIndex !== index),
-                }))}>
-                <TrashIcon />
-              </Button>
-            </div>
-          ))}
-        </div>
-        <div className="asb-provider-model-actions asb-provider-model-actions-end">
-          <Tooltip label={t("codex.model.mappingAdd")}>
-            <Button variant="icon" aria-label={t("codex.model.mappingAdd")} disabled={busy || draft.catalog.length === 0}
+    <CollapsibleSection open={expanded} onOpenChange={setExpanded}
+      label={t("codex.model.mapping")}
+      value={draft.modelRoutes.length > 0 ? t("codex.model.mappingCount", { count: draft.modelRoutes.length }) : t("codex.model.mappingNone")}>
+      <p className="asb-scope-note">{t("codex.model.mappingNote")}</p>
+      <div className="asb-provider-mapping-list">
+        {draft.modelRoutes.map((route, index) => (
+          <div className="asb-provider-mapping-row" key={index} aria-label={t("codex.model.mapping")}>
+            <Select ariaLabel={t("codex.model.mappingClientAria", { index: index + 1 })} value={route.clientModel} disabled={busy}
+              options={draft.catalog.map((entry) => ({ value: entry.id, label: entry.id }))}
+              onChange={(value) => update(index, value, route.upstreamModel)} />
+            <span className="asb-provider-mapping-arrow" aria-hidden="true">→</span>
+            <Input code aria-label={t("codex.model.mappingUpstreamAria", { index: index + 1 })} value={route.upstreamModel}
+              disabled={busy} onChange={(event) => update(index, route.clientModel, event.target.value)} />
+            <Button variant="danger" aria-label={t("codex.model.mappingDeleteAria", { index: index + 1 })} disabled={busy}
               onClick={() => setDraft((current) => ({
                 ...current,
-                modelRoutes: [...current.modelRoutes,
-                  { clientModel: current.catalog[0]?.id ?? "", upstreamModel: "" }],
+                modelRoutes: current.modelRoutes.filter((_, routeIndex) => routeIndex !== index),
               }))}>
-              <PlusIcon />
+              <TrashIcon />
             </Button>
-          </Tooltip>
-        </div>
+          </div>
+        ))}
       </div>
-    </details>
+      <div className="asb-provider-model-actions asb-provider-model-actions-end">
+        <Tooltip label={t("codex.model.mappingAdd")}>
+          <Button variant="icon" aria-label={t("codex.model.mappingAdd")} disabled={busy || draft.catalog.length === 0}
+            onClick={() => setDraft((current) => ({
+              ...current,
+              modelRoutes: [...current.modelRoutes,
+                { clientModel: current.catalog[0]?.id ?? "", upstreamModel: "" }],
+            }))}>
+            <PlusIcon />
+          </Button>
+        </Tooltip>
+      </div>
+    </CollapsibleSection>
   );
 }
 

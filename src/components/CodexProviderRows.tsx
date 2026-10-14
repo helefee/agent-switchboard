@@ -7,7 +7,7 @@ import { OfficialLoginPanel } from "./OfficialLoginPanel";
 import { ProviderRowShell } from "./ProviderWorkspaceShell";
 import { ProviderTestPanel } from "./ProviderTestPanel";
 import { ProviderUsagePanel } from "./ProviderUsagePanel";
-import { RowPanelDisclosure } from "./RowPanelDisclosure";
+import { Collapsible } from "./Collapsible";
 import { useProviderUsage, type ProviderUsage } from "./use-provider-usage";
 import { ProviderUsageSummary } from "./ProviderUsageSummary";
 import { ProviderActivateButton, ProviderEndpoint, ProviderLoginButton, ProviderRowActions } from "./ProviderRowControls";
@@ -51,13 +51,13 @@ export function CodexProviderRow({ record, usageOpen, onToggleUsage, onConfigure
       test={{ id: testId, open: testOpen, trigger: testTriggerRef, onToggle: () => setTestOpen((open) => !open) }}
       usage={{ id: usageId, configured: hasUsageQuery, open: usageOpen,
         onOpen: () => { if (hasUsageQuery) onToggleUsage(); else onConfigureUsage(); } }} />}>
-    <RowPanelDisclosure open={testOpen}>
+    <Collapsible open={testOpen}>
       <ProviderTestPanel id={testId} name={name} url={record.profile.endpoint} target={target}
         onClose={() => { setTestOpen(false); testTriggerRef.current?.focus(); }} />
-    </RowPanelDisclosure>
-    {usage && <RowPanelDisclosure open={usageOpen}>
+    </Collapsible>
+    {usage && <Collapsible open={usageOpen}>
       <ProviderUsagePanel id={usageId} name={name} usage={usage} onConfigure={onConfigureUsage} />
-    </RowPanelDisclosure>}
+    </Collapsible>}
     {props.children}
   </ProviderRowShell>;
 }
@@ -89,23 +89,23 @@ export function CodexOfficialRow(props: OfficialRowProps) {
       endpoint={<span>{t("codex.identity.official")}</span>}
       summary={<OfficialQuotaSummary name={profile.name} quota={quota} />}
       primaryAction={!props.active ? <ProviderActivateButton name={profile.name} onActivate={props.onActivate} /> : undefined}
-      secondaryAction={<ProviderLoginButton name={profile.name} open={reloginOpen} onToggle={() => setReloginOpen((open) => !open)} />}
+      secondaryAction={<ProviderLoginButton name={profile.name} open={reloginOpen} controlsId={`codex-official-relogin-${profile.id}`}
+        onToggle={() => setReloginOpen((open) => !open)} />}
       actions={<ProviderRowActions name={profile.name} onEdit={props.onEdit} onDelete={props.onDelete}
         usage={{ id: `codex-official-quota-${profile.id}`, configured: true, open: props.quotaOpen, onOpen: props.onToggleQuota }} />}>
-      {reloginOpen && (
+      <Collapsible open={reloginOpen} id={`codex-official-relogin-${profile.id}`}>
         <OfficialLoginPanel app="codex" onFinished={(completed) => {
           if (completed) {
             quota.run();
             props.onReloginFinished();
           }
         }} />
-      )}
-      {props.quotaOpen && (
-        <CodexOfficialQuotaPanel
-          id={`codex-official-quota-${profile.id}`} quota={quota} profileName={profile.name}
+      </Collapsible>
+      <Collapsible open={props.quotaOpen} id={`codex-official-quota-${profile.id}`}>
+        <CodexOfficialQuotaPanel quota={quota} profileName={profile.name}
           refreshIntervalMinutes={profile.officialQuotaRefreshIntervalMinutes ?? 0}
           onSaveInterval={(minutes) => props.onSaveQuotaInterval(profile, minutes)} />
-      )}
+      </Collapsible>
       {props.children}
     </ProviderRowShell>
   );

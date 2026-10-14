@@ -88,11 +88,17 @@
 .asb-provider-mapping-arrow { color: var(--asb-text-muted); }
 .asb-provider-chat-reasoning { padding-top: var(--asb-space-2); }
 
+/* Model-mapping folds close flush inside the fields grid: the section's own
+   gap separates the fold body from the fields above it. */
+.asb-editor-section-fields .asb-collapsible-body {
+  padding-bottom: 0;
+}
+
 @media (max-width: 580px) {
   .asb-provider-field-grid { grid-template-columns: minmax(0, 1fr); }
   .asb-provider-model-toolbar { grid-template-columns: minmax(0, 1fr); align-items: start; }
   .asb-provider-model-actions { align-self: start; }
-  .asb-provider-disclosure summary { flex-wrap: wrap; }
+  .asb-collapsible-section .asb-collapsible-summary { flex-wrap: wrap; }
   .asb-provider-resolved-endpoint { grid-template-columns: minmax(0, 1fr); gap: var(--asb-space-1); }
   .asb-provider-subagent-model-control { flex-basis: 100%; max-width: none; }
   .asb-provider-mapping-row { grid-template-columns: minmax(0, 1fr); }
@@ -116,7 +122,7 @@
   letter-spacing: -0.01em;
 }
 
-.asb-provider-editor .asb-provider-disclosure-value,
+.asb-provider-editor .asb-collapsible-summary-value,
 .asb-provider-editor .asb-provider-advanced-value,
 .asb-provider-editor .asb-provider-advanced-action span {
   font: var(--asb-text-caption);

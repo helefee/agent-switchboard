@@ -1,8 +1,10 @@
+import { useState } from "react";
 import type { AppKind, KeyChange, SettingSpec, SettingValue } from "../api/client";
 import { useI18n } from "../i18n";
 import { catalogText } from "../i18n/errors";
 import type { TFunction } from "../i18n";
 import { Button } from "./Button";
+import { CollapsibleSection } from "./Collapsible";
 import { DiffView } from "./DiffView";
 import { RadioOption } from "./RadioOption";
 import { Slider } from "./Slider";
@@ -191,12 +193,13 @@ function SettingCodeDisclosure({
   available: boolean;
 }) {
   const { t } = useI18n();
+  const [open, setOpen] = useState(false);
   const actualCode = available ? settingCode(app, spec.key, actualValue, t) : t("clientConfig.settings.codeUnreadable", { key: spec.key });
   const draftCode = settingCode(app, spec.key, draftValue, t);
   const showDiff = changed && actualCode !== draftCode;
   return (
-    <details className="asb-client-setting-code">
-      <summary>{showDiff ? t("clientConfig.settings.viewPendingDiff") : t("clientConfig.settings.viewCurrentCode")}</summary>
+    <CollapsibleSection quiet open={open} onOpenChange={setOpen}
+      label={showDiff ? t("clientConfig.settings.viewPendingDiff") : t("clientConfig.settings.viewCurrentCode")}>
       <div className="asb-client-setting-code-body">
         {showDiff ? (
           <code aria-label={t("clientConfig.settings.pendingDiffAria", { label: catalogText(spec.label, t) })}>
@@ -208,7 +211,7 @@ function SettingCodeDisclosure({
           <code>{actualCode}</code>
         )}
       </div>
-    </details>
+    </CollapsibleSection>
   );
 }
 

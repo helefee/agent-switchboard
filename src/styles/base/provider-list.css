@@ -64,48 +64,17 @@
   border-color: var(--asb-hairline-strong);
 }
 
-/* Inline row-panel disclosure (供应商测试 / 用量读数): height, offset, and
-   opacity transition as one set, matching the editor's collapsible modules.
-   The row is a flex column with gap and the disclosure exists only while
-   open or animating, so the collapsed state cancels the gap lane it would
-   otherwise claim. Transition completion and a duration-aware fallback both
-   finish cleanup, including an immediate switch with reduced motion. */
-.asb-row-panel-disclosure {
-  display: grid;
-  grid-template-rows: 0fr;
-  min-width: 0;
+/* Row panels (供应商测试 / 用量读数 / 官方登录) use the shared .asb-collapsible
+   primitive; the row is a flex column with gap and the panel exists only while
+   open or animating, so the collapsed row cancels the gap lane the panel would
+   otherwise claim. The closing margin-top keeps the panel snug against the row
+   through the collapse transition. */
+.asb-row-item > .asb-collapsible {
   margin-top: calc(-1 * var(--asb-space-2));
-  visibility: hidden;
-  pointer-events: none;
-  opacity: 0;
-  transform: translateY(calc(-1 * var(--asb-space-unit)));
-  transition:
-    grid-template-rows var(--asb-motion-node) var(--asb-easing),
-    margin-top var(--asb-motion-node) var(--asb-easing),
-    visibility 0s linear var(--asb-motion-node),
-    opacity var(--asb-motion-node) var(--asb-easing),
-    transform var(--asb-motion-node) var(--asb-easing);
 }
 
-.asb-row-panel-disclosure.is-open {
-  grid-template-rows: 1fr;
+.asb-row-item > .asb-collapsible.is-open {
   margin-top: 0;
-  visibility: visible;
-  pointer-events: auto;
-  opacity: 1;
-  transform: translateY(0);
-  transition:
-    grid-template-rows var(--asb-motion-node) var(--asb-easing),
-    margin-top var(--asb-motion-node) var(--asb-easing),
-    visibility 0s linear 0s,
-    opacity var(--asb-motion-node) var(--asb-easing),
-    transform var(--asb-motion-node) var(--asb-easing);
-}
-
-/* The grid track collapses only when the item can shrink below its content. */
-.asb-row-panel-disclosure > * {
-  min-height: 0;
-  overflow: hidden;
 }
 
 .asb-row-grip-spacer {
@@ -165,13 +134,14 @@
   white-space: inherit;
 }
 
-/* Only the model value shrinks; its status stays on the cell's trailing edge. */
+/* The applied marker trails the name; model and endpoint cells carry only
+   their own fact, so no two facts read as one phrase. */
 .asb-row-applied {
   flex: none;
   display: inline-flex;
   align-items: center;
   gap: var(--asb-space-1);
-  margin-inline-start: auto;
+  margin-inline-start: var(--asb-space-2);
   color: var(--asb-text-muted);
   font: var(--asb-text-caption);
   white-space: nowrap;
@@ -208,7 +178,21 @@
   min-width: 0;
 }
 
-/* Row actions remain visible and keyboard reachable without a hover step. */
+/* Idle rows hide their actions; hover, in-row focus, or dragging reveals
+   them. Opacity preserves the scan rail and Tab order; touch devices reveal
+   through the tap-induced hover state, with no pointer detection. */
+.asb-row-item:not(:hover, :focus-within, .is-dragging) .asb-row-action {
+  opacity: 0;
+  pointer-events: none;
+}
+
+/* The reveal fades at node speed, the same rhythm as the row's disclosure
+   panels. :where keeps this default weaker than any marked element's own
+   transition list, so the grip's press feedback stays intact. */
+:where(.asb-row-action) {
+  transition: opacity var(--asb-motion-node) var(--asb-easing);
+}
+
 .asb-row-item .asb-row-activate {
   flex: none;
   display: inline-flex;
@@ -217,8 +201,16 @@
 
 .asb-provider-list { container: provider-list / inline-size; }
 @container provider-list (max-width: 55rem) {
-  .asb-row-line { grid-template-columns: var(--asb-touch-target) repeat(3, minmax(0, 1fr)); }
+  /* The action rail wraps into a second tight line: the primary rail drops
+     to the standard control height and no row gap separates the two, so the
+     wrapped actions read as the same rail instead of a stranded block. */
+  .asb-row-line {
+    grid-template-columns: var(--asb-touch-target) repeat(3, minmax(0, 1fr));
+    row-gap: 0;
+    min-height: 0;
+  }
   .asb-row-controls { grid-column: 2 / -1; }
+  .asb-row-model { height: auto; min-height: var(--asb-control-height); }
 }
 
 .asb-row-item.is-live .asb-avatar {

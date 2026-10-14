@@ -1,7 +1,9 @@
+import { useState } from "react";
 import type { FilePreview, LocalizedMessage } from "../api/client";
 import { useI18n } from "../i18n";
 import { localizedMessageText } from "../i18n/errors";
 import { CodePreview } from "./CodePreview";
+import { CollapsibleSection } from "./Collapsible";
 import { DiffView } from "./DiffView";
 import { PreviewIcon } from "./icons";
 
@@ -25,6 +27,7 @@ export function PreviewInspector({
   userConfigWarnings,
 }: Props) {
   const { t } = useI18n();
+  const [fileOpen, setFileOpen] = useState(false);
   if (!filePreview) {
     return (
       <div className="asb-empty-state">
@@ -64,10 +67,10 @@ export function PreviewInspector({
         <span className="asb-kv-label">{t("providers.preview.backupDir")}</span>
         <span className="asb-kv-value asb-code">{preview.backupDir}</span>
       </div>
-      <details>
-        <summary>{t("common.candidateFile")}</summary>
+      <CollapsibleSection quiet open={fileOpen} onOpenChange={setFileOpen}
+        label={t("common.candidateFile")}>
         <CodePreview target={preview.target} content={filePreview.content} />
-      </details>
+      </CollapsibleSection>
     </div>
   );
 }

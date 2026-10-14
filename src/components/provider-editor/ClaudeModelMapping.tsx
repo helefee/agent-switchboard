@@ -2,7 +2,7 @@ import { useState, type Dispatch, type SetStateAction } from "react";
 import type { ClaudeModelSettings, ProviderModel } from "../../api/client";
 import { useI18n } from "../../i18n";
 import { Checkbox } from "../Checkbox";
-import { ChevronDownIcon } from "../icons";
+import { CollapsibleSection } from "../Collapsible";
 import { Input } from "../Input";
 import { ModelPicker } from "../ModelPicker";
 import { Textarea } from "../Textarea";
@@ -74,15 +74,15 @@ export function ClaudeModelMapping(props: Props) {
   const hasMapping = Boolean(values && (values.haikuModel || values.sonnetModel || values.opusModel || values.availableModels?.length));
   const [expanded, setExpanded] = useState(hasMapping);
   return (
-    <details className="asb-provider-disclosure" open={expanded}
-      onToggle={(event) => setExpanded(event.currentTarget.open)}>
-      <summary><span>{t("providers.editor.mapping")}</span><span className="asb-provider-disclosure-value">{hasMapping ? t("providers.editor.mapping.configured") : t("providers.editor.mapping.byTier")}</span><ChevronDownIcon /></summary>
-      <div className="asb-provider-disclosure-body asb-provider-field-grid">
+    <CollapsibleSection open={expanded} onOpenChange={setExpanded}
+      label={t("providers.editor.mapping")}
+      value={hasMapping ? t("providers.editor.mapping.configured") : t("providers.editor.mapping.byTier")}>
+      <div className="asb-provider-field-grid">
         <ModelTierField {...props} label={t("providers.editor.tier.haiku")} field="haikuModel" />
         <ModelTierField {...props} label={t("providers.editor.tier.sonnet")} field="sonnetModel" contextFlag="sonnetOneM" />
         <ModelTierField {...props} label={t("providers.editor.tier.opus")} field="opusModel" contextFlag="opusOneM" />
         <AvailableModelsField {...props} />
       </div>
-    </details>
+    </CollapsibleSection>
   );
 }

@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { openUrl } from "@tauri-apps/plugin-opener";
 import {
   type CodexResetHeatmap,
@@ -8,6 +9,7 @@ import {
 import type { MessageKey, TFunction } from "../i18n";
 import { useI18n } from "../i18n";
 import { Button } from "./Button";
+import { CollapsibleSection } from "./Collapsible";
 import { Time } from "./Time";
 import { relativeLabel } from "../lib/time";
 import { UpdateIcon } from "./icons";
@@ -80,6 +82,7 @@ function Badge({ type }: { type: ResetType }) {
  * the feed's week count; days after the anchor stay invisible placeholders. */
 function ResetHeatmap({ heatmap }: { heatmap: CodexResetHeatmap }) {
   const { t } = useI18n();
+  const [dailyOpen, setDailyOpen] = useState(false);
   const levels = new Map(heatmap.days.map((day) => [day.date, day]));
   const todayKey = new Date().toISOString().slice(0, 10);
   const anchorKey = heatmap.days.reduce(
@@ -130,8 +133,8 @@ function ResetHeatmap({ heatmap }: { heatmap: CodexResetHeatmap }) {
         <span className="asb-codex-reset-heatmap-cell is-level-4" />
         <span>{t("codex.reset.many")}</span>
       </div>
-      <details>
-        <summary>{t("codex.reset.dailyData")}</summary>
+      <CollapsibleSection quiet open={dailyOpen} onOpenChange={setDailyOpen}
+        label={t("codex.reset.dailyData")}>
         <div className="asb-codex-reset-daily-data" tabIndex={0}>
           <Table rows={cells.filter((cell) => cell.day)} rowKey={(cell) => cell.key}
             ariaLabel={t("codex.reset.dailyData")} columns={[
@@ -139,7 +142,7 @@ function ResetHeatmap({ heatmap }: { heatmap: CodexResetHeatmap }) {
               { key: "count", header: t("codex.reset.dailyCount"), align: "end", render: (cell) => cell.day?.count ?? 0 },
             ]} />
         </div>
-      </details>
+      </CollapsibleSection>
     </div>
   );
 }

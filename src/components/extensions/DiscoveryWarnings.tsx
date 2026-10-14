@@ -1,7 +1,7 @@
 import { useEffect, useId, useRef } from "react";
 import type { ExtensionDiagnostic } from "../../api/client";
 import { Button } from "../Button";
-import { ChevronDownIcon, ChevronUpIcon } from "../icons";
+import { Collapsible, CollapsibleChevron } from "../Collapsible";
 import { clientName } from "../../lib/client-name";
 import { useI18n, type TFunction } from "../../i18n";
 import { catalogText } from "../../i18n/errors";
@@ -114,7 +114,7 @@ export function DiscoveryWarnings({
           aria-label={open ? t("importDiscovery.warn.collapseAria") : t("importDiscovery.warn.expandAria", { summary })}
           onClick={() => onOpenChange(!open)}
         >
-          {open ? <ChevronUpIcon /> : <ChevronDownIcon />}
+          <CollapsibleChevron open={open} />
           <span id={summaryTextId} className="asb-discovery-summary-text">
             {summary}
             {stale && t("importDiscovery.warn.staleSuffix")}
@@ -140,8 +140,8 @@ export function DiscoveryWarnings({
           {t("importDiscovery.warn.staleNote", { time: scannedAt })}
         </p>
       )}
-      {open && (
-        <ul id={detailsId} className="asb-discovery-diagnostic-list">
+      <Collapsible open={open} id={detailsId}>
+        <ul className="asb-discovery-diagnostic-list">
           {diagnostics.map((diagnostic) => {
             const focused =
               focusDiagnosticId !== null && focusDiagnosticId === diagnostic.id;
@@ -167,7 +167,7 @@ export function DiscoveryWarnings({
             );
           })}
         </ul>
-      )}
+      </Collapsible>
     </section>
   );
 }

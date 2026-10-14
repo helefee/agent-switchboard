@@ -21,12 +21,16 @@ export function ProviderActivateButton({ name, onActivate }: { name: string; onA
   </Tooltip>;
 }
 
-export function ProviderLoginButton({ name, open, onToggle }: { name: string; open: boolean; onToggle: () => void }) {
+export function ProviderLoginButton({ name, open, controlsId, onToggle }: {
+  name: string; open: boolean; /** Target of aria-controls while the login panel exists. */
+  controlsId?: string; onToggle: () => void;
+}) {
   const { t } = useI18n();
   const label = open ? t("providers.row.loginCollapse", { name }) : t("providers.row.relogin", { name });
   return <Tooltip label={label}>
     <Button variant="secondary" className={`asb-row-activate${open ? " is-active" : ""}`}
-      aria-label={label} aria-expanded={open} onClick={onToggle}>{open ? t("providers.row.loginCollapseShort") : t("providers.row.reloginShort")}</Button>
+      aria-label={label} aria-expanded={open} aria-controls={open ? controlsId : undefined}
+      onClick={onToggle}>{open ? t("providers.row.loginCollapseShort") : t("providers.row.reloginShort")}</Button>
   </Tooltip>;
 }
 

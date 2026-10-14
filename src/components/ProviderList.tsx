@@ -5,7 +5,7 @@ import { useI18n } from "../i18n";
 import { OfficialLoginPanel } from "./OfficialLoginPanel";
 import { ProviderRowShell, SortableProviderRows } from "./ProviderWorkspaceShell";
 import { ProviderUsagePanel } from "./ProviderUsagePanel";
-import { RowPanelDisclosure } from "./RowPanelDisclosure";
+import { Collapsible } from "./Collapsible";
 import { useProviderUsage, type ProviderUsage } from "./use-provider-usage";
 import { ProviderUsageSummary } from "./ProviderUsageSummary";
 import { SwitchConfirmationSection } from "./SwitchConfirmationSection";
@@ -84,7 +84,8 @@ function ProviderRow(props: RowProps & { usage?: ProviderUsage }) {
     endpoint={profile.websiteUrl ? <ProviderEndpoint url={profile.websiteUrl} link /> : official ? <span>{t("providers.label.officialLogin")}</span> : undefined}
     summary={usage ? <ProviderUsageSummary name={profile.name} usage={usage} /> : undefined}
     primaryAction={!active && props.onActivate ? <ProviderActivateButton name={profile.name} onActivate={() => props.onActivate?.(profile)} /> : undefined}
-    secondaryAction={official ? <ProviderLoginButton name={profile.name} open={reloginOpen} onToggle={() => setReloginOpen((open) => !open)} /> : undefined}
+    secondaryAction={official ? <ProviderLoginButton name={profile.name} open={reloginOpen}
+      controlsId={`provider-relogin-${profile.id}`} onToggle={() => setReloginOpen((open) => !open)} /> : undefined}
     actions={hasActions ? <ProviderRowActions name={profile.name}
       onEdit={props.onEdit ? () => props.onEdit?.(profile) : undefined}
       onDelete={props.onDelete ? () => props.onDelete?.(profile) : undefined}
@@ -93,16 +94,18 @@ function ProviderRow(props: RowProps & { usage?: ProviderUsage }) {
         id: usageId, configured: hasUsageQuery, open: usageOpen,
         onOpen: () => { if (hasUsageQuery) props.onToggleUsage(profile); else props.onConfigureUsage?.(profile); },
       } : undefined} /> : undefined}>
-    {!official && profile.baseUrl && <RowPanelDisclosure open={testOpen}>
+    {!official && profile.baseUrl && <Collapsible open={testOpen}>
       <ProviderTestPanel id={testId} name={profile.name} url={profile.baseUrl} target={target}
         onClose={() => { setTestOpen(false); testTriggerRef.current?.focus(); }} />
-    </RowPanelDisclosure>}
-    {usage && <RowPanelDisclosure open={usageOpen}>
+    </Collapsible>}
+    {usage && <Collapsible open={usageOpen}>
       <ProviderUsagePanel id={usageId} name={profile.name} usage={usage}
         onConfigure={props.onConfigureUsage ? () => props.onConfigureUsage?.(profile) : undefined} />
-    </RowPanelDisclosure>}
+    </Collapsible>}
     {confirmation}
-    {reloginOpen && official && <OfficialLoginPanel app={profile.app} />}
+    <Collapsible open={reloginOpen} id={`provider-relogin-${profile.id}`}>
+      <OfficialLoginPanel app={profile.app} />
+    </Collapsible>
   </ProviderRowShell>;
 }
 

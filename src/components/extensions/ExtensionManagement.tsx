@@ -1,6 +1,7 @@
-import type { ReactNode } from "react";
+import { useState, type ReactNode } from "react";
 import { useI18n } from "../../i18n";
 import { Button } from "../Button";
+import { CollapsibleSection } from "../Collapsible";
 import { ExportIcon, PreviewIcon, TrashIcon, UpdateIcon } from "../icons";
 import { Time } from "../Time";
 import { Table } from "../Table";
@@ -105,6 +106,7 @@ function SkillUpdateManagement({ item, updateReport: report, busy, onApplyUpdate
 
 export function ExtensionManagement(props: ExtensionManagementProps) {
   const { t } = useI18n();
+  const [factsOpen, setFactsOpen] = useState(false);
   const { item, capabilities } = props;
   return (
     <section className="asb-ext-management" aria-label={t("extensions.management.aria", { name: item.name })}>
@@ -121,10 +123,11 @@ export function ExtensionManagement(props: ExtensionManagementProps) {
           <ExtensionCheckPanel {...props} />
         )}
         <SkillUpdateManagement {...props} />
-        <details><summary>{t("extensions.management.details")}</summary>
+        <CollapsibleSection quiet open={factsOpen} onOpenChange={setFactsOpen}
+          label={t("extensions.management.details")}>
           <ExtensionResourceFacts item={item} />
           <CapabilityPanel reports={capabilities} />
-        </details>
+        </CollapsibleSection>
       </div>
     </section>
   );

@@ -7,6 +7,8 @@
 @import "./base/shell.css";
 @import "./base/workspace-main.css";
 @import "./base/buttons.css";
+@import "./base/collapsible.css";
+@import "./base/markdown.css";
 @import "./base/panels.css";
 @import "./base/provider-cards.css";
 @import "./base/provider-list.css";

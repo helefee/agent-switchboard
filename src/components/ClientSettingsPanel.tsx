@@ -5,6 +5,7 @@ import type { ClientSettingsEditorState } from "../app/useClientSettings";
 import { useI18n, type TFunction } from "../i18n";
 import { Button } from "./Button";
 import { ClientPicker } from "./ClientPicker";
+import { Collapsible } from "./Collapsible";
 import { CurrentConfigurationEditor } from "./CurrentConfigurationEditor";
 import {
   ClientConfigurationConfirmation,
@@ -87,7 +88,7 @@ function ClientConfigurationReviewButton({
     <Button
       variant="secondary"
       aria-expanded={open}
-      aria-controls={reviewId}
+      aria-controls={open ? reviewId : undefined}
       disabled={busy || state.currentConfigurationLoading}
       onClick={(event) => onToggle(event.currentTarget)}
     >
@@ -215,29 +216,6 @@ function ClientPreferencesEditor(props: ClientSettingsPanelProps) {
   );
 }
 
-interface ClientSettingsDisclosureProps {
-  id: string;
-  label: string;
-  section: ClientSettingsSection;
-  open: boolean;
-  children: ReactNode;
-}
-
-function ClientSettingsDisclosure({ id, label, section, open, children }: ClientSettingsDisclosureProps) {
-  return (
-    <div
-      id={id}
-      role="region"
-      aria-label={label}
-      aria-hidden={!open}
-      className={`asb-client-settings-disclosure is-${section}`}
-      data-open={open}
-    >
-      <div className="asb-client-settings-disclosure-content">{children}</div>
-    </div>
-  );
-}
-
 type ClientSettingsSection = "directory" | "review" | "instructions" | "reset";
 
 interface ClientSettingsToolbarProps {
@@ -284,7 +262,7 @@ function ClientSettingsToolbar({
           <Button
             variant="secondary"
             aria-expanded={directoryOpen}
-            aria-controls={directoryId}
+            aria-controls={directoryOpen ? directoryId : undefined}
             disabled={!panel.editorState.editor}
             onClick={(event) => onSectionChange(directoryOpen ? null : "directory", event.currentTarget)}
           >
@@ -303,7 +281,7 @@ function ClientSettingsToolbar({
           <Button
             variant="secondary"
             aria-expanded={instructionsOpen}
-            aria-controls={instructionsId}
+            aria-controls={instructionsOpen ? instructionsId : undefined}
             disabled={panel.busy}
             onClick={(event) => onSectionChange(instructionsOpen ? null : "instructions", event.currentTarget)}
           >
@@ -312,7 +290,7 @@ function ClientSettingsToolbar({
           <Button
             variant="secondary"
             aria-expanded={resetOpen}
-            aria-controls={resetId}
+            aria-controls={resetOpen ? resetId : undefined}
             disabled={!configuration.canNativeReset || panel.busy || configuration.applying}
             onClick={(event) => {
               const next = !resetOpen;
@@ -400,18 +378,19 @@ export function ClientSettingsPanel(props: ClientSettingsPanelProps) {
         configuration={configuration}
         onSectionChange={changeSection}
       />
-      <ClientSettingsDisclosure id={reviewId} label={t("clientConfig.review.title")} section="review" open={reviewOpen}>
+      <Collapsible open={reviewOpen} id={reviewId} ariaLabel={t("clientConfig.review.title")}>
         <ClientConfigurationReview {...props} open={reviewOpen} />
-      </ClientSettingsDisclosure>
-      <ClientSettingsDisclosure id={instructionsId} label={t("clientConfig.toolbar.instructionsEditor")} section="instructions" open={instructionsOpen}>
-        {props.globalInstructions}
-      </ClientSettingsDisclosure>
-      <ClientSettingsDisclosure id={directoryId} label={t("clientConfig.toolbar.directory")} section="directory" open={directoryOpen}>
+      </Collapsible>
+      <Collapsible open={instructionsOpen} id={instructionsId} className="is-instructions"
+        ariaLabel={t("clientConfig.toolbar.instructionsEditor")}>
+        <div className="asb-client-settings-instructions">{props.globalInstructions}</div>
+      </Collapsible>
+      <Collapsible open={directoryOpen} id={directoryId} ariaLabel={t("clientConfig.toolbar.directory")}>
         <OfficialSettingsDirectory entries={props.editorState.editor?.directory ?? []} />
-      </ClientSettingsDisclosure>
-      <ClientSettingsDisclosure id={resetId} label={t("clientConfig.reset.nativeTitle")} section="reset" open={resetOpen}>
+      </Collapsible>
+      <Collapsible open={resetOpen} id={resetId} ariaLabel={t("clientConfig.reset.nativeTitle")}>
         <ClientConfigurationResetPanel app={props.app} busy={props.busy} configuration={configuration} />
-      </ClientSettingsDisclosure>
+      </Collapsible>
       <ClientSettingsForm panel={props} directoryOpen={directoryOpen} reviewOpen={reviewOpen} resetOpen={resetOpen} configuration={configuration} />
     </div>
     <ClientConfigurationConfirmation
