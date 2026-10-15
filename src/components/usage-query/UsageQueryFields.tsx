@@ -31,7 +31,7 @@ export function DeclarativeFields({ value, disabled, onChange }: { value: Declar
         <span>{t(`usage.query.${key}`)}</span><Input code={key !== "unit"} aria-label={t(`usage.query.${key}Aria`)}
           value={value[key] ?? ""} disabled={disabled} placeholder={placeholder}
           onChange={(event) => onChange({ [key]: event.target.value.trim() || null })} /></label>)}</div>
-      <p className="asb-scope-note">{t("usage.query.declarativeNote", { baseUrl: "{{baseUrl}}", apiKey: "{{apiKey}}" })}</p>
+      <p className="asb-scope-note">{t("usage.query.declarativeNote", { baseUrl: "{{baseUrl}}", apiKeyExample: "{{apiKey}}" })}</p>
       <p className="asb-scope-note">{t("usage.query.fieldsNote")}</p>
     </div></>;
 }

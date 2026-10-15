@@ -1,16 +1,15 @@
 import { useMessageState } from "../i18n/use-message-state";
-import { Fragment, useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import { backupDiff, type BackupRecord, type KeyChange } from "../api/client";
 import { DiffView } from "./DiffView";
 import { Button } from "./Button";
 import { ConfirmSheet } from "./ConfirmSheet";
 import { Pagination } from "./Pagination";
-import { type TableColumn } from "./Table";
+import { Table, type TableColumn } from "./Table";
 import { Time } from "./Time";
 import { RestoreIcon } from "./icons";
 import { useI18n, type MessageKey } from "../i18n";
 import { tr } from "../i18n/current";
-import { cx } from "@/utils/cx";
 
 interface Props {
   records: BackupRecord[];
@@ -76,10 +75,8 @@ function BackupDiff({ record }: { record: BackupRecord }) {
   return <DiffView changes={changes} label={t("backup.diff.label")} />;
 }
 
-/** Recent validation and restore history (DESIGN.md §7 bottom band). The
- * table markup mirrors the shared Table contract because an open diff needs
- * a full-width expansion row under its own row, which the shared renderer
- * does not emit. */
+/** Recent validation and restore history (DESIGN.md §7 bottom band); the
+ * open diff rides the shared Table's expansion row under its own row. */
 export function BackupHistory({ records, busy, onRestore }: Props) {
   const { t } = useI18n();
   const [pending, setPending] = useState<BackupRecord | null>(null);
@@ -173,37 +170,13 @@ export function BackupHistory({ records, busy, onRestore }: Props) {
 
   return (
     <div className="asb-backups">
-      <table className="asb-table" aria-label={t("backup.history.tableAria")}>
-        <thead>
-          <tr>
-            {columns.map((column) => (
-              <th key={column.key} scope="col" className="asb-table-cell">
-                {column.header}
-              </th>
-            ))}
-          </tr>
-        </thead>
-        <tbody>
-          {pageRecords.map((record) => (
-            <Fragment key={record.id}>
-              <tr>
-                {columns.map((column) => (
-                  <td key={column.key} className={cx("asb-table-cell", column.cellClassName)}>
-                    {column.render(record)}
-                  </td>
-                ))}
-              </tr>
-              {openDiffs.has(record.id) && (
-                <tr className="asb-backup-diff-row">
-                  <td colSpan={columns.length}>
-                    <BackupDiff record={record} />
-                  </td>
-                </tr>
-              )}
-            </Fragment>
-          ))}
-        </tbody>
-      </table>
+      <Table
+        columns={columns}
+        rows={pageRecords}
+        rowKey={(record) => record.id}
+        ariaLabel={t("backup.history.tableAria")}
+        renderExpansion={(record) => (openDiffs.has(record.id) ? <BackupDiff record={record} /> : null)}
+      />
       <Pagination
         total={records.length}
         page={currentPage}

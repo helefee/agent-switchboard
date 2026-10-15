@@ -3,12 +3,14 @@
  * DESIGN.md 本机网关。柱高与条宽的过渡时长取自 motion token，两种减少
  * 动态偏好下自动归零。 */
 
-/* —— 图表带：无卡片、无内部分隔线，仅靠间距与字阶分列。 —— */
+/* —— 图表带：无卡片、无内部分隔线，仅靠间距与字阶分列。统计块按内容取宽
+ * 排成一条仪表行，协议分布吸收剩余宽度；窄容器按块自然换行。 —— */
 
 .asb-gateway-strip {
-  display: grid;
-  grid-template-columns: minmax(0, 1.4fr) minmax(0, 0.8fr) minmax(0, 1.15fr) minmax(0, 1.2fr);
-  gap: var(--asb-space-5);
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: var(--asb-space-4) var(--asb-space-5);
   padding-block: var(--asb-space-4);
 }
 
@@ -44,11 +46,14 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* 趋势柱：60 根分钟柱，柱高以窗口内最大计数满高，随轮询平滑过渡。 */
+/* 趋势柱：60 根分钟柱，柱高以窗口内最大计数满高，随轮询平滑过渡。
+ * 宽度固定，块在仪表行内按内容取宽时柱组仍有稳定读数宽度。 */
 .asb-gateway-trend {
   display: flex;
   align-items: flex-end;
   gap: 1px;
+  width: 280px;
+  max-width: 100%;
   height: 64px;
   margin-top: var(--asb-space-2);
 }
@@ -61,19 +66,17 @@
   transition: height var(--asb-motion-node) var(--asb-easing);
 }
 
-/* 延迟条：p50/p95 的条宽线性对应 p95 满宽，数值始终以文字呈现。 */
+/* 延迟条：p50/p95 的条宽线性对应 p95 满宽，数值始终以文字呈现。
+ * 两行共用一组三列轨道，标签、条与数值跨行对齐。 */
 .asb-gateway-latency {
   display: grid;
-  gap: var(--asb-space-2);
+  grid-template-columns: max-content 120px auto;
+  align-items: center;
+  gap: var(--asb-space-1) var(--asb-space-2);
   margin-top: var(--asb-space-2);
 }
 
-.asb-gateway-latency-row {
-  display: grid;
-  grid-template-columns: max-content minmax(0, 1fr) auto;
-  align-items: center;
-  gap: var(--asb-space-2);
-}
+.asb-gateway-latency-row { display: contents; }
 
 .asb-gateway-latency-label {
   color: var(--asb-text-muted);
@@ -103,7 +106,10 @@
   font-variant-numeric: tabular-nums;
 }
 
-.asb-gateway-gauge.is-protocol { gap: var(--asb-space-2); }
+.asb-gateway-gauge.is-protocol {
+  flex: 1 1 auto;
+  gap: var(--asb-space-2);
+}
 
 .asb-gateway-protocol-bar {
   display: flex;
@@ -150,21 +156,17 @@
   font-variant-numeric: tabular-nums;
 }
 
-/* The table belongs to the page surface; only row separators remain. */
-.asb-gateway-recent-table {
-  min-width: 0;
-  overflow-x: auto;
-}
-
-.asb-gateway-recent-table .asb-table {
+/* The table belongs to the page surface; only row separators remain. The
+   horizontal overflow lives in the shared Table wrap. */
+.asb-table.asb-gateway-recent-table {
   min-width: 56rem;
   border: 0;
   border-radius: 0;
   background: transparent;
 }
 
-.asb-gateway-recent-table .asb-table th,
-.asb-gateway-recent-table .asb-table td { border-radius: 0; }
+.asb-gateway-recent-table th,
+.asb-gateway-recent-table td { border-radius: 0; }
 
 .asb-gateway-request-app,
 .asb-gateway-request-result { white-space: nowrap; }

@@ -1,0 +1,148 @@
+/* Calendar date picker (src/components/DatePicker.tsx). Behavior states are
+   react-aria hook data wired to explicit data attributes; every visual value
+   comes from tokens.css. The trigger reuses the shared .asb-select-trigger
+   field look. */
+
+.asb-date-trigger {
+  inline-size: 100%;
+}
+
+.asb-date-value {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.asb-date-value[data-placeholder] {
+  color: var(--asb-text-muted);
+}
+
+/* The popover reuses the shared menu material; RAC owns its position. */
+.asb-date-popover {
+  z-index: 70;
+  border: 1px solid var(--asb-hairline);
+  border-radius: var(--asb-radius);
+  background: var(--asb-surface-menu);
+  box-shadow: var(--asb-shadow-modal), var(--asb-inset-highlight);
+  color: var(--asb-text);
+}
+
+.asb-date-dialog {
+  padding: var(--asb-space-2);
+  outline: none;
+}
+
+.asb-calendar {
+  display: flex;
+  flex-direction: column;
+  gap: var(--asb-space-1);
+}
+
+.asb-calendar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--asb-space-1);
+}
+
+.asb-calendar-heading {
+  margin: 0;
+  font: var(--asb-text-label);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+}
+
+.asb-calendar-nav {
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  inline-size: 28px;
+  block-size: 28px;
+  border: 0;
+  border-radius: var(--asb-radius);
+  background: transparent;
+  color: var(--asb-text-muted);
+  cursor: pointer;
+  transition: background var(--asb-motion-press) var(--asb-easing);
+}
+
+.asb-calendar-nav svg {
+  display: block;
+  width: 16px;
+  height: 16px;
+}
+
+.asb-calendar-nav:hover:not(:disabled) {
+  background: var(--asb-row-selected);
+  color: var(--asb-text);
+}
+
+.asb-calendar-nav:disabled {
+  opacity: 0.45;
+  cursor: default;
+}
+
+.asb-calendar-grid {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+.asb-calendar-grid td {
+  padding: 1px;
+}
+
+.asb-calendar-weekday {
+  padding: var(--asb-space-hairline) 0 var(--asb-space-1);
+  font: var(--asb-text-label);
+  color: var(--asb-text-muted);
+  text-align: center;
+}
+
+/* The focusable, pressable surface is the styled div inside the gridcell. */
+.asb-calendar-cell {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 32px;
+  block-size: 30px;
+  border-radius: var(--asb-radius);
+  font: var(--asb-text-body);
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+  outline: none;
+  transition: background var(--asb-motion-press) var(--asb-easing);
+}
+
+.asb-calendar-cell[data-outside-month] {
+  color: var(--asb-text-muted);
+  opacity: 0.55;
+}
+
+.asb-calendar-cell[data-today]:not([data-selected]) {
+  color: var(--asb-action);
+  font-weight: 600;
+}
+
+.asb-calendar-cell:hover:not([data-selected]):not([data-disabled]) {
+  background: var(--asb-row-selected);
+}
+
+.asb-calendar-cell[data-selected] {
+  background: var(--asb-action);
+  color: #fff;
+  font-weight: 600;
+}
+
+.asb-calendar-cell[data-focus-visible] {
+  outline: 2px solid var(--asb-focus-ring);
+  outline-offset: -2px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .asb-calendar-nav,
+  .asb-calendar-cell {
+    transition: none;
+  }
+}

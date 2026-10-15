@@ -1,5 +1,5 @@
 use super::{contracts::AccountSelection, manager};
-use asb_core::contracts::{CodexOfficialQuota, CodexOfficialQuotaStatus};
+use asb_core::contracts::{CodexOfficialQuota, CodexOfficialQuotaStatus, CodexQuotaReadFailure};
 use serde::Serialize;
 use std::{
     collections::HashMap,
@@ -75,10 +75,11 @@ pub(crate) fn quota(
             &body,
             chrono::Utc::now().to_rfc3339(),
         ),
-        Err(_) => crate::codex_official_quota::quota_from_http_response(
-            503,
-            "",
-            chrono::Utc::now().to_rfc3339(),
+        Err(failure) => crate::codex_official_quota::failed(
+            CodexOfficialQuotaStatus::Unavailable,
+            CodexQuotaReadFailure::transport(
+                crate::codex_official_quota::transport_class(&failure),
+            ),
         ),
     };
     let mut warning = account.native_sync_error.clone();
@@ -107,8 +108,10 @@ pub(crate) fn quota(
         warning,
     })
 }
-fn get(account: &super::contracts::Account, url: &str) -> Result<(u16, String), String> {
+fn get(
+    account: &super::contracts::Account,
+    url: &str,
+) -> Result<(u16, String), crate::probe::RequestFailure> {
     let headers = format!("Authorization: Bearer {}\r\nChatGPT-Account-Id: {}\r\nAccept: application/json\r\nOriginator: codex_cli_rs\r\nVersion: 0.152.1\r\n", account.tokens.access_token, account.identity.account_id);
     crate::probe::http_request("GET", url, &headers, &[])
-        .map_err(|_| "Codex 账号查询网络失败，请稍后重试".into())
 }

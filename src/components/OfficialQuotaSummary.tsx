@@ -1,6 +1,7 @@
-import { officialQuotaReadings } from "../lib/usage-format";
+import { officialQuotaFailureMessage, officialQuotaReadings } from "../lib/usage-format";
 import type { CodexOfficialQuota } from "../api/client";
 import { useI18n } from "../i18n";
+import { errorText } from "../i18n/errors";
 import type { CachedQuery } from "./use-cached-query";
 import { UsageSummaryView } from "./UsageSummaryView";
 
@@ -10,9 +11,10 @@ export function OfficialQuotaSummary({ name, quota }: { name: string; quota: Cac
   const empty = status === "signInRequired" ? t("clientConfig.quota.emptySignIn")
     : status === "reauthenticationRequired" ? t("clientConfig.quota.emptyReauth")
     : status === "unavailable" ? t("clientConfig.quota.emptyUnavailable") : t("clientConfig.quota.emptyDefault");
-  const error = quota.error ?? (status === "unavailable" ? t("clientConfig.quota.errorUnavailable")
-    : status === "reauthenticationRequired" ? t("clientConfig.quota.errorReauth")
-    : status === "signInRequired" ? t("clientConfig.quota.errorSignIn") : null);
+  const error = quota.error
+    ?? (status === "unavailable" ? errorText(officialQuotaFailureMessage(quota.data?.failure ?? null), t)
+      : status === "reauthenticationRequired" ? t("clientConfig.quota.errorReauth")
+      : status === "signInRequired" ? t("clientConfig.quota.errorSignIn") : null);
   return <UsageSummaryView name={name} readings={quota.data ? officialQuotaReadings(quota.data) : []}
     at={quota.data?.at ?? null} querying={quota.querying} error={error} stale={quota.data?.stale}
     empty={empty} run={quota.run} />;

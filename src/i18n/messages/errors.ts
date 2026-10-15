@@ -43,6 +43,23 @@ export const messages = {
   "errors.writeNotConfirmed": ["{operation}前必须进行显式确认", "{operation} requires explicit confirmation first"],
   "errors.appStateUnavailable": ["应用状态不可用：{detail}", "Application state is unavailable: {detail}"],
 
+  "errors.transport.dns": ["域名解析失败（DNS）", "DNS lookup failed"],
+  "errors.transport.timeout": ["连接超时", "The connection timed out"],
+  "errors.transport.connect": ["连接被拒绝", "The connection was refused"],
+  "errors.transport.tls": ["TLS 握手失败", "The TLS handshake failed"],
+  "errors.transport.other": ["网络请求失败", "The network request failed"],
+
+  "errors.outboundProxy.unavailable": ["无法读取出站代理设置：{detail}", "The outbound proxy settings are unavailable: {detail}"],
+  "errors.outboundProxy.revisionConflict": ["出口代理设置已被修改，请重新读取后再保存", "The egress proxy settings changed elsewhere; reload them before saving"],
+  "errors.outboundProxy.versionUnsupported": ["出口代理设置版本不受支持", "This egress proxy settings version is not supported"],
+  "errors.outboundProxy.revisionInvalid": ["出口代理设置修订无效", "The egress proxy settings revision is invalid"],
+  "errors.outboundProxy.directUrlForbidden": ["直连模式不能携带代理地址", "Direct mode cannot carry a proxy URL"],
+  "errors.outboundProxy.systemUrlForbidden": ["系统代理模式不能携带代理地址", "System mode cannot carry a proxy URL"],
+  "errors.outboundProxy.manualUrlRequired": ["手动代理需要代理地址", "Manual mode requires a proxy URL"],
+  "errors.outboundProxy.urlTooLong": ["代理地址过长或含有控制字符", "The proxy URL is too long or contains control characters"],
+  "errors.outboundProxy.urlScheme": ["代理协议必须是 http、https、socks5 或 socks5h：{scheme}", "The proxy scheme must be http, https, socks5 or socks5h: {scheme}"],
+  "errors.outboundProxy.urlInvalid": ["代理地址无效：{detail}", "The proxy URL is invalid: {detail}"],
+
   "errors.switch.readCurrent": ["无法读取当前配置：{detail}", "Could not read the current configuration: {detail}"],
   "errors.switch.planRejected": ["配置计划无效：{detail}", "The switch plan is invalid: {detail}"],
   "errors.switch.blockedFree": ["切换被锁阻塞：当前无锁", "The switch is blocked by a lock: no lock is currently held"],

@@ -1,6 +1,21 @@
-import type { CodexOfficialQuota, UsageReading } from "../api/client";
+import type { CodexOfficialQuota, CodexQuotaReadFailure, UsageReading } from "../api/client";
 import { currentLanguage, tr } from "../i18n/current.ts";
+import { TRANSPORT_CLASS_KEYS, uiMessage } from "../i18n/errors.ts";
 import type { MessageKey } from "../i18n/messages.ts";
+
+/** The structured message of one failed official-quota read. The backend
+ * owns the classification; this catalog owns the text. A missing failure on
+ * an unavailable read falls back to the generic transport class. */
+export function officialQuotaFailureMessage(failure: CodexQuotaReadFailure | null) {
+  if (failure?.kind === "httpStatus") {
+    return uiMessage("clientConfig.quota.failure.httpStatus", { status: failure.httpStatus ?? 0 });
+  }
+  if (failure?.kind === "invalidResponse") {
+    return uiMessage("clientConfig.quota.failure.invalidResponse");
+  }
+  return uiMessage("clientConfig.quota.failure.transport",
+    { detailKey: TRANSPORT_CLASS_KEYS[failure?.transportClass ?? "other"] });
+}
 
 function exactValueFormatter(): Intl.NumberFormat {
   return new Intl.NumberFormat(currentLanguage(), { maximumFractionDigits: 2 });

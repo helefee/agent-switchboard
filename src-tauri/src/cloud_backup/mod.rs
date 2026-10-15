@@ -119,7 +119,7 @@ pub fn test_connection(
     settings: &CloudBackupSettings,
     account_password: &str,
 ) -> Result<(), String> {
-    test_connection_with_request(settings, account_password, http_request)
+    test_connection_with_request(settings, account_password, classified_request)
 }
 
 pub fn upload(
@@ -127,14 +127,25 @@ pub fn upload(
     account_password: &str,
     backup_password: &str,
 ) -> Result<CloudBackupResult, String> {
-    upload_with_request(state, account_password, backup_password, &http_request)
+    upload_with_request(state, account_password, backup_password, &classified_request)
 }
 pub fn restore(
     state: &LocalState,
     account_password: &str,
     backup_password: &str,
 ) -> Result<CloudBackupResult, String> {
-    restore_with_request(state, account_password, backup_password, &http_request)
+    restore_with_request(state, account_password, backup_password, &classified_request)
+}
+
+/// Adapts the shared classified transport onto the remote module's
+/// string-error request contract; cloud backup owns no transport classes.
+fn classified_request(
+    method: &str,
+    url: &str,
+    headers: &str,
+    body: &[u8],
+) -> Result<(u16, String), String> {
+    http_request(method, url, headers, body).map_err(|failure| failure.to_string())
 }
 
 fn configured_settings(state: &LocalState) -> Result<CloudBackupSettings, String> {

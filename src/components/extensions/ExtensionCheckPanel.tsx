@@ -46,7 +46,10 @@ function CheckResults({ item, projectNames, check }: ExtensionManagementProps) {
   const { t } = useI18n();
   if (item.checks.length === 0) return null;
   const rows = item.checks.map((result) => ({ result, view: outcomeView(result) }));
-  return <div className="asb-ext-table-scroll" tabIndex={0} aria-live="polite" aria-busy={check.phase !== null}>
+  /* The live region predates the table's own scroll wrap: it exists so the
+     results table's replacement is announced, and carries no layout of its
+     own. */
+  return <div aria-live="polite" aria-busy={check.phase !== null}>
     <Table rows={rows} rowKey={({ result }) => targetValue(result.target)}
       ariaLabel={t("extensions.check.results")} className="asb-ext-management-table" columns={[
         { key: "target", header: t("extensions.table.target"), render: ({ result }) => targetLabel(result.target, projectNames) },

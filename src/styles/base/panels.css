@@ -201,25 +201,24 @@
 }
 
 /* ---------------------------------------------------------------------------
- * Fact row — one key/value pair per line, the label column fixed so values
- * line up down the page (DESIGN.md §8). Owns the pattern that provider
- * details, gateway listener rows, reset facts and diagnostics all used to
- * re-invent. Rendered as <dl class="asb-fact-row"><div><dt/><dd/></div>…</dl>.
+ * Fact row — the visual contract of the FactList primitive (DESIGN.md
+ * 组件所有权): one key/value pair per line, rendered as
+ * <dl class="asb-fact-row"><div><dt/><dd/></div>…</dl>. The list is a single
+ * two-column grid and the pair wrappers are display:contents, so dt/dd stay
+ * the grid items: the label column sizes to the widest label and every value
+ * starts at the same left edge down the page.
  * ------------------------------------------------------------------------- */
 .asb-fact-row {
-  display: flex;
-  flex-direction: column;
-  gap: var(--asb-space-1);
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  align-items: baseline;
+  gap: var(--asb-space-1) var(--asb-space-2);
   margin: 0;
 }
 
-.asb-fact-row > div {
-  display: flex;
-  gap: var(--asb-space-2);
-}
+.asb-fact-row > div { display: contents; }
 
 .asb-fact-row dt {
-  flex: 0 0 var(--asb-fact-label-width);
   color: var(--asb-text-muted);
   font: var(--asb-text-label);
 }
@@ -227,8 +226,24 @@
 .asb-fact-row dd {
   min-width: 0;
   margin: 0;
-  font: var(--asb-text-label);
+  font: var(--asb-text-body);
   overflow-wrap: anywhere;
+}
+
+/* Inline variant: pairs share one rail (gateway summary). The shared label
+ * column only pays off when values stack down a page; on a rail each pair
+ * is self-contained, so wrappers return to flex rows with natural label
+ * widths. */
+.asb-fact-row.is-inline {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: var(--asb-space-1) var(--asb-space-4);
+}
+
+.asb-fact-row.is-inline > div {
+  display: flex;
+  gap: var(--asb-space-2);
 }
 
 /* A path value that is itself the control (copy, open location): the

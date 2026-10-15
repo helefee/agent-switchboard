@@ -18,6 +18,7 @@ const ACTION_LABEL: Record<RuntimeLogAction, MessageKey> = {
   storageHistoryArchived: "backup.action.storageHistoryArchived",
   appSettingsSaved: "backup.action.appSettingsSaved",
   outboundProxySaved: "backup.action.outboundProxySaved",
+  outboundProxyRepaired: "backup.action.outboundProxyRepaired",
   codexSubagentSettingsApplied: "backup.action.codexSubagentSettingsApplied",
   providersSqlImported: "backup.action.providersSqlImported",
   appSettingsRepaired: "backup.action.appSettingsRepaired",
@@ -91,12 +92,10 @@ export function LogsPage({ logs }: { logs: ReturnType<typeof useRuntimeLogs> }) 
         </p>
       )}
       {loading && entries.length === 0 ? (
-        <div className="asb-runtime-log-table-wrap">
-          <div className="asb-runtime-log-skeleton" role="status" aria-label={t("backup.logs.loadingAria")}>
-            {Array.from({ length: RUNTIME_LOG_PAGE_SIZE }, (_, index) => (
-              <span key={index} className="asb-skeleton asb-runtime-log-skeleton-row" />
-            ))}
-          </div>
+        <div className="asb-runtime-log-skeleton" role="status" aria-label={t("backup.logs.loadingAria")}>
+          {Array.from({ length: RUNTIME_LOG_PAGE_SIZE }, (_, index) => (
+            <span key={index} className="asb-skeleton asb-runtime-log-skeleton-row" />
+          ))}
         </div>
       ) : visibleEntries.length === 0 ? (
         <div className="asb-empty-state asb-runtime-log-empty">
@@ -110,15 +109,13 @@ export function LogsPage({ logs }: { logs: ReturnType<typeof useRuntimeLogs> }) 
         </div>
       ) : (
         <>
-          <div className="asb-runtime-log-table-wrap">
-            <Table
-              columns={columns}
-              rows={pageEntries}
-              rowKey={(entry, index) => `${entry.at}-${entry.action}-${entry.errorCode ?? ""}-${index}`}
-              ariaLabel={t("backup.logs.tableAria")}
-              className="asb-runtime-log-table"
-            />
-          </div>
+          <Table
+            columns={columns}
+            rows={pageEntries}
+            rowKey={(entry, index) => `${entry.at}-${entry.action}-${entry.errorCode ?? ""}-${index}`}
+            ariaLabel={t("backup.logs.tableAria")}
+            className="asb-runtime-log-table"
+          />
           <Pagination
             total={visibleEntries.length}
             page={page}

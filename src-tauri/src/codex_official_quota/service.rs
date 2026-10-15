@@ -1,4 +1,7 @@
-use asb_core::contracts::{CodexOfficialQuota, CodexOfficialQuotaStatus, CodexOfficialQuotaWindow};
+use asb_core::contracts::{
+    CodexOfficialQuota, CodexOfficialQuotaStatus, CodexOfficialQuotaWindow, CodexQuotaReadFailure,
+    CodexTransportClass,
+};
 use asb_switch::sha256_hex;
 use serde::Deserialize;
 use std::collections::HashMap;
@@ -159,9 +162,22 @@ pub(super) fn fetch(auth_path: &Path) -> (CodexOfficialQuota, Option<String>) {
 
     let quota = match crate::probe::http_get(CODEX_USAGE_URL, &headers) {
         Ok((status, body)) => quota_from_http_response(status, &body, utc_now()),
-        Err(_) => empty(CodexOfficialQuotaStatus::Unavailable),
+        Err(failure) => failed(
+            CodexOfficialQuotaStatus::Unavailable,
+            CodexQuotaReadFailure::transport(transport_class(&failure)),
+        ),
     };
     (quota, marker)
+}
+
+/// Reduces one request failure to its transport class. Grammar rejection of
+/// the app-constructed URL and headers cannot occur, so it lands in the
+/// generic class instead of inventing a second kind of quota failure.
+pub(crate) fn transport_class(failure: &crate::probe::RequestFailure) -> CodexTransportClass {
+    match failure {
+        crate::probe::RequestFailure::Transport(transport) => transport.class,
+        crate::probe::RequestFailure::Malformed(_) => CodexTransportClass::Other,
+    }
 }
 
 pub(super) fn parse_credentials(content: &str) -> Option<AuthCredentials> {
@@ -211,10 +227,20 @@ fn has_header_control_characters(value: &str) -> bool {
 
 pub(crate) fn quota_from_http_response(status: u16, body: &str, at: String) -> CodexOfficialQuota {
     match status {
-        200..=299 => quota_from_body(body, at)
-            .unwrap_or_else(|| empty(CodexOfficialQuotaStatus::Unavailable)),
-        401 | 403 => empty(CodexOfficialQuotaStatus::ReauthenticationRequired),
-        _ => empty(CodexOfficialQuotaStatus::Unavailable),
+        200..=299 => quota_from_body(body, at).unwrap_or_else(|| {
+            failed(
+                CodexOfficialQuotaStatus::Unavailable,
+                CodexQuotaReadFailure::INVALID_RESPONSE,
+            )
+        }),
+        401 | 403 => failed(
+            CodexOfficialQuotaStatus::ReauthenticationRequired,
+            CodexQuotaReadFailure::http_status(status),
+        ),
+        _ => failed(
+            CodexOfficialQuotaStatus::Unavailable,
+            CodexQuotaReadFailure::http_status(status),
+        ),
     }
 }
 
@@ -232,6 +258,7 @@ fn quota_from_body(body: &str, at: String) -> Option<CodexOfficialQuota> {
         at: Some(at),
         stale: false,
         last_reset: None,
+        failure: None,
     })
 }
 
@@ -271,6 +298,7 @@ fn utc_now() -> String {
     chrono::Utc::now().to_rfc3339_opts(chrono::SecondsFormat::Millis, true)
 }
 
+/// A read that never attempted the network, so it carries no failure reason.
 pub(super) fn empty(status: CodexOfficialQuotaStatus) -> CodexOfficialQuota {
     CodexOfficialQuota {
         status,
@@ -278,6 +306,23 @@ pub(super) fn empty(status: CodexOfficialQuotaStatus) -> CodexOfficialQuota {
         at: None,
         stale: false,
         last_reset: None,
+        failure: None,
+    }
+}
+
+/// A read that attempted the network and failed; the constructor keeps the
+/// failure-reason-must-be-present invariant in one place.
+pub(crate) fn failed(
+    status: CodexOfficialQuotaStatus,
+    failure: CodexQuotaReadFailure,
+) -> CodexOfficialQuota {
+    CodexOfficialQuota {
+        status,
+        windows: Vec::new(),
+        at: None,
+        stale: false,
+        last_reset: None,
+        failure: Some(failure),
     }
 }
 
@@ -293,6 +338,7 @@ pub(super) fn retain_last_success(
             at: quota.at.clone(),
             stale: true,
             last_reset: quota.last_reset.clone(),
+            failure: failure.failure,
         })
         .unwrap_or(failure)
 }
@@ -308,12 +354,31 @@ mod tests {
         success.windows.push(CodexOfficialQuotaWindow {
             label: "5 小时".into(), used_percent: 25.0, resets_at: None,
         });
-        let first = retain_last_success(empty(CodexOfficialQuotaStatus::Unavailable), Some(&success));
-        let second = retain_last_success(empty(CodexOfficialQuotaStatus::Unavailable), Some(&first));
+        let timeout = || failed(
+            CodexOfficialQuotaStatus::Unavailable,
+            CodexQuotaReadFailure::transport(CodexTransportClass::Timeout),
+        );
+        let first = retain_last_success(timeout(), Some(&success));
+        let second = retain_last_success(timeout(), Some(&first));
         assert_eq!(second.windows, success.windows);
         assert_eq!(second.at, success.at);
         assert_eq!(second.status, CodexOfficialQuotaStatus::Unavailable);
         assert!(second.stale);
+        assert_eq!(second.failure, first.failure);
+        assert!(second.failure.is_some());
+    }
+
+    #[test]
+    fn attempted_reads_always_carry_a_failure_and_attempted_never_do() {
+        assert_eq!(empty(CodexOfficialQuotaStatus::SignInRequired).failure, None);
+        let parsed = quota_from_http_response(200, "{\"rate_limit\":null}", "2026-10-15T00:00:00Z".into());
+        assert_eq!(parsed.status, CodexOfficialQuotaStatus::Unavailable);
+        assert_eq!(parsed.failure, Some(CodexQuotaReadFailure::INVALID_RESPONSE));
+        let rejected = quota_from_http_response(429, "", "2026-10-15T00:00:00Z".into());
+        assert_eq!(rejected.failure, Some(CodexQuotaReadFailure::http_status(429)));
+        let reauth = quota_from_http_response(401, "", "2026-10-15T00:00:00Z".into());
+        assert_eq!(reauth.status, CodexOfficialQuotaStatus::ReauthenticationRequired);
+        assert_eq!(reauth.failure, Some(CodexQuotaReadFailure::http_status(401)));
     }
 
     #[test]

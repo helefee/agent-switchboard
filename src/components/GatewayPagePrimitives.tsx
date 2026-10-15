@@ -29,7 +29,12 @@ export function ConfirmGatewayRecoveryDiscard({ onConfirm, busy }: { onConfirm: 
 }
 
 export function CopyGatewayAddressButton({ value }: { value: string }) {
-  return <CopyButton content={value} />;
+  const { t } = useI18n();
+  return (
+    <CopyButton content={value} iconOnly
+      label={t("gateway.copyAddressAria")}
+      copiedLabel={t("gateway.copiedAddressAria")} />
+  );
 }
 
 /** Status and recovery precede topology, charts and recent requests. */

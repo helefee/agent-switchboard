@@ -49,7 +49,7 @@
 
 .asb-gateway-connection[data-client="claude"] { --asb-gateway-client-tone: var(--asb-claude); }
 .asb-gateway-connection.is-client { grid-column: 1; }
-.asb-gateway-hub { grid-column: 3; }
+.asb-gateway-node.is-hub { grid-column: 3; }
 .asb-gateway-connection.is-provider,
 .asb-gateway-node.is-empty { grid-column: 5; }
 
@@ -150,7 +150,7 @@
 
 /* Device surfaces continue to follow global theme tokens. */
 .asb-gateway-device { display: block; width: 112px; height: 94px; color: var(--asb-gateway-client-tone, var(--asb-action)); }
-.asb-gateway-hub .asb-gateway-device { flex: none; width: 144px; height: 120px; }
+.asb-gateway-node.is-hub .asb-gateway-device { flex: none; width: 96px; height: 80px; }
 .asb-gateway-device-base { fill: var(--asb-surface-rail); }
 .asb-gateway-device-top { fill: var(--asb-content); stroke: var(--asb-hairline-strong); stroke-linejoin: round; }
 .asb-gateway-device-face { fill: var(--asb-content-muted); stroke: var(--asb-hairline-strong); stroke-linejoin: round; }

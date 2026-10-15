@@ -7,16 +7,14 @@
   }
 
   .asb-gateway-connection.is-provider { grid-column: 3; }
-  .asb-gateway-hub { grid-column: 2; }
+  .asb-gateway-node.is-hub { grid-column: 2; }
   .asb-gateway-node.is-empty { grid-column: 3; }
-  .asb-gateway-strip { grid-template-columns: repeat(2, minmax(0, 1fr)); }
 }
 
 @container gateway (max-width: 680px) {
   .asb-gateway-map-canvas { display: flex; flex-direction: column; align-items: stretch; gap: var(--asb-space-4); padding-top: var(--asb-space-2); }
   .asb-gateway-floor,
   .asb-gateway-wires { display: none; }
-  .asb-gateway-hub { align-self: stretch; }
   .asb-gateway-node { grid-template-columns: minmax(0, 1fr) 112px; justify-items: start; text-align: left; }
   .asb-gateway-node > .asb-gateway-device { grid-column: 2; grid-row: 1 / span 4; align-self: center; }
   .asb-gateway-node > :not(.asb-gateway-device) { grid-column: 1; }
@@ -26,25 +24,7 @@
 }
 
 @container gateway (max-width: 420px) {
-  .asb-gateway-strip { grid-template-columns: minmax(0, 1fr); }
   .asb-gateway-unavailable { align-items: flex-start; flex-wrap: wrap; }
   .asb-gateway-unavailable > .asb-btn { margin-left: 0; }
-  .asb-gateway-hub .asb-gateway-device { width: 72px; height: 60px; }
+  .asb-gateway-node.is-hub .asb-gateway-device { width: 72px; height: 60px; }
 }
-
-.asb-gateway-hub.is-summary {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
-  gap: var(--asb-space-3);
-  align-self: stretch;
-  align-items: center;
-  padding: var(--asb-space-3);
-  border-radius: var(--asb-radius-group);
-  background: var(--asb-content-muted);
-}
-.asb-gateway-hub.is-summary .asb-gateway-device { display: none; }
-.asb-gateway-hub.is-summary .asb-gateway-hub-identity { align-items: flex-start; }
-.asb-gateway-hub.is-summary .asb-gateway-hub-copy { justify-items: start; }
-.asb-gateway-hub.is-summary .asb-gateway-hub-failure { grid-column: 1 / -1; }
-.asb-gateway-hub.is-topology { align-items: center; gap: var(--asb-space-1); text-align: center; overflow-wrap: anywhere; }
-.asb-gateway-hub.is-topology .asb-gateway-device { width: 96px; height: 80px; }

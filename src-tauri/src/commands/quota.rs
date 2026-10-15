@@ -75,6 +75,7 @@ pub async fn get_cached_codex_official_reset(
                     at: Some(read.at),
                     stale: false,
                     last_reset: baseline.last_reset,
+                    failure: None,
                 })
         }))
     })

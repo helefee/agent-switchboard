@@ -140,6 +140,7 @@ mod tests {
             at: Some("2026-09-21T00:00:00Z".into()),
             stale: false,
             last_reset: None,
+            failure: None,
         };
         let script = serde_json::to_value(TrayUsage::Script(script)).unwrap();
         let official = serde_json::to_value(TrayUsage::Official(official)).unwrap();

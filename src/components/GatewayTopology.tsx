@@ -40,9 +40,9 @@ export function GatewayTopology({ status, failed, profileNames, focus, onFocus }
         <GatewayTopologyFloor />
         <GatewayTopologyWires sceneRef={sceneRef} routes={routes} focus={focus} failed={failed} />
         <GatewayClientNodes rows={[1, rows]} routes={routes} counts={traffic.byApp} focus={focus} onFocus={onFocus} />
-        <div data-gateway-node="hub" className="asb-gateway-hub is-topology" style={{ gridRow: `1 / span ${rows}` }}>
+        <div data-gateway-node="hub" className="asb-gateway-node is-hub" style={{ gridRow: `1 / span ${rows}` }}>
           <GatewayDeviceArt kind="hub" /><strong>{t("gateway.title")}</strong>
-          <span>{status.baseUrl ?? t("gateway.addressNotListening")}</span>
+          <span className="asb-gateway-node-caption">{status.baseUrl ?? t("gateway.addressNotListening")}</span>
         </div>
         <GatewayProviderNodes routes={routes} profileNames={profileNames} counts={traffic.byRoute} focus={focus} onFocus={onFocus} />
         {routes.length === 0 && (

@@ -47,14 +47,12 @@ function TargetPreview({ target, label }: { target: PlannedTargetView; label: st
       {target.files && target.files.length > 0 && (
         <div>
           <p className="asb-scope-note">{t("extensions.plan.fileChanges")}</p>
-          <div className="asb-ext-table-scroll" tabIndex={0}>
-            <Table rows={target.files} rowKey={(file) => `${file.action}:${file.relativePath}`}
-              ariaLabel={t("extensions.plan.diffLabel", { target: label })} columns={[
-                { key: "file", header: t("extensions.table.file"), render: (file) => <span className="asb-code">{file.relativePath}</span> },
-                { key: "action", header: t("extensions.table.actions"), render: (file) => t(file.action === "remove"
-                  ? "extensions.plan.fileRemove" : "extensions.plan.fileDeploy") },
-              ]} />
-          </div>
+          <Table rows={target.files} rowKey={(file) => `${file.action}:${file.relativePath}`}
+            ariaLabel={t("extensions.plan.diffLabel", { target: label })} columns={[
+              { key: "file", header: t("extensions.table.file"), render: (file) => <span className="asb-code">{file.relativePath}</span> },
+              { key: "action", header: t("extensions.table.actions"), render: (file) => t(file.action === "remove"
+                ? "extensions.plan.fileRemove" : "extensions.plan.fileDeploy") },
+            ]} />
         </div>
       )}
     </div>

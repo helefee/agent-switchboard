@@ -1,7 +1,7 @@
 /* Runtime log — a single app-owned operational ledger. The renderer sees
    parsed, closed events only; diagnostics remain solid and easy to scan.
    The page scroll surface (.asb-main) carries the ledger vertically; the
-   wrap below owns only the table's horizontal overflow. */
+   table's horizontal overflow is owned by the shared Table wrap. */
 .asb-panel.asb-runtime-logs {
   display: flex;
   flex-direction: column;
@@ -38,13 +38,6 @@
 .asb-runtime-log-empty {
   justify-content: center;
   min-height: 180px;
-}
-
-/* The table's own surface is its horizontal overflow: the 680px ledger
-   stays legible in narrow windows without widening the workspace. */
-.asb-runtime-log-table-wrap {
-  overflow-x: auto;
-  scrollbar-gutter: stable;
 }
 
 /* Loading placeholder shaped like the log table: one 40px row band per
@@ -98,8 +91,8 @@
 }
 
 /* Model usage is a local-session ledger, not a provider-quota surface. The
-   panel owns its narrow horizontal scroll region so its exact token columns
-   remain legible without widening the application workspace. */
+   shared Table wrap owns the horizontal overflow; the panel stretches it so
+   exact token columns stay legible without widening the workspace. */
 .asb-panel.asb-model-usage {
   display: flex;
   flex: 1;
@@ -167,14 +160,12 @@
   min-height: 0;
 }
 
-.asb-model-usage-table-wrap {
+.asb-model-usage .asb-table-scroll {
   flex: 1;
   min-height: 0;
-  overflow: auto;
-  scrollbar-gutter: stable;
 }
 
-.asb-model-usage-table-wrap .asb-table th {
+.asb-model-usage-table th {
   position: sticky;
   top: 0;
   z-index: 1;
@@ -271,11 +262,6 @@
 
 .asb-codex-probe-table {
   min-width: max-content;
-}
-
-.asb-codex-probe-table-wrap {
-  min-width: 0;
-  overflow-x: auto;
 }
 
 .asb-codex-probe-detail {

@@ -126,7 +126,12 @@
   letter-spacing: -0.06em;
 }
 
-.asb-codex-reset-daily-data { max-height: 18rem; overflow: auto; margin-top: var(--asb-space-2); }
+/* The daily ledger is height-capped in its own wrap; the scroll itself is
+   the shared Table wrap's. */
+.asb-table-scroll:has(> .asb-codex-reset-daily-table) {
+  max-height: 18rem;
+  margin-top: var(--asb-space-2);
+}
 
 /* A pending forecast reads as the monitor's own amber warning; the absent
    answer stays muted instead of looking like a failure. */

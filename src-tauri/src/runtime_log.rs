@@ -78,6 +78,7 @@ pub enum RuntimeLogAction {
     StorageHistoryArchived,
     AppSettingsSaved,
     OutboundProxySaved,
+    OutboundProxyRepaired,
     AppSettingsRepaired,
     ProfileStoreRepaired,
     ProfileCreated,

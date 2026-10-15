@@ -69,3 +69,41 @@ export const messages = Object.freeze({
 
 export type MessageKey = keyof typeof messages;
 export type { MessageEntry, MessageParams, ResolvedLanguage } from "./types";
+
+// The message template is the single owner of its interpolation contract:
+// placeholder names are derived from the literal itself and every translator
+// call is checked against them, so a renamed `{detail}` can never silently
+// mismatch a `detailKey` param again.
+
+/** Placeholder names inside one template literal, e.g. `"年{month}月"` → `"month"`. */
+type Placeholders<S extends string> =
+  S extends `${string}{${infer Name}}${infer Rest}` ? Name | Placeholders<Rest> : never;
+
+/** The zh template stands for both languages; zh/en parity is asserted below. */
+type ZhTemplate<K extends MessageKey> = (typeof messages)[K][0];
+
+/** Value type of one placeholder: `*Key` names carry catalog keys and resolve
+ * recursively through the catalog; everything else is a display value. */
+type PlaceholderValue<Name extends string> = Name extends `${string}Key` ? MessageKey : string | number;
+
+/** The exact params object one message key accepts. */
+export type MessageParamsOf<K extends MessageKey> = {
+  [Name in Placeholders<ZhTemplate<K>>]: PlaceholderValue<Name>;
+};
+
+/** Translator argument tuple: no placeholders → no params accepted. For a
+ * union of keys this distributes per member, so a no-args call stays valid
+ * when every key in the union is placeholder-free. */
+export type TemplateArgs<K extends MessageKey> = K extends unknown
+  ? Placeholders<ZhTemplate<K>> extends never ? [] : [params: MessageParamsOf<K>]
+  : never;
+
+/** Fails to compile, naming the key, when a template's zh and en entries
+ * interpolate different placeholder names. */
+type PlaceholderParityMismatch = {
+  [K in MessageKey]: Placeholders<ZhTemplate<K>> extends Placeholders<(typeof messages)[K][1]>
+    ? Placeholders<(typeof messages)[K][1]> extends Placeholders<ZhTemplate<K>> ? never : K
+    : K;
+}[MessageKey];
+type ParityAssertion = [PlaceholderParityMismatch] extends [never] ? "ok" : PlaceholderParityMismatch;
+export const MESSAGE_PLACEHOLDER_PARITY: ParityAssertion = "ok";

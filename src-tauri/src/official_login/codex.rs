@@ -174,6 +174,7 @@ fn post_json(url: &str, payload: &serde_json::Value) -> Result<(u16, String), St
     let headers =
         format!("Content-Type: application/json\r\nAccept: application/json\r\nUser-Agent: {USER_AGENT}\r\n");
     http_request("POST", url, &headers, payload.to_string().as_bytes())
+        .map_err(|failure| failure.to_string())
 }
 
 #[cfg(test)]

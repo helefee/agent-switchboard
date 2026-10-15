@@ -4,8 +4,10 @@
    carried by spacing alone. Numeric columns align right; hover stays neutral.
    The table carries its own hairline border and control-radius corner frame
    (2026-09-02 user directive); the band and the last row's hover surface
-   clip to those corners. Sticky headers are opt-in only for modules that
-   own a table scroll region. */
+   clip to those corners. The scroll region is the component's own wrap
+   (2026-10-15): wide tables pan horizontally there, no module rolls its
+   own overflow wrapper; modules tune width with min-width on the table
+   element and opt into sticky headers in their own stylesheets. */
 .asb-table {
   width: 100%;
   border-collapse: separate;
@@ -14,6 +16,14 @@
   border-radius: var(--asb-radius);
   background: var(--asb-content);
   font: var(--asb-text-body);
+}
+
+/* The component-owned scroll region: every table can be panned when its
+   columns cannot shrink further, with the workspace-wide stable gutter and
+   a keyboard-focusable surface for keyboard panning. */
+.asb-table-scroll {
+  overflow: auto;
+  scrollbar-gutter: stable;
 }
 
 /* Tables compare numbers down columns, so figures are tabular table-wide. */
@@ -74,8 +84,7 @@
   gap: var(--asb-space-2);
 }
 
-.asb-table + .asb-pagination,
-.asb-runtime-log-table-wrap + .asb-pagination {
+.asb-table-scroll + .asb-pagination {
   margin-top: var(--asb-space-3);
 }
 
@@ -99,8 +108,8 @@
 /* A data table never shares an edge with the trend block above it (user
    directive 2026-09-04): the chart card carries no own margin, so the table
    keeps breathing room whatever spacing model its parent uses — flex gap or
-   plain block flow. */
-.asb-usage-history + .asb-table {
+   plain block flow. The table's sibling is the component's scroll wrap. */
+.asb-usage-history + .asb-table-scroll {
   margin-top: var(--asb-space-3);
 }
 
@@ -124,9 +133,9 @@
   margin-bottom: var(--asb-space-3);
 }
 
-/* The open backup diff is a full-width region under its own row, never a
+/* An open expansion row is a full-width region under its own row, never a
    squeezed cell; unlike data rows it stays hover-neutral. */
-.asb-table .asb-backup-diff-row:hover {
+.asb-table .asb-table-expansion-row:hover {
   background: transparent;
 }
 

@@ -3,6 +3,7 @@ import { ClientManagementPage } from "../pages/ClientManagementPage";
 import { DiagnosticsPage } from "../pages/DiagnosticsPage";
 import { GatewayPage } from "../pages/GatewayPage";
 import { SettingsPage } from "../pages/SettingsPage";
+import { OutboundProxySettings } from "../components/OutboundProxySettings";
 import { StorageSettings } from "../components/StorageSettings";
 import type { SwitchboardModel } from "./useSwitchboardModel";
 
@@ -11,6 +12,7 @@ export function SettingsWorkspace({ model, active }: { model: SwitchboardModel; 
   return (
     <SettingsPage section={model.settingsSection} onSectionChange={model.setSettingsSection}
       onReturnToProviders={model.settingsReturnToProviders ? model.returnToProviders : undefined}
+      egress={<OutboundProxySettings active={active && model.settingsSection === "application"} busy={busy} />}
       storage={<StorageSettings active={active && model.settingsSection === "application"} busy={busy}
         onArchived={() => { void snapshot.refresh(); }} />}
       backups={<BackupsPage records={snapshot.backups} busy={busy} lastSwitch={model.lastSwitchOverall}

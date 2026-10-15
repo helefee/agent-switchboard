@@ -3,8 +3,15 @@ import { useI18n } from "../i18n";
 import { Button } from "./Button";
 import { CheckIcon, RestoreIcon } from "./icons";
 
-/** One visible clipboard result for code, device codes and generated answers. */
-export function CopyButton({ content }: { content: string }) {
+/** One visible clipboard result for code, device codes and generated answers.
+ * `iconOnly` renders a fixed-footprint icon action; the accessible name then
+ * comes from `label` / `copiedLabel` instead of visible text. */
+export function CopyButton({ content, iconOnly = false, label, copiedLabel }: {
+  content: string;
+  iconOnly?: boolean;
+  label?: string;
+  copiedLabel?: string;
+}) {
   const { t } = useI18n();
   const [status, setStatus] = useState<"idle" | "copying" | "copied" | "failed">("idle");
   const locked = useRef(false);
@@ -23,10 +30,16 @@ export function CopyButton({ content }: { content: string }) {
       if (current === revision.current) setStatus("failed");
     } finally { locked.current = false; }
   };
+  const copied = status === "copied";
   return <>
-    <Button variant="secondary" disabled={status === "copying"} onClick={() => void copy()}>
-      {status === "copied" ? <CheckIcon /> : <RestoreIcon />}
-      {t(status === "copied" ? "common.copied" : "common.copy")}
+    <Button
+      variant={iconOnly ? "icon" : "secondary"}
+      disabled={status === "copying"}
+      onClick={() => void copy()}
+      {...(iconOnly && { "aria-label": copied ? copiedLabel : label, title: copied ? copiedLabel : label })}
+    >
+      {copied ? <CheckIcon /> : <RestoreIcon />}
+      {!iconOnly && t(copied ? "common.copied" : "common.copy")}
     </Button>
     {status === "failed" && <span className="asb-field-error" role="alert">{t("common.copyFailed")}</span>}
   </>;

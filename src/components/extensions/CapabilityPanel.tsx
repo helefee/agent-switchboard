@@ -21,23 +21,21 @@ export function CapabilityPanel({ reports }: Props) {
       label={<span className="asb-section-title">{t("extensions.capabilities.title")}</span>}
       value={t("extensions.capabilities.count", { count: reports.length })}>
       {rows.length === 0 ? <p className="asb-empty">{t("extensions.capabilities.empty")}</p> : (
-        <div className="asb-ext-table-scroll" tabIndex={0}>
-          <Table rows={rows} rowKey={(row) => `${row.client}:${row.entry?.code ?? "empty"}`}
-            ariaLabel={t("extensions.capabilities.title")} className="asb-ext-management-table" columns={[
-              { key: "client", header: t("extensions.table.client"), render: (row) => clientName(row.client) },
-              { key: "resource", header: t("extensions.table.resource"), render: ({ entry }) => entry
-                ? catalogText(entry.resource, t) : t("extensions.capabilities.empty") },
-              { key: "status", header: t("extensions.table.status"), render: ({ entry }) => !entry ? "—" : (
-                <span className={entry.verification === "verified" && entry.supported ? "asb-ok-text" : "asb-warn-text"}>
-                  {entry.verification === "verified" && entry.supported
-                    ? t("extensions.capabilities.verified", { version: entry.clientVersion })
-                    : t("extensions.capabilities.unverified")}
-                </span>
-              ) },
-              { key: "condition", header: t("extensions.table.condition"), render: ({ entry }) => entry?.verification === "open"
-                ? catalogText(entry.condition, t) : "—" },
-            ]} />
-        </div>
+        <Table rows={rows} rowKey={(row) => `${row.client}:${row.entry?.code ?? "empty"}`}
+          ariaLabel={t("extensions.capabilities.title")} className="asb-ext-management-table" columns={[
+            { key: "client", header: t("extensions.table.client"), render: (row) => clientName(row.client) },
+            { key: "resource", header: t("extensions.table.resource"), render: ({ entry }) => entry
+              ? catalogText(entry.resource, t) : t("extensions.capabilities.empty") },
+            { key: "status", header: t("extensions.table.status"), render: ({ entry }) => !entry ? "—" : (
+              <span className={entry.verification === "verified" && entry.supported ? "asb-ok-text" : "asb-warn-text"}>
+                {entry.verification === "verified" && entry.supported
+                  ? t("extensions.capabilities.verified", { version: entry.clientVersion })
+                  : t("extensions.capabilities.unverified")}
+              </span>
+            ) },
+            { key: "condition", header: t("extensions.table.condition"), render: ({ entry }) => entry?.verification === "open"
+              ? catalogText(entry.condition, t) : "—" },
+          ]} />
       )}
     </CollapsibleSection>
   );

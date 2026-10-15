@@ -1,11 +1,13 @@
 import * as React from "react";
-import type { MessageKey, MessageParams } from "../i18n/messages";
+import type { MessageKey, MessageParams, TemplateArgs } from "../i18n/messages";
 
 export type ToastKind = "info" | "success" | "warning" | "error";
 
 /** A not-yet-translated toast string: ToastText resolves it through the
  * catalog at render time, so a visible toast follows a language switch
- * instead of freezing in the language of the moment it was raised. */
+ * instead of freezing in the language of the moment it was raised. The
+ * queue erases the key's param type by nature; `toastMessage` checks it
+ * at every producer and `ToastText` is the single dynamic render boundary. */
 export interface ToastMessage {
   readonly __toastMessage: true;
   readonly key: MessageKey;
@@ -13,8 +15,8 @@ export interface ToastMessage {
 }
 
 /** Builds a render-time-translated toast text. */
-export function toastMessage(key: MessageKey, params?: MessageParams): ToastMessage {
-  return { __toastMessage: true, key, params };
+export function toastMessage<K extends MessageKey>(key: K, ...args: TemplateArgs<K>): ToastMessage {
+  return { __toastMessage: true, key, params: args[0] };
 }
 
 export function isToastMessage(content: unknown): content is ToastMessage {

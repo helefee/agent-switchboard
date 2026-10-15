@@ -41,86 +41,129 @@ impl Default for OutboundProxySettings {
         }
     }
 }
+
+/// One invalid or failed outbound-proxy settings operation. The `Display`
+/// text is the scrubbed diagnostic detail; `parts` carries the renderer
+/// translation coordinates.
+#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
+pub(crate) enum OutboundProxyError {
+    #[error("无法读取出站代理设置：{0}")]
+    Read(String),
+    #[error("出站代理设置文件无效")]
+    Unreadable,
+    #[error("无法写取出站代理设置：{0}")]
+    Write(String),
+    #[error("出站代理设置已改变，请重新读取后再保存")]
+    RevisionConflict,
+    #[error("出站代理设置版本不受支持")]
+    UnsupportedVersion,
+    #[error("出站代理设置修订无效")]
+    InvalidRevision,
+    #[error("直连模式不能携带代理地址")]
+    DirectUrlForbidden,
+    #[error("系统代理模式不能携带代理地址")]
+    SystemUrlForbidden,
+    #[error("手动代理需要代理地址")]
+    ManualUrlRequired,
+    #[error("代理地址过长或含有控制字符")]
+    UrlTooLong,
+    #[error("代理协议必须是 http、https、socks5 或 socks5h：{0}")]
+    UrlScheme(String),
+    #[error("代理地址无效：{0}")]
+    UrlInvalid(String),
+}
+
+impl OutboundProxyError {
+    pub(crate) fn parts(&self) -> (&'static str, serde_json::Value) {
+        match self {
+            Self::Read(detail) | Self::Write(detail) => {
+                ("errors.outboundProxy.unavailable", serde_json::json!({ "detail": detail }))
+            }
+            Self::Unreadable => ("errors.outboundProxy.unavailable", serde_json::json!({})),
+            Self::RevisionConflict => ("errors.outboundProxy.revisionConflict", serde_json::json!({})),
+            Self::UnsupportedVersion => ("errors.outboundProxy.versionUnsupported", serde_json::json!({})),
+            Self::InvalidRevision => ("errors.outboundProxy.revisionInvalid", serde_json::json!({})),
+            Self::DirectUrlForbidden => ("errors.outboundProxy.directUrlForbidden", serde_json::json!({})),
+            Self::SystemUrlForbidden => ("errors.outboundProxy.systemUrlForbidden", serde_json::json!({})),
+            Self::ManualUrlRequired => ("errors.outboundProxy.manualUrlRequired", serde_json::json!({})),
+            Self::UrlTooLong => ("errors.outboundProxy.urlTooLong", serde_json::json!({})),
+            Self::UrlScheme(scheme) => ("errors.outboundProxy.urlScheme", serde_json::json!({ "scheme": scheme })),
+            Self::UrlInvalid(detail) => ("errors.outboundProxy.urlInvalid", serde_json::json!({ "detail": detail })),
+        }
+    }
+
+    /// Read/write failures mean the settings surface is unavailable, not that
+    /// the submitted values were invalid.
+    pub(crate) fn is_io(&self) -> bool {
+        matches!(self, Self::Read(_) | Self::Unreadable | Self::Write(_))
+    }
+}
+
 impl OutboundProxySettings {
-    pub(crate) fn validate(&self) -> Result<(), String> {
+    pub(crate) fn validate(&self) -> Result<(), OutboundProxyError> {
         if self.version != VERSION {
-            return Err("出站代理设置版本不受支持".into());
+            return Err(OutboundProxyError::UnsupportedVersion);
         }
         if uuid::Uuid::parse_str(&self.revision).is_err() {
-            return Err("出站代理设置修订无效".into());
+            return Err(OutboundProxyError::InvalidRevision);
         }
         match self.mode {
             OutboundProxyMode::None => {
                 if self.url.is_some() {
-                    return Err("直连模式不能携带代理地址".into());
+                    return Err(OutboundProxyError::DirectUrlForbidden);
                 }
             }
             OutboundProxyMode::System => {
                 if self.url.is_some() {
-                    return Err("系统代理模式不能携带代理地址".into());
+                    return Err(OutboundProxyError::SystemUrlForbidden);
                 }
             }
             OutboundProxyMode::Manual => {
                 let Some(url) = self.url.as_deref().map(str::trim).filter(|u| !u.is_empty()) else {
-                    return Err("手动代理需要代理地址".into());
+                    return Err(OutboundProxyError::ManualUrlRequired);
                 };
                 if url.len() > 2048 || url.chars().any(char::is_control) {
-                    return Err("代理地址过长或含有控制字符".into());
+                    return Err(OutboundProxyError::UrlTooLong);
                 }
                 // This module owns the accepted scheme set; reqwest then owns
                 // the rest of the grammar (host, port, credentials).
                 const SCHEMES: [&str; 4] = ["http", "https", "socks5", "socks5h"];
                 let scheme = url.split("://").next().unwrap_or_default();
                 if !SCHEMES.contains(&scheme) {
-                    return Err(format!(
-                        "代理协议必须是 http、https、socks5 或 socks5h：{scheme}"
-                    ));
+                    return Err(OutboundProxyError::UrlScheme(scheme.to_string()));
                 }
-                reqwest::Proxy::all(url).map_err(|error| format!("代理地址无效：{error}"))?;
+                reqwest::Proxy::all(url)
+                    .map_err(|error| OutboundProxyError::UrlInvalid(error.to_string()))?;
             }
         }
         Ok(())
     }
 }
 
-/// Masks credentials in a proxy URL for logs and diagnostics.
-#[expect(dead_code)] // reserved: proxy log surface
-pub(crate) fn mask_url(url: &str) -> String {
-    let Some(position) = url.find("://") else {
-        return "[代理]".into();
-    };
-    let (scheme, rest) = url.split_at(position + 3);
-    match rest.rsplit_once('@') {
-        Some((_, host)) => format!("{scheme}***@{host}"),
-        None => url.into(),
-    }
-}
-
-pub(crate) fn read(state_root: &Path) -> Result<OutboundProxySettings, String> {
+pub(crate) fn read(state_root: &Path) -> Result<OutboundProxySettings, OutboundProxyError> {
     let path = settings_path(state_root);
     let bytes = match std::fs::read(&path) {
         Ok(bytes) => bytes,
         Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
             return Ok(OutboundProxySettings::default());
         }
-        Err(error) => return Err(format!("无法读取出站代理设置：{error}")),
+        Err(error) => return Err(OutboundProxyError::Read(error.to_string())),
     };
     let settings: OutboundProxySettings =
-        serde_json::from_slice(&bytes).map_err(|_| "出站代理设置文件无效".to_string())?;
+        serde_json::from_slice(&bytes).map_err(|_| OutboundProxyError::Unreadable)?;
     settings.validate()?;
     Ok(settings)
 }
 
-#[expect(dead_code)] // reserved: proxy settings editor
 pub(crate) fn save(
     state_root: &Path,
     settings: OutboundProxySettings,
     expected_revision: &str,
-) -> Result<OutboundProxySettings, String> {
+) -> Result<OutboundProxySettings, OutboundProxyError> {
     settings.validate()?;
     let current = read(state_root)?;
     if current.revision != expected_revision {
-        return Err("出站代理设置已改变，请重新读取后再保存".into());
+        return Err(OutboundProxyError::RevisionConflict);
     }
     if current == settings {
         return Ok(current);
@@ -129,21 +172,43 @@ pub(crate) fn save(
     saved.revision = uuid::Uuid::new_v4().to_string();
     let path = settings_path(state_root);
     if let Some(parent) = path.parent() {
-        std::fs::create_dir_all(parent).map_err(|error| format!("无法创建设置目录：{error}"))?;
+        std::fs::create_dir_all(parent)
+            .map_err(|error| OutboundProxyError::Write(error.to_string()))?;
     }
     let temporary = path.with_extension("tmp");
     std::fs::write(
         &temporary,
-        serde_json::to_vec_pretty(&saved).map_err(|_| "出站代理设置无法编码".to_string())?,
+        serde_json::to_vec_pretty(&saved).map_err(|_| OutboundProxyError::Write("编码失败".into()))?,
     )
-    .map_err(|error| format!("无法写取出站代理设置：{error}"))?;
-    std::fs::rename(&temporary, &path).map_err(|error| format!("无法提交出站代理设置：{error}"))?;
+    .map_err(|error| OutboundProxyError::Write(error.to_string()))?;
+    std::fs::rename(&temporary, &path)
+        .map_err(|error| OutboundProxyError::Write(error.to_string()))?;
     store_snapshot(Arc::new(Snapshot {
         revision: saved.revision.clone(),
         mode: saved.mode,
         url: saved.url.clone(),
     }));
     Ok(saved)
+}
+
+/// One-click reset for a settings file that no longer parses — written by
+/// another version or corrupted on disk. Removal returns the machine to the
+/// absent-file default (direct egress) and reloads the process snapshot; the
+/// UI only offers this after a failed read, so a valid file never reaches it.
+pub(crate) fn repair(state_root: &Path) -> Result<OutboundProxySettings, OutboundProxyError> {
+    let path = settings_path(state_root);
+    match std::fs::remove_file(&path) {
+        Ok(()) => {}
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
+        Err(error) => return Err(OutboundProxyError::Write(error.to_string())),
+    }
+    let default = OutboundProxySettings::default();
+    store_snapshot(Arc::new(Snapshot {
+        revision: default.revision.clone(),
+        mode: default.mode,
+        url: None,
+    }));
+    Ok(default)
 }
 
 fn settings_path(state_root: &Path) -> PathBuf {
@@ -194,7 +259,7 @@ fn store_snapshot(next: Arc<Snapshot>) {
 /// by the settings command after a save; reading the file lazily per client
 /// build would race concurrent writes.
 pub(crate) fn load(state_root: &Path) -> Result<(), String> {
-    let settings = read(state_root)?;
+    let settings = read(state_root).map_err(|error| error.to_string())?;
     store_snapshot(Arc::new(Snapshot {
         revision: settings.revision.clone(),
         mode: settings.mode,

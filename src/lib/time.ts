@@ -25,6 +25,23 @@ export function timeLabel(iso: string): string {
 }
 
 /**
+ * Formats a `YYYY-MM-DD` UTC calendar date verbatim: an archive cutoff is a
+ * UTC date boundary, not a local instant, so no timezone conversion happens
+ * (shifting to local would fabricate a time of day and move the date in zones
+ * behind UTC). Rendering goes through the `Time` component, like the other
+ * formatters.
+ */
+export function dateLabel(iso: string): string {
+  const [year, month, day] = iso.slice(0, 10).split("-");
+  if (currentLanguage() === "zh-CN") {
+    return tr("format.date.full", { year, month, day });
+  }
+  return new Intl.DateTimeFormat(currentLanguage(), {
+    month: "short", day: "numeric", year: "numeric", timeZone: "UTC",
+  }).format(new Date(`${iso}T00:00:00Z`));
+}
+
+/**
  * A coarse human countdown to an RFC 3339 timestamp, computed against the
  * current time at render. There is no timer: a refresh re-renders the label.
  */

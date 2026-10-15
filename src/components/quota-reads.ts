@@ -8,18 +8,20 @@ import {
   refreshCodexOfficialReset,
   type CodexOfficialQuota,
   type CodexOfficialQuotaStatus,
+  type CodexQuotaReadFailure,
   type CodexResetRead,
 } from "../api/client";
+import { officialQuotaFailureMessage } from "../lib/usage-format";
 import { useUsageHistory } from "./use-usage-history";
 
-function statusCopy(status: Exclude<CodexOfficialQuotaStatus, "available">) {
+function statusCopy(status: Exclude<CodexOfficialQuotaStatus, "available">, failure: CodexQuotaReadFailure | null) {
   switch (status) {
     case "signInRequired":
       return uiMessage("clientConfig.quota.statusSignIn");
     case "reauthenticationRequired":
       return uiMessage("clientConfig.quota.statusReauth");
     case "unavailable":
-      return uiMessage("clientConfig.quota.statusUnavailable");
+      return officialQuotaFailureMessage(failure);
   }
 }
 
@@ -79,7 +81,7 @@ export function useCodexOfficialReset(enabled: boolean) {
         setFreshness("live");
         void history.refresh();
       } else {
-        setStatusNotice(statusCopy(next.status));
+        setStatusNotice(statusCopy(next.status, next.failure));
       }
     } catch (reason) {
       setReadError(reason);

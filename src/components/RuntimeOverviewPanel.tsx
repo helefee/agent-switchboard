@@ -2,6 +2,7 @@ import { useMessageState } from "../i18n/use-message-state";
 import { useEffect, useState } from "react";
 import { getRuntimeOverview, openAppDataDir, type RuntimeOverview } from "../api/client";
 import { useI18n, type TFunction } from "../i18n";
+import { FactList } from "./FactList";
 import { FactPath } from "./FactPath";
 import { ModuleHeader } from "./WorkspaceHeader";
 import { Button } from "./Button";
@@ -86,36 +87,16 @@ export function RuntimeOverviewPanel() {
         </p>
       )}
       {runtime !== null && (
-        <dl className="asb-fact-row">
-          <div>
-            <dt>{t("providers.runtime.appVersion")}</dt>
-            <dd>v{runtime.appVersion}</dd>
-          </div>
-          <div>
-            <dt>{t("providers.runtime.buildMode")}</dt>
-            <dd>{buildModeLabel(runtime.buildMode, t)}</dd>
-          </div>
-          <div>
-            <dt>{t("providers.runtime.platform")}</dt>
-            <dd>
-              {platformLabel(runtime.platform)} · {architectureLabel(runtime.architecture)}
-            </dd>
-          </div>
-          <div>
-            <dt>{t("providers.runtime.listener")}</dt>
-            <dd className="asb-code">{listenerLabel(runtime.transport, t)}</dd>
-          </div>
-          <div>
-            <dt>{t("providers.runtime.response")}</dt>
-            <dd>{responseLabel(runtime.transport, t)}</dd>
-          </div>
-          <div>
-            <dt>{t("providers.runtime.appData")}</dt>
-            <dd>
-              <FactPath path={runtime.appDataPath} open={openAppDataDir} />
-            </dd>
-          </div>
-        </dl>
+        <FactList rows={[
+          { label: t("providers.runtime.appVersion"), value: `v${runtime.appVersion}` },
+          { label: t("providers.runtime.buildMode"), value: buildModeLabel(runtime.buildMode, t) },
+          { label: t("providers.runtime.platform"),
+            value: `${platformLabel(runtime.platform)} · ${architectureLabel(runtime.architecture)}` },
+          { label: t("providers.runtime.listener"),
+            value: <span className="asb-code">{listenerLabel(runtime.transport, t)}</span> },
+          { label: t("providers.runtime.response"), value: responseLabel(runtime.transport, t) },
+          { label: t("providers.runtime.appData"), value: <FactPath path={runtime.appDataPath} open={openAppDataDir} /> },
+        ]} />
       )}
     </section>
   );

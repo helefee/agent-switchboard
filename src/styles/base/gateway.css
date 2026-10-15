@@ -9,37 +9,29 @@
 
 .asb-gateway-panel { container: gateway / inline-size; }
 
-/* —— 网关节点：全图唯一视觉锚点 —— */
+/* —— 网关事实轨：状态 · 本机地址 · 端口 · 动作共享一条中轴基线；块按内容
+ * 取宽，空间不足时按组换行，失败说明整行独占。拓扑大图的中央节点是
+ * asb-gateway-node is-hub（gateway-topology.css），与本块互不借用。 —— */
 
 .asb-gateway-hub {
   display: flex;
-  flex-direction: column;
-  gap: var(--asb-space-4);
-  align-self: center;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--asb-space-2) var(--asb-space-4);
+  align-self: stretch;
   min-width: 0;
-  padding: var(--asb-space-2);
+  padding: var(--asb-space-3) var(--asb-space-4);
+  border-radius: var(--asb-radius-group);
+  background: var(--asb-content-muted);
 }
 
 .asb-gateway-hub-identity {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: var(--asb-space-2);
-  min-width: 0;
-}
-
-.asb-gateway-hub-copy {
-  display: grid;
+  align-items: flex-start;
   gap: var(--asb-space-hairline);
+  flex: none;
   min-width: 0;
-  justify-items: center;
-}
-
-.asb-gateway-kicker {
-  margin: 0;
-  color: var(--asb-text-muted);
-  font: var(--asb-text-caption);
-  font-weight: 600;
 }
 
 .asb-gateway-hub-state {
@@ -48,8 +40,7 @@
   gap: var(--asb-space-1);
   margin: 0;
   color: var(--asb-text);
-  font: var(--asb-text-title);
-  letter-spacing: -0.025em;
+  font: var(--asb-text-section);
 }
 
 .asb-gateway-hub.is-failure .asb-gateway-hub-state { color: var(--asb-danger); }
@@ -72,19 +63,29 @@
 .asb-gateway-lamp.is-running { background: var(--asb-safe); }
 .asb-gateway-lamp.is-failure { background: var(--asb-danger); }
 
-/* Keep the complete loopback address and copy action on the same rail. */
+/* The address label reads like the port labels: inline, muted, one grammar. */
 .asb-gateway-hub-address {
-  display: grid;
-  gap: var(--asb-space-1);
-  min-width: 0;
-}
-
-.asb-gateway-plate {
   display: flex;
   align-items: center;
   gap: var(--asb-space-2);
+  flex: 0 1 auto;
   min-width: 0;
-  padding: var(--asb-space-1);
+}
+
+.asb-gateway-address-label {
+  margin: 0;
+  color: var(--asb-text-muted);
+  font: var(--asb-text-label);
+  white-space: nowrap;
+}
+
+/* 地址牌是轨上唯一带边框的元素；复制动作固定为紧凑图标，复制前后占位一致。 */
+.asb-gateway-plate {
+  display: flex;
+  align-items: center;
+  gap: var(--asb-space-1);
+  min-width: 0;
+  padding: var(--asb-space-concentric);
   border: 1px solid var(--asb-hairline);
   border-radius: var(--asb-radius);
   background: var(--asb-content);
@@ -95,7 +96,11 @@
   background: color-mix(in srgb, var(--asb-danger) 5%, var(--asb-content-muted));
 }
 
-.asb-gateway-plate > .asb-btn { flex: none; }
+.asb-gateway-plate > .asb-btn {
+  flex: none;
+  width: var(--asb-control-height-compact);
+  height: var(--asb-control-height-compact);
+}
 
 .asb-gateway-plate-address {
   flex: 1 1 auto;
@@ -117,17 +122,15 @@
   overflow-wrap: anywhere;
 }
 
-.asb-gateway-hub-failure { display: grid; gap: var(--asb-space-1); }
+.asb-gateway-hub-failure { display: grid; gap: var(--asb-space-1); flex: 0 0 100%; }
 .asb-gateway-hub-detail { margin: 0; color: var(--asb-text-muted); font: var(--asb-text-caption); overflow-wrap: anywhere; }
 
 .asb-gateway-hub-actions {
   display: flex;
   flex-wrap: wrap;
   gap: var(--asb-space-2);
-  justify-content: flex-end;
+  margin-left: auto;
 }
-
-.asb-gateway-hub.is-failure .asb-gateway-device { color: var(--asb-danger); }
 
 /* —— 主图内嵌指引：修复指引与恢复阻塞附着在图内，不另起平级告警卡 —— */
 

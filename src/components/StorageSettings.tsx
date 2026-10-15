@@ -6,7 +6,9 @@ import { useMessageState } from "../i18n/use-message-state";
 import { localizedMessageText } from "../i18n/errors";
 import { Button } from "./Button";
 import { ConfirmSheet } from "./ConfirmSheet";
-import { Input } from "./Input";
+import { DatePicker } from "./DatePicker";
+import { FactList } from "./FactList";
+import { Time } from "./Time";
 
 function defaultCutoff() {
   const date = new Date(); date.setUTCDate(date.getUTCDate() - 90);
@@ -62,12 +64,12 @@ export function StorageSettings({ active, busy, onArchived }: { active: boolean;
   return <section className="asb-storage-settings" aria-labelledby="storage-settings-heading">
     <h3 className="asb-section-title" id="storage-settings-heading">{t("storage.title")}</h3>
     <p className="asb-field-help">{t("storage.description")}</p>
-    {state.usage && <dl className="asb-session-facts">
-      <dt>{t("storage.data")}</dt><dd>{bytes(state.usage.dataBytes)}</dd>
-      <dt>{t("storage.backups")}</dt><dd>{bytes(state.usage.backupBytes)}</dd>
-      <dt>{t("storage.history")}</dt><dd>{bytes(state.usage.historyBytes)}</dd>
-      {state.usage.cacheMaintenance && <><dt>{t("storage.cache")}</dt><dd>{bytes(state.usage.cacheBytes)}</dd></>}
-    </dl>}
+    {state.usage && <FactList rows={[
+      { label: t("storage.data"), value: bytes(state.usage.dataBytes) },
+      { label: t("storage.backups"), value: bytes(state.usage.backupBytes) },
+      { label: t("storage.history"), value: bytes(state.usage.historyBytes) },
+      ...(state.usage.cacheMaintenance ? [{ label: t("storage.cache"), value: bytes(state.usage.cacheBytes) }] : []),
+    ]} />}
     <div className="asb-session-actions">
       <Button variant="secondary" disabled={disabled} onClick={() => void state.refresh()}>{t("storage.refresh")}</Button>
       {state.usage?.cacheMaintenance && <Button variant="secondary" disabled={disabled || state.usage.cacheClearing}
@@ -75,7 +77,8 @@ export function StorageSettings({ active, busy, onArchived }: { active: boolean;
     </div>
     {state.usage?.cacheMaintenance && <p className="asb-field-help">{t("storage.cachePolicy", { budget: bytes(state.usage.cacheBudgetBytes) })}</p>}
     <label className="asb-storage-cutoff">{t("storage.cutoff")}
-      <Input type="date" value={cutoff} disabled={disabled} onChange={(event) => { setCutoff(event.target.value); state.setPlan(null); }} />
+      <DatePicker value={cutoff} disabled={disabled} ariaLabel={t("storage.cutoff")}
+        onChange={(value) => { setCutoff(value); state.setPlan(null); }} />
     </label>
     <p className="asb-field-help">{t("storage.archivePolicy")}</p>
     <Button variant="secondary" disabled={disabled || !cutoff} onClick={() => void state.run("preview", cutoff)}>{t("storage.previewArchive")}</Button>
@@ -85,7 +88,7 @@ export function StorageSettings({ active, busy, onArchived }: { active: boolean;
     {state.plan && <ConfirmSheet title={t("storage.archiveTitle")} confirmLabel={t("storage.archiveConfirm")}
       busy={state.working} confirmDisabled={disabled || archiveCount(state.plan) === 0}
       destructive onCancel={() => state.setPlan(null)} onConfirm={() => { void state.run("archive", cutoff); }}>
-      <p>{t("storage.archiveReview", { cutoff: state.plan.cutoff, count: archiveCount(state.plan) })}</p>
+      <p>{t("storage.archiveReview.head", { count: archiveCount(state.plan) })}<Time iso={state.plan.cutoff} mode="date" />{t("storage.archiveReview.tail")}</p>
       <p>{t("storage.archiveProtected")}</p>
       {state.error && <p className="asb-warn-text" role="alert">{state.error}</p>}
     </ConfirmSheet>}

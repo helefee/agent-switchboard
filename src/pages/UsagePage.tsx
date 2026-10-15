@@ -175,15 +175,13 @@ export function UsagePage({ usage }: {
               />
             </section>
           </div>
-          <div className="asb-model-usage-table-wrap">
-            <Table
-              columns={usageColumns(t)}
-              rows={report.groups}
-              rowKey={(group, index) => `${group.app}-${group.model ?? "unknown"}-${index}`}
-              ariaLabel={t("usage.consumption")}
-              className="asb-model-usage-table"
-            />
-          </div>
+          <Table
+            columns={usageColumns(t)}
+            rows={report.groups}
+            rowKey={(group, index) => `${group.app}-${group.model ?? "unknown"}-${index}`}
+            ariaLabel={t("usage.consumption")}
+            className="asb-model-usage-table"
+          />
         </div>
       ) : report ? (
         <div className="asb-empty-state asb-model-usage-empty">

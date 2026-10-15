@@ -2,6 +2,7 @@ import { useId } from "react";
 import type { ProviderEndpoints, UpstreamProtocol } from "../../api/client";
 import { useI18n } from "../../i18n";
 import { Input } from "../Input";
+import { FactList } from "../FactList";
 import { PROTOCOL_NOTES } from "./draft";
 
 interface Props {
@@ -35,9 +36,9 @@ export function ProviderEndpointField({
       <div id={resultId} aria-live="polite">
         {resolvingEndpoint && <p className="asb-scope-note">{t("providers.editor.resolvingEndpoint")}</p>}
         {endpointError && <p className="asb-scope-note asb-warn-text" role="alert">{endpointError}</p>}
-        {endpoints && <dl className="asb-provider-resolved-endpoint">
-          <dt>{t("providers.label.requestUrl")}</dt><dd>{endpoints.requestUrl}</dd>
-        </dl>}
+        {endpoints && <FactList rows={[
+          { label: t("providers.label.requestUrl"), value: <span className="asb-code">{endpoints.requestUrl}</span> },
+        ]} />}
       </div>
     </div>
   );

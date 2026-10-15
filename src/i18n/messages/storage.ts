@@ -22,7 +22,8 @@ export const messages = {
   "storage.previewArchive": ["预览历史归档", "Preview history archive"],
   "storage.archiveTitle": ["归档并回收旧历史", "Archive and reclaim older history"],
   "storage.archiveConfirm": ["选择归档位置并执行", "Choose archive location and continue"],
-  "storage.archiveReview": ["将归档 {cutoff} 之前的 {count} 条历史记录。所选位置保存完整压缩归档；导出成功后，这些记录将移出应用内历史。", "Archive {count} history records from before {cutoff}. A complete compressed archive is saved to your selected location; after successful export, these records are removed from in-app history."],
+  "storage.archiveReview.head": ["将归档 {count} 条 ", "Archive {count} history records from before "],
+  "storage.archiveReview.tail": [" 之前的历史记录。所选位置保存完整压缩归档；导出成功后，这些记录将移出应用内历史。", ". A complete compressed archive is saved to your selected location; after successful export, these records are removed from in-app history."],
   "storage.archiveProtected": ["恢复备份及当前计费周期保持可用。历史变化时会拒绝过期计划；回收失败的部分会单独报告。", "Recovery backups and the current billing period remain available. Changes to history invalidate the preview; incomplete reclamation is reported separately."],
   "storage.archived": ["已回收 {count} 条历史记录。完整归档：{path}", "Reclaimed {count} history records. Complete archive: {path}"],
 } as const satisfies Record<string, MessageEntry>;

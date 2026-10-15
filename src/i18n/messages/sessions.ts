@@ -45,7 +45,6 @@ export const messages = {
   "sessions.time.from": ["开始日期", "From date"],
   "sessions.time.to": ["结束日期（含当天）", "Through date (inclusive)"],
   "sessions.time.invalid": ["结束日期不能早于开始日期。", "The end date cannot precede the start date."],
-  "sessions.time.invalidDate": ["请输入有效日期（年份为 0001 至 9999）；结束日期不能超过 9999-12-30。", "Enter valid dates with years from 0001 to 9999; the through date must be before 9999-12-31."],
   "sessions.batchDelete.failedUnknown": ["{title}：未知错误", "{title}: Unknown error"],
   "sessions.role.user": ["用户", "User"],
   "sessions.role.assistant": ["助手", "Assistant"],

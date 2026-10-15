@@ -35,22 +35,20 @@ function HistoryRecord({ record, props }: { record: ExtensionOperationRecord; pr
         {t("extensions.history.restore")}
       </Button>
     </div>
-    {rows.length > 0 && <div className="asb-ext-table-scroll" tabIndex={0}>
-      <Table rows={rows} rowKey={(row, index) => `${row.resource.definitionId}:${index}`}
-        ariaLabel={t("extensions.history.resultsAria", { time: record.createdAt })}
-        className="asb-ext-management-table" columns={[
-          { key: "extension", header: t("extensions.table.extension"), render: (row) => nameOf(row.resource.definitionId) },
-          { key: "operation", header: t("extensions.table.actions"), render: (row) => t(OPERATION_LABELS[row.resource.operation]) },
-          { key: "target", header: t("extensions.table.target"), render: (row) => row.target
-            ? targetLabel(row.target.target, props.projectNames) : "—" },
-          { key: "outcome", header: t("extensions.table.result"), render: (row) => row.target ? (
-            <div className="asb-ext-table-cell-stack">
-              <span>{outcomeText(row.target.outcome)}</span>
-              {row.target.warnings?.map((warning) => <span key={warning} className="asb-warn-text">{warning}</span>)}
-            </div>
-          ) : "—" },
-        ]} />
-    </div>}
+    {rows.length > 0 && <Table rows={rows} rowKey={(row, index) => `${row.resource.definitionId}:${index}`}
+      ariaLabel={t("extensions.history.resultsAria", { time: record.createdAt })}
+      className="asb-ext-management-table" columns={[
+        { key: "extension", header: t("extensions.table.extension"), render: (row) => nameOf(row.resource.definitionId) },
+        { key: "operation", header: t("extensions.table.actions"), render: (row) => t(OPERATION_LABELS[row.resource.operation]) },
+        { key: "target", header: t("extensions.table.target"), render: (row) => row.target
+          ? targetLabel(row.target.target, props.projectNames) : "—" },
+        { key: "outcome", header: t("extensions.table.result"), render: (row) => row.target ? (
+          <div className="asb-ext-table-cell-stack">
+            <span>{outcomeText(row.target.outcome)}</span>
+            {row.target.warnings?.map((warning) => <span key={warning} className="asb-warn-text">{warning}</span>)}
+          </div>
+        ) : "—" },
+      ]} />}
     {record.rollback && <p className="asb-scope-note">
       {t("extensions.history.rollback", { restored: record.rollback.restored.length, failed: record.rollback.failed.length })}
     </p>}

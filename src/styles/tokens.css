@@ -200,7 +200,6 @@
   --asb-dialog-width-wide: 1000px;
   --asb-dialog-viewport-max: 90dvh;
   --asb-detail-aside-width: 240px;
-  --asb-fact-label-width: 6em;
   --asb-menu-min-width: 190px;
   --asb-select-min-width: 108px;
   /* Reading measures: a form never runs the full window width, and long

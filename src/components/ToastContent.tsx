@@ -4,7 +4,9 @@ import { isToastMessage, type ToastContent } from "./use-toast";
 /** Resolve descriptors at render time so existing messages follow language changes. */
 export function ToastText({ content }: { content: ToastContent }) {
   const { t } = useI18n();
-  if (isToastMessage(content)) return <>{t(content.key, content.params)}</>;
+  // The queued key and params crossed a runtime queue that erases the
+  // template contract; `toastMessage` checked them at the producer.
+  if (isToastMessage(content)) return <>{t(content.key, content.params as never)}</>;
   return <>{content}</>;
 }
 

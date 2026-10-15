@@ -72,4 +72,17 @@ export const messages = {
   "settings.performance.hardwareAcceleration": ["启用硬件加速", "Enable hardware acceleration"],
   "settings.performance.restartRequired": ["重启以应用硬件加速", "Restart to apply hardware acceleration"],
   "settings.performance.restart": ["重启应用", "Restart app"],
+
+  "settings.egress.title": ["出口代理", "Egress proxy"],
+  "settings.egress.description": ["网关上游、端点探测、官方额度与官方登录都经由这里的出口策略。", "Gateway upstreams, endpoint probes, official quota and official sign-ins all follow this egress policy."],
+  "settings.egress.mode": ["出站模式", "Outbound mode"],
+  "settings.egress.mode.none": ["直连", "Direct"],
+  "settings.egress.mode.system": ["跟随系统", "System"],
+  "settings.egress.mode.manual": ["手动代理", "Manual"],
+  "settings.egress.url": ["代理地址", "Proxy URL"],
+  "settings.egress.urlHelp": ["支持 http、https、socks5、socks5h，例如 http://127.0.0.1:7890。", "Supports http, https, socks5 and socks5h, e.g. http://127.0.0.1:7890."],
+  "settings.egress.systemNote": ["「跟随系统」在应用外切换系统代理后，需在应用内重新保存或重启应用后生效。", "After the OS proxy is toggled outside the app, \"System\" picks it up on the next in-app save or restart."],
+  "settings.egress.save": ["保存出口代理", "Save egress proxy"],
+  "settings.egress.saved": ["出口代理设置已保存。", "Egress proxy settings saved."],
+  "settings.egress.repair": ["重置为默认设置", "Reset to default settings"],
 } as const satisfies Record<string, MessageEntry>;

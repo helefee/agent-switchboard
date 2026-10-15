@@ -58,15 +58,17 @@ function GatewayStrip({ metrics }: { metrics: GatewayMetricsStatus }) {
         <p className="asb-gateway-gauge-label">{t("gateway.totalRequests")}</p>
         <p className="asb-gateway-gauge-value">{totalRequests}</p>
         <p className="asb-gateway-gauge-detail">{t("gateway.totalDetail", { count: windowTotal })}</p>
-        <div className="asb-gateway-trend" aria-hidden="true">
-          {buckets.map((count, index) => (
-            <span
-              key={index}
-              className="asb-gateway-trend-bar"
-              style={{ height: barHeightPercent(count, max) }}
-            />
-          ))}
-        </div>
+        {windowTotal > 0 && (
+          <div className="asb-gateway-trend" aria-hidden="true">
+            {buckets.map((count, index) => (
+              <span
+                key={index}
+                className="asb-gateway-trend-bar"
+                style={{ height: barHeightPercent(count, max) }}
+              />
+            ))}
+          </div>
+        )}
       </div>
       <div className={`asb-gateway-gauge${failedRequests > 0 ? " is-warning" : ""}`}>
         <p className="asb-gateway-gauge-label">{t("gateway.failedRequests")}</p>
@@ -75,10 +77,12 @@ function GatewayStrip({ metrics }: { metrics: GatewayMetricsStatus }) {
       </div>
       <div className="asb-gateway-gauge">
         <p className="asb-gateway-gauge-label">{t("gateway.latencyTitle")}</p>
-        <div className="asb-gateway-latency">
-          <LatencyRow label={t("gateway.latencyMedian")} ms={p50} scaleMax={p95} />
-          <LatencyRow label={t("gateway.latencyP95")} ms={p95} scaleMax={p95} />
-        </div>
+        {hasLatency && (
+          <div className="asb-gateway-latency">
+            <LatencyRow label={t("gateway.latencyMedian")} ms={p50} scaleMax={p95} />
+            <LatencyRow label={t("gateway.latencyP95")} ms={p95} scaleMax={p95} />
+          </div>
+        )}
         <p className="asb-gateway-gauge-detail">{hasLatency ? t("gateway.latencyOnlyCompleted") : t("gateway.latencyNoCompleted")}</p>
       </div>
       <div className="asb-gateway-gauge is-protocol">
@@ -178,16 +182,15 @@ function GatewayRecentRequests({ samples, profileNames, focus }: {
         </span>
       </header>
       {recent.length > 0 && (
-        <div className="asb-gateway-recent-table">
-          <Table
-            ariaLabel={t("gateway.recentTableAriaLabel")}
-            columns={recentColumns(t, profileNames)}
-            rows={recent}
-            rowKey={(sample) =>
-              `${sample.atMs}:${sample.app}:${sample.profileId ?? "-"}:${sample.routeRevision ?? "-"}`
-            }
-          />
-        </div>
+        <Table
+          ariaLabel={t("gateway.recentTableAriaLabel")}
+          columns={recentColumns(t, profileNames)}
+          rows={recent}
+          rowKey={(sample) =>
+            `${sample.atMs}:${sample.app}:${sample.profileId ?? "-"}:${sample.routeRevision ?? "-"}`
+          }
+          className="asb-gateway-recent-table"
+        />
       )}
       <p className="asb-gateway-note">
         {t("gateway.telemetryNote")}

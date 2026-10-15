@@ -31,7 +31,7 @@ Status: implemented
 
 - 收益：设备类型、连接方向与监听事实分别有图形及文字承载；聚焦共享 ClientFilter 与页面内唯一状态，用户可从节点直接缩小最近请求范围；没有当前路由的客户端不再伪装接入。
 - 代价：SVG 设备占用更多图面高度；曲线增加尺寸观察和帧调度，窄窗口顺序堆叠并隐藏连线。视图不支持自由相机或平移缩放，因为所有状态文字与地址须始终可读。
-- 所有权：GatewayPage 拥有快照读取、临时聚焦与端口弹层；GatewayTopology 拥有路由和样本归属；GatewayTopologyWires 独占设备端点测量与曲线；GatewayHub 拥有监听状态呈现；GatewayDeviceArt 只输出装饰性 SVG；GatewayTelemetry 的仪表仍用全量 metrics，最近请求先筛选再截取 20 条。
+- 所有权：GatewayPage 拥有快照读取、临时聚焦与端口弹层；GatewayTopology 拥有路由和样本归属；GatewayTopologyWires 独占设备端点测量与曲线；GatewayHub 拥有设置页监听事实轨（asb-gateway-hub，样式独存于 gateway.css），拓扑中央节点由 GatewayTopology 以 asb-gateway-node is-hub 自有渲染与持有样式，两者不互借类；GatewayDeviceArt 只输出装饰性 SVG；GatewayTelemetry 的仪表仍用全量 metrics，最近请求先筛选再截取 20 条。
 - 删除旧 GatewayMap、平面卡片节点、线中协议芯片、竖向母线、伪元素连线、底面网格与模块分割线及对应样式，没有并存的旧渲染路径；保留现有协议本地化、配置执行器与端口事务。DESIGN.md 更新为同一事实。
 - 布局静态目检覆盖 1080 / 820 / 440 像素内容宽度、浅深主题、监听失败、空路由与聚焦反馈，使用当前源样式与设备 SVG、隔离示例数据，不访问真实配置。宽、中曲线路径未遮挡状态和地址，窄布局没有模块分割线；深色标记底面与中性空设备依据目检修正。文案静态预览覆盖 820 像素监听失败指引和 440 像素请求统计、表格横向滚动，应用品牌名与成功、失败状态可完整读取。静态服务只暴露隔离目录内的示例 HTML、CSS、字体与品牌图标。
 - 按项目约定不运行编译、类型检查或自动化测试。静态预览不证明 React 运行时、真实轮询、端口提交或筛选事件正确；这些仍未执行验收。

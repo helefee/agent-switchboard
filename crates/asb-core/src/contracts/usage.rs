@@ -338,6 +338,60 @@ pub struct CodexOfficialQuotaReset {
     pub resets_at: Option<String>,
 }
 
+/// The class of one outbound transport failure, shared by the quota read and
+/// the endpoint probe surfaces. The classification owner; user-visible text
+/// lives in the renderer's message catalog.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum CodexTransportClass {
+    Dns,
+    Timeout,
+    Connect,
+    Tls,
+    Other,
+}
+
+/// Which stage of one official-quota read failed.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum CodexQuotaReadFailureKind {
+    /// The request never received an HTTP answer.
+    Transport,
+    /// The server answered outside the accepted status range.
+    HttpStatus,
+    /// A 2xx body did not parse into any quota window.
+    InvalidResponse,
+}
+
+/// Why one official-quota read failed after an attempt was made. Present
+/// exactly on `Unavailable` and `ReauthenticationRequired` reads; `Available`
+/// succeeded and `SignInRequired` never attempted, so both carry none.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct CodexQuotaReadFailure {
+    pub kind: CodexQuotaReadFailureKind,
+    /// Set only when `kind` is `Transport`.
+    pub transport_class: Option<CodexTransportClass>,
+    /// Set only when `kind` is `HttpStatus`.
+    pub http_status: Option<u16>,
+}
+
+impl CodexQuotaReadFailure {
+    pub fn transport(class: CodexTransportClass) -> Self {
+        Self { kind: CodexQuotaReadFailureKind::Transport, transport_class: Some(class), http_status: None }
+    }
+
+    pub fn http_status(status: u16) -> Self {
+        Self { kind: CodexQuotaReadFailureKind::HttpStatus, transport_class: None, http_status: Some(status) }
+    }
+
+    pub const INVALID_RESPONSE: Self = Self {
+        kind: CodexQuotaReadFailureKind::InvalidResponse,
+        transport_class: None,
+        http_status: None,
+    };
+}
+
 /// A normalized read of the existing Codex ChatGPT-login quota. On a failed
 /// refresh, `windows` can retain the most recent in-process successful read
 /// and `stale` makes that fact explicit.
@@ -352,4 +406,7 @@ pub struct CodexOfficialQuota {
     /// The most recent locally detected reset known when this read was
     /// recorded. Absent on reads that never ran the comparison.
     pub last_reset: Option<CodexOfficialQuotaReset>,
+    /// Why this read failed, present exactly on `Unavailable` and
+    /// `ReauthenticationRequired`.
+    pub failure: Option<CodexQuotaReadFailure>,
 }

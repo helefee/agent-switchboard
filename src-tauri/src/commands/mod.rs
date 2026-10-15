@@ -26,6 +26,7 @@ mod app_settings;
 pub(crate) mod claude_integration;
 pub(crate) mod codex_project_plans;
 mod discovery;
+mod outbound_proxy_settings;
 mod profiles;
 mod query;
 mod quota;
@@ -85,6 +86,7 @@ impl ConfigWriteGate {
 
 pub use app_settings::*;
 pub use discovery::*;
+pub use outbound_proxy_settings::*;
 pub use profiles::*;
 pub use query::*;
 pub use quota::*;

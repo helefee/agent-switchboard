@@ -18,16 +18,9 @@
 .asb-provider-connection-choice { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 22rem), 1fr)); gap: var(--asb-space-3); }
 .asb-provider-route-note { display: grid; gap: var(--asb-space-1); }
 
-.asb-provider-resolved-endpoint {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: baseline;
-  gap: var(--asb-space-2);
-  margin: var(--asb-space-1) 0 0;
-  font: var(--asb-text-label);
-}
-.asb-provider-resolved-endpoint dt { color: var(--asb-text-muted); }
-.asb-provider-resolved-endpoint dd { margin: 0; overflow-wrap: anywhere; font: var(--asb-text-code); }
+/* The resolved request URL speaks through the shared FactList; the field owns
+   only its spacing above the facts. */
+.asb-provider-endpoint .asb-fact-row { margin-top: var(--asb-space-1); }
 
 .asb-provider-model-toolbar {
   display: grid;
@@ -99,7 +92,6 @@
   .asb-provider-model-toolbar { grid-template-columns: minmax(0, 1fr); align-items: start; }
   .asb-provider-model-actions { align-self: start; }
   .asb-collapsible-section .asb-collapsible-summary { flex-wrap: wrap; }
-  .asb-provider-resolved-endpoint { grid-template-columns: minmax(0, 1fr); gap: var(--asb-space-1); }
   .asb-provider-subagent-model-control { flex-basis: 100%; max-width: none; }
   .asb-provider-mapping-row { grid-template-columns: minmax(0, 1fr); }
   .asb-provider-mapping-arrow { display: none; }

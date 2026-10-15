@@ -1,5 +1,5 @@
 import { invoke } from "./client";
-import type { AppKind, AuthenticationScheme, ModelOptions, ResponsesOptions, UpstreamProtocol } from "./shared";
+import type { AppKind, AuthenticationScheme, CodexTransportClass, ModelOptions, ResponsesOptions, UpstreamProtocol } from "./shared";
 import type { UsageQuery } from "./usage";
 import type { FilePreview } from "./switching";
 import type { SettingsValues } from "./settings";
@@ -233,7 +233,8 @@ export interface ProbeResult {
   grade: ProbeGrade;
   status: number | null;
   latencyMs: number | null;
-  error: string | null;
+  /** Set exactly when grade is unreachable; the text lives in the catalog. */
+  errorClass: CodexTransportClass | null;
   at: string;
 }
 

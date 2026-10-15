@@ -135,13 +135,11 @@ function ResetHeatmap({ heatmap }: { heatmap: CodexResetHeatmap }) {
       </div>
       <CollapsibleSection quiet open={dailyOpen} onOpenChange={setDailyOpen}
         label={t("codex.reset.dailyData")}>
-        <div className="asb-codex-reset-daily-data" tabIndex={0}>
-          <Table rows={cells.filter((cell) => cell.day)} rowKey={(cell) => cell.key}
-            ariaLabel={t("codex.reset.dailyData")} columns={[
-              { key: "date", header: t("codex.reset.dailyDate"), render: (cell) => cell.key },
-              { key: "count", header: t("codex.reset.dailyCount"), align: "end", render: (cell) => cell.day?.count ?? 0 },
-            ]} />
-        </div>
+        <Table rows={cells.filter((cell) => cell.day)} rowKey={(cell) => cell.key}
+          ariaLabel={t("codex.reset.dailyData")} className="asb-codex-reset-daily-table" columns={[
+            { key: "date", header: t("codex.reset.dailyDate"), render: (cell) => cell.key },
+            { key: "count", header: t("codex.reset.dailyCount"), align: "end", render: (cell) => cell.day?.count ?? 0 },
+          ]} />
       </CollapsibleSection>
     </div>
   );

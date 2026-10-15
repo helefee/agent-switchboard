@@ -1,29 +1,24 @@
-import { useId } from "react";
 import { useI18n } from "../../i18n";
 import { Select } from "../Select";
-import { Input } from "../Input";
+import { DatePicker } from "../DatePicker";
 import type { SessionSearch } from "./use-session-search";
 
+/** Values come from the date picker, so they are always valid `YYYY-MM-DD`;
+ * the only guard is the +1-day overflow of a 9999-12-31 through date. */
 function dateBoundary(value: string, nextDay: boolean) {
   if (!value) return null;
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(value) || Number(value.slice(0, 4)) === 0) return false;
   const date = new Date(`${value}T00:00:00`);
-  if (!Number.isFinite(date.getTime()) || date.getMonth() + 1 !== Number(value.slice(5, 7))
-    || date.getDate() !== Number(value.slice(8, 10))) return false;
   if (nextDay) date.setDate(date.getDate() + 1);
-  if (date.getFullYear() > 9999) return false;
+  if (date.getFullYear() > 9999) return null;
   return date.toISOString();
 }
 
-function SessionTimeFilter({ search, disabled, invalid, errorId }: {
-  search: SessionSearch; disabled: boolean; invalid: boolean; errorId: string | undefined;
-}) {
+function SessionTimeFilter({ search, disabled }: { search: SessionSearch; disabled: boolean }) {
   const { t } = useI18n();
   const { range, from, to } = search.timeDraft;
   const apply = (start: string, end: string) => {
-    const activeAfter = dateBoundary(start, false), activeBefore = dateBoundary(end, true);
-    if (activeAfter !== false && activeBefore !== false && (!start || !end || start <= end)) {
-      search.changeDates({ activeAfter, activeBefore });
+    if (!start || !end || start <= end) {
+      search.changeDates({ activeAfter: dateBoundary(start, false), activeBefore: dateBoundary(end, true) });
     }
   };
   const change = (value: string) => {
@@ -43,34 +38,28 @@ function SessionTimeFilter({ search, disabled, invalid, errorId }: {
       { value: "30", label: t("sessions.time.month") }, { value: "custom", label: t("sessions.time.custom") },
     ]} />
     {range === "custom" && <div className="asb-session-date-range">
-      <label>{t("sessions.time.from")}<Input type="date" value={from} disabled={disabled}
-        aria-invalid={invalid} aria-describedby={errorId}
-        onChange={(event) => update(event.target.value, to)} /></label>
-      <label>{t("sessions.time.to")}<Input type="date" value={to} disabled={disabled}
-        aria-invalid={invalid} aria-describedby={errorId}
-        onChange={(event) => update(from, event.target.value)} /></label>
+      <label>{t("sessions.time.from")}<DatePicker value={from} disabled={disabled}
+        ariaLabel={t("sessions.time.from")} onChange={(value) => update(value, to)} /></label>
+      <label>{t("sessions.time.to")}<DatePicker value={to} disabled={disabled}
+        ariaLabel={t("sessions.time.to")} onChange={(value) => update(from, value)} /></label>
     </div>}
   </>;
 }
 
 export function SessionOrganizationFilters({ search, disabled }: { search: SessionSearch; disabled: boolean }) {
   const { t } = useI18n();
-  const errorId = useId();
   const { range, from, to } = search.timeDraft;
-  const invalidDate = range === "custom"
-    && (dateBoundary(from, false) === false || dateBoundary(to, true) === false);
-  const invalidRange = range === "custom" && Boolean(from && to && from > to);
-  const invalid = invalidDate || invalidRange;
+  const invalid = range === "custom" && Boolean(from && to && from > to);
   return <>
-    <SessionTimeFilter search={search} disabled={disabled} invalid={invalid} errorId={invalid ? errorId : undefined} />
+    <SessionTimeFilter search={search} disabled={disabled} />
     <Select value={search.tag === null ? "all" : `tag:${search.tag}`} ariaLabel={t("sessions.organize.tagFilter")}
       disabled={disabled} onChange={(value) => search.changeTag(value === "all" ? null : value.slice(4))}
       options={[{ value: "all", label: t("sessions.organize.allTags") },
         ...[...new Set([...search.tags, ...(search.tag ? [search.tag] : [])])].map((tag) => ({ value: `tag:${tag}`, label: tag }))]} />
     <label className="asb-session-pin-filter"><input type="checkbox" checked={search.pinnedOnly} disabled={disabled}
       onChange={(event) => search.changePinned(event.target.checked)} />{t("sessions.organize.pinnedOnly")}</label>
-    {invalid && <p id={errorId} className="asb-field-error asb-session-filter-error" role="alert">
-      {t(invalidDate ? "sessions.time.invalidDate" : "sessions.time.invalid")}
+    {invalid && <p className="asb-field-error asb-session-filter-error" role="alert">
+      {t("sessions.time.invalid")}
     </p>}
   </>;
 }

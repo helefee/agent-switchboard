@@ -92,13 +92,11 @@ function SkillUpdateManagement({ item, updateReport: report, busy, onApplyUpdate
         )}
       </div>
       {!current && report.changedFiles.length > 0 && (
-        <div className="asb-ext-table-scroll" tabIndex={0}>
-          <Table rows={report.changedFiles} rowKey={(file) => `${file.action}:${file.relativePath}`}
-            ariaLabel={t("extensions.management.sourceUpdates")} columns={[
-              { key: "file", header: t("extensions.table.file"), render: (file) => <span className="asb-code">{file.relativePath}</span> },
-              { key: "change", header: t("extensions.table.change"), render: (file) => t(SKILL_CHANGE_LABELS[file.action]) },
-            ]} />
-        </div>
+        <Table rows={report.changedFiles} rowKey={(file) => `${file.action}:${file.relativePath}`}
+          ariaLabel={t("extensions.management.sourceUpdates")} columns={[
+            { key: "file", header: t("extensions.table.file"), render: (file) => <span className="asb-code">{file.relativePath}</span> },
+            { key: "change", header: t("extensions.table.change"), render: (file) => t(SKILL_CHANGE_LABELS[file.action]) },
+          ]} />
       )}
     </div>
   );

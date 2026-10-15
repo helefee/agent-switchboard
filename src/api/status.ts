@@ -11,6 +11,7 @@ export type RuntimeLogAction =
   | "storageHistoryArchived"
   | "appSettingsSaved"
   | "outboundProxySaved"
+  | "outboundProxyRepaired"
   | "codexSubagentSettingsApplied"
   | "providersSqlImported"
   | "appSettingsRepaired"

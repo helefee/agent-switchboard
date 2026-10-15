@@ -208,28 +208,6 @@
   gap: var(--asb-space-2);
 }
 
-/* Detail facts keep each value in its own row so the session id and project
-   path remain readable without competing with header actions. */
-.asb-session-facts {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  align-items: baseline;
-  gap: var(--asb-space-1) var(--asb-space-2);
-  margin: 0;
-}
-
-.asb-session-facts dt {
-  color: var(--asb-text-muted);
-  font: var(--asb-text-label);
-}
-
-.asb-session-facts dd {
-  margin: 0;
-  min-width: 0;
-  overflow-wrap: anywhere;
-  font: var(--asb-text-body);
-}
-
 .asb-session-resume-fact {
   display: flex;
   align-items: center;

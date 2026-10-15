@@ -108,7 +108,7 @@ export const messages = {
 	"usage.query.totalPathAria": ["总量提取路径", "Total extraction path"],
 	"usage.query.unit": ["单位", "Unit"],
 	"usage.query.unitAria": ["用量单位", "Usage unit"],
-	"usage.query.declarativeNote": ["以一次 GET 请求读取 JSON；地址可使用 {baseUrl} 与 {apiKey}。", "Reads JSON with a single GET request; the URL may use {baseUrl} and {apiKey}."],
+	"usage.query.declarativeNote": ["以一次 GET 请求读取 JSON；地址可使用 {baseUrl} 与 {apiKeyExample}。", "Reads JSON with a single GET request; the URL may use {baseUrl} and {apiKeyExample}."],
 	"usage.query.fieldsNote": ["每组可含 planName、remaining、used、total、unit、resetsAt（RFC 3339 含时区）、isValid、invalidMessage（仅失效时）、extra；缺失记为 null，不以 0 代替。", "Each group may contain planName, remaining, used, total, unit, resetsAt (RFC 3339 with timezone), isValid, invalidMessage (only when invalid) and extra; missing values stay null, never zero."],
 	"usage.query.scriptLabel": ["用量查询脚本", "Usage query script"],
 	"usage.query.input": ["输入", "Input"],

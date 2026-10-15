@@ -251,7 +251,9 @@ export const messages = {
   "clientConfig.quota.emptyReauth": ["请重新登录后读取额度", "Sign in again to read the quota"],
   "clientConfig.quota.emptyUnavailable": ["额度读取失败", "Quota read failed"],
   "clientConfig.quota.emptyDefault": ["尚未查询额度", "Quota not queried yet"],
-  "clientConfig.quota.errorUnavailable": ["官方额度读取失败，请重试。", "Reading the official quota failed; try again."],
+  "clientConfig.quota.failure.transport": ["无法连接官方服务：{detailKey}", "The official service is unreachable: {detailKey}"],
+  "clientConfig.quota.failure.httpStatus": ["官方服务返回 HTTP {status}，请稍后重试。", "The official service returned HTTP {status}; try again later."],
+  "clientConfig.quota.failure.invalidResponse": ["官方服务响应无法解析为额度数据。", "The official service response is not parsable quota data."],
   "clientConfig.quota.errorReauth": ["登录已过期，请重新登录。", "The login has expired; sign in again."],
   "clientConfig.quota.errorSignIn": ["请登录后读取额度。", "Sign in to read the quota."],
   "clientConfig.quota.trendTitle": ["额度趋势", "Quota trend"],
@@ -261,7 +263,6 @@ export const messages = {
   "clientConfig.quota.noReason": ["未提供具体原因", "No specific reason given"],
   "clientConfig.quota.statusSignIn": ["未检测到可用的 Codex 官方登录。请完成登录后刷新。", "No usable Codex official login detected. Sign in and refresh."],
   "clientConfig.quota.statusReauth": ["Codex 官方登录已失效。请重新登录后刷新。", "The Codex official login has expired. Sign in again and refresh."],
-  "clientConfig.quota.statusUnavailable": ["暂时无法读取官方额度，请稍后刷新。", "The official quota cannot be read right now; refresh later."],
 
   // Boundary errors.
   "clientConfig.error.claudeExtraCodex": ["Claude 额外通用配置不能写入 Codex 设置", "Claude extra common settings cannot be written into Codex settings"],

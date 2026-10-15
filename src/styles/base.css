@@ -22,6 +22,7 @@
 @import "./base/setting-input.css";
 @import "./base/client-management.css";
 @import "./base/field-controls.css";
+@import "./base/date-picker.css";
 @import "./base/forms.css";
 @import "./base/tooltip-feedback.css";
 @import "./base/usage-workspace.css";

@@ -7,6 +7,8 @@ import {
   ChartColumnIncreasing,
   Check,
   ChevronDown,
+  ChevronLeft,
+  ChevronRight,
   ChevronUp,
   ChevronsLeft,
   ChevronsRight,
@@ -77,6 +79,8 @@ export const CollapseNavigationIcon = icon(ChevronsLeft, 20);
 export const ExpandNavigationIcon = icon(ChevronsRight, 20);
 
 export const ChevronDownIcon = icon(ChevronDown, 16, 2.4);
+export const ChevronLeftIcon = icon(ChevronLeft, 16, 2.4);
+export const ChevronRightIcon = icon(ChevronRight, 16, 2.4);
 export const ChevronUpIcon = icon(ChevronUp, 16, 2.4);
 export const SearchIcon = icon(Search, 16, 2.4);
 export const ScrollTextIcon = icon(ScrollText, 16, 2.4);

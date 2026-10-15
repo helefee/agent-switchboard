@@ -6,6 +6,7 @@ import { useI18n, type TFunction } from "../i18n";
 import { localizedMessageText } from "../i18n/errors";
 import { Button } from "./Button";
 import { ClientLogo } from "./ClientLogo";
+import { FactList, type FactListRow } from "./FactList";
 import { FactPath } from "./FactPath";
 import { Time } from "./Time";
 import { ModuleHeader } from "./WorkspaceHeader";
@@ -57,10 +58,6 @@ function statusPill(t: TFunction, status: ConfigFileStatus): { ok: boolean; text
   return { ok: true, text: t("clientConfig.pill.ok") };
 }
 
-function StatusField({ label, className, children }: { label: string; className?: string; children: ReactNode }) {
-  return <div><dt>{label}</dt><dd className={className}>{children}</dd></div>;
-}
-
 function ConfigStatusDetails({ status, profiles, lock }: {
   status: ConfigFileStatus;
   profiles: ProviderProfile[];
@@ -68,42 +65,35 @@ function ConfigStatusDetails({ status, profiles, lock }: {
 }) {
   const { t } = useI18n();
   const readable = !status.readError && status.exists && status.syntaxOk;
-  return (
-    <dl className="asb-fact-row">
-      <StatusField label={t("clientConfig.details.configFile")}>
-        <FactPath path={status.path} open={() => openConfigFileLocation(status.app)} />
-      </StatusField>
-      {status.recoveryIssue && (
-        <StatusField label={t("clientConfig.details.recoveryBlocked")} className="asb-warn-text">
-          <span role="status" className="asb-status-warn">{status.recoveryIssue}</span>
-          <span className="asb-status-warn">{t("clientConfig.details.recoveryHelp")}</span>
-        </StatusField>
-      )}
-      {status.readError && <StatusField label={t("clientConfig.details.readError")} className="asb-warn-text">{status.readError}</StatusField>}
-      {readable && <>
-        <StatusField label={t("clientConfig.details.currentProvider")}>{currentProviderName(status, profiles)} · {status.route?.model ?? t("clientConfig.details.defaultModel")}</StatusField>
-        <StatusField label={t("clientConfig.details.matchStatus")}>{matchLabel(t, status.matchStatus)}</StatusField>
-      </>}
-      {status.lastSwitch && (
-        <StatusField label={t("clientConfig.details.lastWrite")}>
-          <Time iso={status.lastSwitch.at} />
-          {status.lastSwitch.operation === "restore"
-            ? t("clientConfig.details.lastRestore")
-            : status.lastSwitch.operation === "gatewayPortChange"
-              ? t("clientConfig.details.lastGatewayPort")
-              : status.lastSwitch.profileName
-                ? t("clientConfig.details.lastProjected", { name: status.lastSwitch.profileName })
-                : t("clientConfig.details.lastWritten")}
-        </StatusField>
-      )}
-      {(status.route?.scopeWarnings.length ?? 0) > 0 && (
-        <StatusField label={t("clientConfig.details.scopeWarnings")}>
-          {status.route?.scopeWarnings.map((warning) => <span key={warning.key} className="asb-warn-text asb-status-warn">{localizedMessageText(warning, t)}</span>)}
-        </StatusField>
-      )}
-      <StatusField label={t("clientConfig.details.writeLock")}>{lockLabel(t, lock)}</StatusField>
-    </dl>
+  const rows: FactListRow[] = [
+    { label: t("clientConfig.details.configFile"),
+      value: <FactPath path={status.path} open={() => openConfigFileLocation(status.app)} /> },
+  ];
+  if (status.recoveryIssue) rows.push({ label: t("clientConfig.details.recoveryBlocked"),
+    value: <><span role="status" className="asb-status-warn">{status.recoveryIssue}</span>
+      <span className="asb-status-warn">{t("clientConfig.details.recoveryHelp")}</span></> });
+  if (status.readError) rows.push({ label: t("clientConfig.details.readError"),
+    value: <span className="asb-warn-text">{status.readError}</span> });
+  if (readable) rows.push(
+    { label: t("clientConfig.details.currentProvider"),
+      value: <>{currentProviderName(status, profiles)} · {status.route?.model ?? t("clientConfig.details.defaultModel")}</> },
+    { label: t("clientConfig.details.matchStatus"), value: matchLabel(t, status.matchStatus) },
   );
+  if (status.lastSwitch) rows.push({ label: t("clientConfig.details.lastWrite"),
+    value: <>
+      <Time iso={status.lastSwitch.at} />
+      {status.lastSwitch.operation === "restore"
+        ? t("clientConfig.details.lastRestore")
+        : status.lastSwitch.operation === "gatewayPortChange"
+          ? t("clientConfig.details.lastGatewayPort")
+          : status.lastSwitch.profileName
+            ? t("clientConfig.details.lastProjected", { name: status.lastSwitch.profileName })
+            : t("clientConfig.details.lastWritten")}
+    </> });
+  if ((status.route?.scopeWarnings.length ?? 0) > 0) rows.push({ label: t("clientConfig.details.scopeWarnings"),
+    value: <>{status.route?.scopeWarnings.map((warning) => <span key={warning.key} className="asb-warn-text asb-status-warn">{localizedMessageText(warning, t)}</span>)}</> });
+  rows.push({ label: t("clientConfig.details.writeLock"), value: lockLabel(t, lock) });
+  return <FactList rows={rows} />;
 }
 
 function ConfigStatusCard({ status, profiles, lock, busy, onRecoverLock }: {

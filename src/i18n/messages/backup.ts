@@ -5,6 +5,7 @@ import type { MessageEntry } from "../types";
 export const messages = {
   "backup.action.storageCacheMaintained": ["维护浏览器缓存", "Maintain browser cache"],
   "backup.action.outboundProxySaved": ["保存出站代理", "Save outbound proxy"],
+  "backup.action.outboundProxyRepaired": ["重置出站代理", "Reset outbound proxy"],
   "backup.action.codexSubagentSettingsApplied": ["应用 Codex 子代理设置", "Apply Codex sub-agent settings"],
   "backup.action.providersSqlImported": ["导入供应商 SQL", "Import provider SQL"],
   "backup.action.storageHistoryArchived": ["归档本地历史", "Archive local history"],

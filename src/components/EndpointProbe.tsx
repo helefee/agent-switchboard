@@ -2,6 +2,7 @@ import { useMessageState } from "../i18n/use-message-state";
 import { useEffect, useRef, useState } from "react";
 import { probeEndpoint, type ProbeResult } from "../api/client";
 import { useI18n } from "../i18n";
+import { TRANSPORT_CLASS_KEYS } from "../i18n/errors";
 import { Time } from "./Time";
 
 interface FeedbackProps {
@@ -62,7 +63,7 @@ export function ProbeFeedback({ result, error }: FeedbackProps) {
           }`}
         >
           {result.grade === "unreachable"
-            ? t("providers.probe.unreachable", { detail: result.error ?? t("providers.probe.networkFailed") })
+            ? t("providers.probe.unreachable", { detail: result.errorClass ? t(TRANSPORT_CLASS_KEYS[result.errorClass]) : t("providers.probe.networkFailed") })
             : t("providers.probe.result", {
               grade: result.grade === "ok" ? t("providers.probe.ok") : t("providers.probe.slow"),
               status: result.status ?? "?",

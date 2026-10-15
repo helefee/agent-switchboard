@@ -8,6 +8,7 @@ import { useMessageState } from "../../i18n/use-message-state";
 import { clientFullName } from "../../lib/client-name";
 import { Button } from "../Button";
 import { ClientLogo } from "../ClientLogo";
+import { FactList } from "../FactList";
 import { Time } from "../Time";
 import { copyText, sessionTitle } from "./session-content";
 import { SessionOrganizationEditor } from "./SessionOrganizationEditor";
@@ -45,22 +46,21 @@ function useDetailActions(session: SessionMeta) {
 
 function SessionFacts({ session, copy }: { session: SessionMeta; copy: (text: string, labelKey: MessageKey) => Promise<void> }) {
   const { t } = useI18n();
-  return <dl className="asb-session-facts">
-    <dt>{t("sessions.fact.sessionId")}</dt><dd><code>{session.sessionId}</code></dd>
-    <dt>{t("sessions.fact.lastActive")}</dt><dd>{session.lastActiveAt
-      ? <Time iso={session.lastActiveAt} /> : t("sessions.time.unknown")}</dd>
-    {session.projectDir && <><dt>{t("sessions.label.projectDir")}</dt><dd>
+  return <FactList rows={[
+    { label: t("sessions.fact.sessionId"), value: <code>{session.sessionId}</code> },
+    { label: t("sessions.fact.lastActive"), value: session.lastActiveAt
+      ? <Time iso={session.lastActiveAt} /> : t("sessions.time.unknown") },
+    ...(session.projectDir ? [{ label: t("sessions.label.projectDir"), value:
       <Button variant="unstyled" className="asb-fact-path"
         title={t("sessions.projectDir.copyHint", { dir: session.projectDir })}
-        onClick={() => void copy(session.projectDir!, "sessions.label.projectDir")}>{session.projectDir}</Button>
-    </dd></>}
-    <dt>{t("sessions.label.resumeCommand")}</dt><dd className="asb-session-resume-fact">
+        onClick={() => void copy(session.projectDir!, "sessions.label.projectDir")}>{session.projectDir}</Button> }] : []),
+    { label: t("sessions.label.resumeCommand"), value: <span className="asb-session-resume-fact">
       <code className="asb-code" title={session.resumeCommand}>{session.resumeCommand}</code>
       <Button variant="icon" aria-label={t("sessions.action.copy", { label: t("sessions.label.resumeCommand") })}
         title={t("sessions.action.copy", { label: t("sessions.label.resumeCommand") })}
         onClick={() => void copy(session.resumeCommand, "sessions.label.resumeCommand")}><Copy aria-hidden="true" /></Button>
-    </dd>
-  </dl>;
+    </span> },
+  ]} />;
 }
 
 function SessionMoreActions({ session, organization, disabled, onExport, onOrganize, onDelete }: {

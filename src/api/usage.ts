@@ -1,5 +1,5 @@
 import { invoke } from "./client";
-import type { AppKind, UpstreamProtocol } from "./shared";
+import type { AppKind, CodexTransportClass, UpstreamProtocol } from "./shared";
 import type { ProviderConnectionOptions } from "./providers";
 import type { UsageReading } from "./usage-reading";
 export type { UsageReading, UsageAvailability } from "./usage-reading";
@@ -170,6 +170,15 @@ export interface CodexOfficialQuota {
   at: string | null;
   stale: boolean;
   lastReset: CodexOfficialQuotaReset | null;
+  /** Present exactly on unavailable and reauthenticationRequired reads. */
+  failure: CodexQuotaReadFailure | null;
+}
+
+/** Why one official-quota read failed after an attempt was made. */
+export interface CodexQuotaReadFailure {
+  kind: "transport" | "httpStatus" | "invalidResponse";
+  transportClass: CodexTransportClass | null;
+  httpStatus: number | null;
 }
 
 /** Runs one on-demand usage-balance query with the supplied profile or editor

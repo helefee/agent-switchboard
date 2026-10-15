@@ -6,6 +6,9 @@ export type RouteMode = "official" | "custom";
 export type UpstreamProtocol = "responses" | "chatCompletions" | "anthropicMessages" | "geminiGenerateContent";
 export type AuthenticationScheme = "bearer" | "xApiKey" | "xGoogApiKey";
 
+/** Class of one outbound transport failure; the renderer owns the text. */
+export type CodexTransportClass = "dns" | "timeout" | "connect" | "tls" | "other";
+
 export interface ResponsesOptions {
   requestMode: "standard" | "minimal";
 }

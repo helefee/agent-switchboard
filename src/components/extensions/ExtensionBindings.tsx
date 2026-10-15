@@ -62,10 +62,8 @@ export function ExtensionBindings(props: ExtensionManagementProps) {
         <span className="asb-empty-state-icon" aria-hidden="true"><ConnectivityIcon /></span>
         <h3 className="asb-section-title">{t("extensions.bindings.empty")}</h3>
       </div>
-    ) : <div className="asb-ext-table-scroll" tabIndex={0}>
-      <Table columns={columns} rows={props.item.bindings} rowKey={(binding) => binding.id}
-        ariaLabel={t("extensions.bindings.title")} className="asb-ext-management-table" />
-    </div>}
+    ) : <Table columns={columns} rows={props.item.bindings} rowKey={(binding) => binding.id}
+      ariaLabel={t("extensions.bindings.title")} className="asb-ext-management-table" />}
   </section>;
 }
 
@@ -81,22 +79,20 @@ export function ExtensionInstallTargets({
     <CollapsibleSection className="asb-ext-install-targets" open={open} onOpenChange={setOpen}
       label={<span className="asb-section-title">{t("extensions.install.title")}</span>}
       value={t("extensions.install.count", { count: options.length })}>
-      <div className="asb-ext-table-scroll" tabIndex={0}>
-        <Table rows={options} rowKey={(option) => option.value} ariaLabel={t("extensions.install.listAria")}
-          className="asb-ext-management-table" columns={[
-            { key: "client", header: t("extensions.table.client"), render: (option) => (
-              <Checkbox checked={installTargets.includes(option.value)} label={clientName(option.target.client)}
-                ariaLabel={`${t("extensions.install.listAria")} ${option.label}`} disabled={busy}
-                onChange={(checked) => onInstallTargetsChange(checked
-                  ? [...installTargets, option.value] : installTargets.filter((value) => value !== option.value))} />
-            ) },
-            { key: "scope", header: t("extensions.table.scope"), render: (option) => t(option.target.scope === "app"
-              ? "extensions.target.app" : option.target.scope === "projectShared"
-                ? "extensions.target.projectShared" : "extensions.target.projectPrivate") },
-            { key: "project", header: t("extensions.table.project"), render: (option) => option.target.scope === "app"
-              ? "—" : projectNames.get(option.target.projectId) ?? option.target.projectId },
-          ]} />
-      </div>
+      <Table rows={options} rowKey={(option) => option.value} ariaLabel={t("extensions.install.listAria")}
+        className="asb-ext-management-table" columns={[
+          { key: "client", header: t("extensions.table.client"), render: (option) => (
+            <Checkbox checked={installTargets.includes(option.value)} label={clientName(option.target.client)}
+              ariaLabel={`${t("extensions.install.listAria")} ${option.label}`} disabled={busy}
+              onChange={(checked) => onInstallTargetsChange(checked
+                ? [...installTargets, option.value] : installTargets.filter((value) => value !== option.value))} />
+          ) },
+          { key: "scope", header: t("extensions.table.scope"), render: (option) => t(option.target.scope === "app"
+            ? "extensions.target.app" : option.target.scope === "projectShared"
+              ? "extensions.target.projectShared" : "extensions.target.projectPrivate") },
+          { key: "project", header: t("extensions.table.project"), render: (option) => option.target.scope === "app"
+            ? "—" : projectNames.get(option.target.projectId) ?? option.target.projectId },
+        ]} />
       <Button variant="primary" disabled={busy || installTargets.length === 0} onClick={onInstall}>
         {t("extensions.install.selected")}
       </Button>

@@ -167,10 +167,8 @@ export function ProbeRunsTable({ batch }: { batch: CodexProbeBatch }) {
   const { t } = useI18n();
   const columns = runColumns(t, batch);
   return (
-    <div className="asb-codex-probe-table-wrap">
-      <Table columns={columns} rows={batch.runs} rowKey={(run) => `probe-run-${batch.batchId}-${run.seq}`}
-        ariaLabel={t("codex.probe.runsTableAria")} className="asb-codex-probe-table" />
-    </div>
+    <Table columns={columns} rows={batch.runs} rowKey={(run) => `probe-run-${batch.batchId}-${run.seq}`}
+      ariaLabel={t("codex.probe.runsTableAria")} className="asb-codex-probe-table" />
   );
 }
 
