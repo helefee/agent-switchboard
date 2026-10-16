@@ -56,7 +56,12 @@ impl LocalState {
     pub(crate) fn initialize_configuration_store(&self) -> Result<(), String> {
         self.configuration()
             .initialize_current_layout()
-            .map_err(|error| error.to_string())
+            .map_err(|error| error.to_string())?;
+        crate::session_manager::initialize_storage(self.root())?;
+        if let Err(error) = crate::usage_history::initialize(self) {
+            log::warn!("用量历史初始化失败，该历史暂不可读写，其他功能继续可用: {error}");
+        }
+        Ok(())
     }
 
     pub(crate) fn initialize_extension_schema(&self) -> Result<(), String> {
@@ -226,12 +231,6 @@ impl LocalState {
 
     fn model_usage_cache_path(&self) -> PathBuf {
         self.root.join("model-usage-cache.json")
-    }
-
-    /// The single credential-free usage-history ledger. Its schema, parsing,
-    /// pruning, and atomic replacement are owned by `usage_history`.
-    pub(crate) fn usage_history_path(&self) -> PathBuf {
-        self.root.join("usage-history.json")
     }
 
     fn discovery_cache_path(&self) -> PathBuf {

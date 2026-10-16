@@ -1,9 +1,9 @@
 //! CLI event identity and exact-session usage. Neither stderr nor unrelated
 //! sessions can provide an answer, model or token count for a probe.
-use crate::codex_metering::{summarize_token_usage, SessionTokenSummary};
+use crate::codex_metering::{merge_token_event, visit_token_usage, SessionTokenSummary};
 use serde_json::Value;
-use std::io::BufReader;
-use std::path::{Path, PathBuf};
+use std::path::Path;
+use std::collections::{HashMap, HashSet};
 use std::time::Duration;
 
 pub(super) struct ProbeEvents {
@@ -63,27 +63,34 @@ pub(super) fn read_usage(session_id: &str) -> Result<SessionTokenSummary, String
 }
 
 fn read_session_usage(root: &Path, session_id: &str) -> Result<SessionTokenSummary, String> {
-    let mut matched: Option<PathBuf> = None;
+    let mut events = HashMap::new();
+    let mut issues = Vec::new();
     for session_root in crate::local_state::codex_paths::session_roots(root) {
-        if !session_root.exists() { continue; }
-        let paths = crate::session_manager::collect_session_jsonl_files(asb_core::contracts::AppKind::Codex, &session_root)
-            .map_err(|_| "无法读取 Codex 会话目录".to_string())?;
-        for path in paths {
-            // The filename narrows the candidates; metadata establishes identity.
-            if !path.file_stem().and_then(|name| name.to_str())
-                .is_some_and(|name| name.ends_with(session_id)) { continue; }
-            let id = crate::session_manager::parser::session_id_in_session_file(&path)
-                .map_err(|_| "无法读取检测会话标识".to_string())?;
-            if id.as_deref() != Some(session_id) { continue; }
-            if matched.replace(path).is_some() {
-                return Err("检测会话存在多份记录，无法确定用量".to_string());
-            }
+        let files = crate::session_manager::collect_session_files(&session_root);
+        issues.extend(files.issues);
+        for path in files.paths {
+            let Some(identity) = crate::session_manager::parser::session_identity(&path).map_err(|error| error.to_string())? else { continue; };
+            if identity.id != session_id { continue; }
+            issues.extend(visit_token_usage(&path, session_id, |event| {
+                if event.owner == session_id { merge_token_event(&mut events, event)?; }
+                Ok(())
+            })?);
         }
     }
-    let path = matched.ok_or_else(|| "未找到本次检测会话的用量记录".to_string())?;
-    let file = std::fs::File::open(path)
-        .map_err(|_| "无法读取检测会话用量".to_string())?;
-    summarize_token_usage(BufReader::new(file))
+    if !issues.is_empty() { return Err(issues.join("；")); }
+    if events.is_empty() { return Err("未找到本次检测会话的真实调用用量记录".into()); }
+    let mut summary = SessionTokenSummary { input: 0, cached_input: 0, output: 0, reasoning_output: Some(0), total: None, model: None };
+    let mut models = HashSet::new();
+    for event in events.into_values() {
+        summary.input = summary.input.checked_add(event.tokens.input).ok_or("输入计数溢出")?;
+        summary.cached_input = summary.cached_input.checked_add(event.tokens.cached_input).ok_or("缓存计数溢出")?;
+        summary.output = summary.output.checked_add(event.tokens.output).ok_or("输出计数溢出")?;
+        summary.reasoning_output = Some(summary.reasoning_output.unwrap_or(0).checked_add(event.tokens.reasoning_output).ok_or("推理计数溢出")?);
+        models.insert(event.model);
+    }
+    if models.len() == 1 { summary.model = models.into_iter().next().flatten(); }
+    summary.total = Some(summary.input.checked_add(summary.output).ok_or("总计数溢出")?);
+    Ok(summary)
 }
 
 #[cfg(test)]

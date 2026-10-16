@@ -1,4 +1,4 @@
-use super::{bookmarks, parser::find_message, resolve_session};
+use super::{bookmarks, resolve_session};
 use asb_core::contracts::AppKind;
 use serde::Deserialize;
 use std::path::Path;
@@ -13,7 +13,7 @@ pub enum SessionCopySource {
 pub fn load_copy_text(root: &Path, source: SessionCopySource) -> Result<String, String> {
     match source {
         SessionCopySource::Session { app, session_id, message_id } => {
-            Ok(find_message(&resolve_session(app, &session_id)?.path, &message_id)?.content)
+            super::images::copy_text(&resolve_session(app, &session_id)?.find(&message_id)?)
         }
         SessionCopySource::Bookmark { id } => bookmarks::load_copy_text(root, &id),
     }

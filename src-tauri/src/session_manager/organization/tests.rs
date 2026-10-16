@@ -5,7 +5,7 @@ use tempfile::tempdir;
 fn meta(app: AppKind, id: &str) -> SessionMeta {
     SessionMeta { app, session_id: id.into(), title: "来源标题".into(), summary: String::new(),
         project_dir: Some("/project".into()), created_at: None, last_active_at: None,
-        resume_command: String::new(), alias: None, pinned: false, tags: Vec::new() }
+        resume_command: String::new(), alias: None, pinned: false, tags: Vec::new(), parent_session_id: None, can_delete: true }
 }
 
 #[test]
@@ -70,13 +70,13 @@ fn deletion_rolls_back_on_source_failure_and_keeps_bookmark_database() {
     let temp = tempdir().unwrap();
     let session = meta(AppKind::Codex, "s1");
     update_resolved(temp.path(), vec![session], &SessionOrganizationChange::Pin { pinned: true }).unwrap();
-    assert!(delete_with_source(temp.path(), AppKind::Codex, "s1", || Err("source removal failed".into())).is_err());
+    assert!(delete_with_sources(temp.path(), AppKind::Codex, &["s1".into()], || Err("source removal failed".into())).is_err());
     assert_eq!(load(temp.path()).unwrap().len(), 1);
     let source = temp.path().join("transcript.jsonl");
     fs::write(&source, "original source").unwrap();
-    let collections = temp.path().join("state/sessions/collections.sqlite3");
+    let collections = super::super::layout::directory(temp.path()).join("collections.sqlite3");
     fs::write(&collections, "bookmark snapshot remains owned separately").unwrap();
-    delete_with_source(temp.path(), AppKind::Codex, "s1", || fs::remove_file(&source).map_err(|error| error.to_string())).unwrap();
+    delete_with_sources(temp.path(), AppKind::Codex, &["s1".into()], || fs::remove_file(&source).map_err(|error| error.to_string())).unwrap();
     assert!(load(temp.path()).unwrap().is_empty());
     assert!(!source.exists());
     assert_eq!(fs::read_to_string(collections).unwrap(), "bookmark snapshot remains owned separately");
@@ -86,7 +86,7 @@ fn deletion_rolls_back_on_source_failure_and_keeps_bookmark_database() {
 fn foreign_or_empty_database_is_rejected_without_replacement() {
     for content in [b"".as_slice(), b"invalid sqlite data".as_slice()] {
         let temp = tempdir().unwrap();
-        let path = temp.path().join("state/sessions/organization.sqlite3");
+        let path = super::super::layout::directory(temp.path()).join("organization.sqlite3");
         fs::create_dir_all(path.parent().unwrap()).unwrap();
         fs::write(&path, content).unwrap();
         assert!(load(temp.path()).is_err());
@@ -109,4 +109,15 @@ fn simultaneous_first_writes_preserve_both_sessions() {
         }
     });
     assert_eq!(load(temp.path()).unwrap().len(), 2);
+}
+
+#[test]
+fn sidecar_metadata_is_removed_in_the_same_transaction_and_unrelated_rows_remain() {
+    let temp = tempdir().unwrap();
+    let metas = ["main", "main-agent-one", "other"].map(|id| meta(AppKind::Claude, id));
+    update_resolved(temp.path(), metas.to_vec(), &SessionOrganizationChange::Pin { pinned: true }).unwrap();
+    delete_with_sources(temp.path(), AppKind::Claude, &["main".into(), "main-agent-one".into()], || Ok(())).unwrap();
+    let rows = load(temp.path()).unwrap();
+    assert_eq!(rows.len(), 1);
+    assert!(rows.contains_key(&(AppKind::Claude, "other".into())));
 }

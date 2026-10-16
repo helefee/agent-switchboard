@@ -8,6 +8,7 @@ import { CodexResetPanel } from "../components/CodexResetPanel";
 import { useCodexOfficialReset, useCodexResetSignal } from "../components/quota-reads";
 import { useCodexProbe } from "../components/use-codex-probe";
 import { useI18n } from "../i18n";
+import { useWorkspaceVisible } from "../hooks/use-workspace-visible";
 import { UsagePage } from "../pages/UsagePage";
 import { useModelUsageReport } from "../pages/use-model-usage-report";
 import { UsageWorkspaceHeader } from "./UsageWorkspaceHeader";
@@ -46,37 +47,37 @@ export function UsageWorkspace({ active, section, onSectionChange }: {
 }) {
   const { t } = useI18n();
   const id = useId();
-  const [quotaOpened, setQuotaOpened] = useState(section === "quota");
+  const visible = useWorkspaceVisible(active);
   const [radarOpened, setRadarOpened] = useState(section === "radar");
   const [historyOpened, setHistoryOpened] = useState(false);
   const [historyOpen, setHistoryOpen] = useState(false);
   const [range, setRange] = useState<ModelUsageRange>("last7Days");
-  useEffect(() => { if (section === "quota") setQuotaOpened(true); }, [section]);
   useEffect(() => { if (section === "radar") setRadarOpened(true); }, [section]);
-  const consumptionActive = active && section === "consumption";
+  const consumptionActive = visible && section === "consumption";
   const usage = useModelUsageReport(consumptionActive, range);
   // Polling stays on while the history route is open too: its header keeps a
   // live entry to a running batch.
-  const radarActive = active && section === "radar";
+  const radarActive = visible && section === "radar";
   const probe = useCodexProbe(radarActive);
   const { form, runCount, setRunCount, setQuestionId, reuseQuestion } = useProbeForm(probe, () => setHistoryOpen(false));
-  const quotaReadsVisible = quotaOpened || section === "quota";
-  const officialReset = useCodexOfficialReset(quotaReadsVisible);
-  const resetSignal = useCodexResetSignal(quotaReadsVisible);
+  const quotaActive = visible && section === "quota";
+  const showHistory = section === "radar" && historyOpen;
+  const officialReset = useCodexOfficialReset(quotaActive);
+  const resetSignal = useCodexResetSignal(quotaActive);
   return (
     <section className="asb-page-stack" aria-label={t("usage.workspace.aria")}>
-      <div hidden={historyOpen}>
+      <div hidden={showHistory}>
         <UsageWorkspaceHeader id={id} section={section} onSectionChange={onSectionChange}
           consumption={{ active: consumptionActive, range, onRangeChange: setRange, usage }}
           officialReset={officialReset} resetSignal={resetSignal}
-          radar={{ probe, form, onQuestionChange: setQuestionId,
+          radar={{ active: radarActive, probe, form, onQuestionChange: setQuestionId,
             runCount, onRunCountChange: setRunCount,
             onOpenHistory: () => { setHistoryOpened(true); setHistoryOpen(true); } }} />
         <div id={`${id}-consumption-panel`} role="tabpanel" aria-labelledby={`${id}-consumption-tab`} hidden={section !== "consumption"}>
-          <UsagePage usage={usage} />
+          {consumptionActive && <UsagePage usage={usage} />}
         </div>
         <div id={`${id}-quota-panel`} role="tabpanel" aria-labelledby={`${id}-quota-tab`} hidden={section !== "quota"}>
-          {quotaReadsVisible && <div className="asb-page-stack">
+          {quotaActive && <div className="asb-page-stack">
             <CodexOfficialResetPanel read={officialReset} />
             <CodexResetPanel read={resetSignal} />
           </div>}
@@ -86,8 +87,8 @@ export function UsageWorkspace({ active, section, onSectionChange }: {
         </div>
       </div>
       {historyOpened && (
-        <div className="asb-editor-route" hidden={!historyOpen}>
-          <CodexProbeHistory active={radarActive && historyOpen} probe={probe} onClose={() => setHistoryOpen(false)}
+        <div className="asb-editor-route" hidden={!showHistory}>
+          <CodexProbeHistory active={radarActive && showHistory} probe={probe} onClose={() => setHistoryOpen(false)}
             onReuseQuestion={reuseQuestion} onChanged={probe.refresh} />
         </div>
       )}

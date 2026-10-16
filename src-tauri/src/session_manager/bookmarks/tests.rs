@@ -6,9 +6,9 @@ fn snapshot() -> (SessionMeta, SessionMessage) {
     (SessionMeta { app: AppKind::Codex, session_id: "s1".into(), title: "会话标题".into(),
         summary: "摘要".into(), project_dir: Some("/project".into()),
         created_at: None, last_active_at: None, resume_command: String::new(),
-        alias: None, pinned: false, tags: Vec::new() },
+        alias: None, pinned: false, tags: Vec::new(), parent_session_id: None, can_delete: true },
     SessionMessage { id: "message-hash".into(), role: "assistant".into(),
-        content: "完整消息\n```rust\nlet x = 1;\n```".into(), at: None })
+        content: "完整消息\n```rust\nlet x = 1;\n```".into(), at: None, images: Vec::new() })
 }
 
 #[test]
@@ -144,4 +144,48 @@ fn bookmark_queries_are_paged_and_content_reads_preserve_nul_and_unicode() {
     assert_eq!(search_bookmarks(temp.path(), BookmarkSearchRequest {
         query: "äpfel 连接".into(), app: None, offset: PAGE_SIZE,
     }).unwrap().items.len(), 6);
+}
+
+#[test]
+fn saved_images_are_independent_of_the_original_and_do_not_distort_text_pages() {
+    let temp = tempdir().unwrap();
+    let (meta, mut message) = snapshot();
+    message.images = vec!["data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mP8/x8AAwMCAO+aGN8AAAAASUVORK5CYII=".into()];
+    let saved = save_snapshot(temp.path(), &meta, &message).unwrap();
+    let page = load_bookmark_content(temp.path(), &saved.id, 0).unwrap();
+    assert_eq!(page.content, message.content);
+    assert_eq!(page.images, message.images);
+    assert_eq!(page.total, message.content.chars().count());
+    let summary = search_bookmarks(temp.path(), BookmarkSearchRequest::default()).unwrap();
+    assert_eq!(summary.items[0].image_count, 1);
+    assert_eq!(summary.items[0].excerpt, message.content);
+    assert!(load_copy_text(temp.path(), &saved.id).unwrap().contains("![会话图片](data:image/png;"));
+}
+
+#[test]
+fn leading_nul_is_nonempty_content_and_survives_a_snapshot() {
+    let temp = tempdir().unwrap();
+    let (meta, mut message) = snapshot();
+    message.content = "\0original".into();
+    let saved = save_snapshot(temp.path(), &meta, &message).unwrap();
+    assert_eq!(load_bookmark_content(temp.path(), &saved.id, 0).unwrap().content, message.content);
+}
+
+#[test]
+fn v1_snapshot_upgrade_preserves_ids_and_text_and_installs_one_current_schema() {
+    let temp = tempdir().unwrap();
+    let path = database_path(temp.path());
+    fs::create_dir_all(path.parent().unwrap()).unwrap();
+    let connection = Connection::open(&path).unwrap();
+    connection.execute_batch(store::SCHEMA_V1).unwrap();
+    connection.execute_batch("PRAGMA user_version=1").unwrap();
+    connection.execute("INSERT INTO bookmarks VALUES('kept','codex','session','title',NULL,'message','user','original text',NULL,'2026-10-16T00:00:00Z')", []).unwrap();
+    drop(connection);
+    let page = load_bookmark_content(temp.path(), "kept", 0).unwrap();
+    assert_eq!(page.content, "original text");
+    assert!(page.images.is_empty());
+    let connection = open_store(temp.path()).unwrap();
+    assert_eq!(connection.query_row::<i64,_,_>("PRAGMA user_version", [], |row| row.get(0)).unwrap(), 2);
+    assert_eq!(connection.query_row::<String,_,_>("SELECT sql FROM sqlite_master WHERE name='bookmarks'", [], |row| row.get(0)).unwrap(), SCHEMA);
+    assert_eq!(connection.query_row::<i64,_,_>("SELECT COUNT(*) FROM sqlite_master WHERE name='bookmarks_previous'", [], |row| row.get(0)).unwrap(), 0);
 }

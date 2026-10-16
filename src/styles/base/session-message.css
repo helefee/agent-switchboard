@@ -12,3 +12,14 @@
   overflow-wrap: anywhere;
   font: inherit;
 }
+
+.asb-session-images {
+  display: grid;
+  gap: var(--asb-space-3);
+}
+
+.asb-session-images img {
+  display: block;
+  max-width: 100%;
+  height: auto;
+}

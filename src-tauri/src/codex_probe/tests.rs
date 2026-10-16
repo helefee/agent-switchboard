@@ -7,13 +7,14 @@ pub(super) fn write_rollout(root: &std::path::Path, id: &str, total: u64) -> std
     let directory = root.join("sessions").join("t");
     std::fs::create_dir_all(&directory).unwrap();
     let path = directory.join(format!("rollout-{id}.jsonl"));
+    let tokens = serde_json::json!({"input_tokens":total-90,"output_tokens":90,
+        "cached_input_tokens":30,"cache_write_input_tokens":0,"reasoning_output_tokens":77,"total_tokens":total});
     let lines = [
         serde_json::json!({"type":"session_meta", "payload":{"id": id}}),
-        serde_json::json!({"type":"event_msg", "payload":{"type":"token_count", "info":{
-            "model":"gpt-test", "total_token_usage":{"input_tokens":120, "output_tokens":40,
-                "cached_input_tokens":30, "reasoning_output_tokens":77, "total_tokens":total},
-            "last_token_usage":{"input_tokens":120,"output_tokens":40,"cached_input_tokens":30}
-        }}}),
+        serde_json::json!({"type":"turn_context", "payload":{"turn_id":"probe-turn","model":"gpt-test"}}),
+        serde_json::json!({"type":"token_usage_record", "payload":{
+            "thread_id":id,"session_id":"probe-session","turn_id":"probe-turn","root_turn_id":"probe-root",
+            "response_id":"probe-response","usage":tokens,"turn_token_usage":tokens,"thread_token_usage":tokens}}),
     ];
     std::fs::write(&path, lines.map(|line| line.to_string()).join("\n") + "\n").unwrap();
     path

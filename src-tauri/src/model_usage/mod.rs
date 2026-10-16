@@ -1,115 +1,48 @@
-//! Read-only aggregation of token usage recorded in local client sessions.
-//!
-//! Local records establish observed token consumption, never a provider
-//! balance or remaining subscription allowance. This module does not create,
-//! modify, or index a session file or SQLite database.
-
+//! Exact local call usage; context estimates never become consumption.
 mod parse;
-
-use parse::{local_date, scan_claude_session, scan_codex_session};
-
-
-use asb_core::contracts::{
-    AppKind, ModelUsageDay, ModelUsageGroup, ModelUsageIssue, ModelUsageRange, ModelUsageReport,
-    ModelUsageTokens,
-};
+use asb_core::contracts::{AppKind, ModelUsageCoverage, ModelUsageDay, ModelUsageGroup,
+    ModelUsageIssue, ModelUsageRange, ModelUsageReport, ModelUsageTokens};
 use chrono::{DateTime, Duration, Local, NaiveDate, Utc};
-use std::collections::{BTreeMap, BTreeSet, HashSet};
-use std::fs::File;
-use std::io::{self, BufReader};
-use std::path::Path;
+use std::collections::{BTreeMap, HashMap, HashSet};
 
-#[derive(Debug, Clone, Copy, Default, PartialEq, Eq)]
-struct TokenTotals {
-    input: u64,
-    cache_read: u64,
-    cache_creation: u64,
-    output: u64,
-    total: u64,
+#[derive(Debug, Clone, Copy, Default)]
+pub(super) struct TokenTotals {
+    pub input: u64,
+    pub cache_read: u64,
+    pub cache_creation: u64,
+    pub output: u64,
+    pub total: u64,
 }
-
 impl TokenTotals {
-    fn delta_from(self, previous: Option<Self>) -> Option<Self> {
-        let Some(previous) = previous else {
-            return Some(self);
-        };
-        Some(Self {
-            input: self.input.checked_sub(previous.input)?,
-            cache_read: self.cache_read.checked_sub(previous.cache_read)?,
-            cache_creation: self.cache_creation.checked_sub(previous.cache_creation)?,
-            output: self.output.checked_sub(previous.output)?,
-            total: self.total.checked_sub(previous.total)?,
-        })
+    fn checked_add(self, other: Self) -> Result<Self, String> {
+        Ok(Self { input: self.input.checked_add(other.input).ok_or("输入计数溢出")?,
+            cache_read: self.cache_read.checked_add(other.cache_read).ok_or("缓存计数溢出")?,
+            cache_creation: self.cache_creation.checked_add(other.cache_creation).ok_or("缓存写入计数溢出")?,
+            output: self.output.checked_add(other.output).ok_or("输出计数溢出")?,
+            total: self.total.checked_add(other.total).ok_or("总计数溢出")? })
     }
-
-    fn checked_add(self, other: Self) -> Option<Self> {
-        Some(Self {
-            input: self.input.checked_add(other.input)?,
-            cache_read: self.cache_read.checked_add(other.cache_read)?,
-            cache_creation: self.cache_creation.checked_add(other.cache_creation)?,
-            output: self.output.checked_add(other.output)?,
-            total: self.total.checked_add(other.total)?,
-        })
-    }
-
     fn into_contract(self) -> ModelUsageTokens {
-        ModelUsageTokens {
-            input_tokens: self.input,
-            cache_read_input_tokens: self.cache_read,
-            cache_creation_input_tokens: self.cache_creation,
-            output_tokens: self.output,
-            total_tokens: self.total,
-        }
+        ModelUsageTokens { input_tokens: self.input, cache_read_input_tokens: self.cache_read,
+            cache_creation_input_tokens: self.cache_creation, output_tokens: self.output, total_tokens: self.total }
     }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-struct GroupKey {
-    app: AppKind,
-    model: Option<String>,
-}
-
-#[derive(Debug, Clone, Copy, Default)]
-struct GroupTotals {
-    tokens: TokenTotals,
-    session_count: u64,
-}
-
-#[derive(Debug, Clone)]
-struct ClaudeUsageCandidate {
-    model: String,
-    tokens: TokenTotals,
-    timestamp: Option<String>,
-    has_stop_reason: bool,
-}
+struct GroupKey { app: AppKind, model: Option<String> }
 
 #[derive(Debug, Clone, Copy)]
-struct CalendarRange {
-    start: Option<NaiveDate>,
-    end: NaiveDate,
-}
-
+struct CalendarRange { start: Option<NaiveDate>, end: NaiveDate }
 impl CalendarRange {
     fn new(range: ModelUsageRange, now: DateTime<Local>) -> Self {
         let end = now.date_naive();
-        let start = match range {
-            ModelUsageRange::Today => Some(end),
+        let start = match range { ModelUsageRange::Today => Some(end),
             ModelUsageRange::Last7Days => Some(end - Duration::days(6)),
-            ModelUsageRange::Last30Days => Some(end - Duration::days(29)),
-            ModelUsageRange::All => None,
-        };
+            ModelUsageRange::Last30Days => Some(end - Duration::days(29)), ModelUsageRange::All => None };
         Self { start, end }
     }
-
     fn assignment(self, timestamp: Option<&str>) -> Option<Option<NaiveDate>> {
-        match timestamp.and_then(local_date) {
-            Some(date)
-                if self
-                    .start
-                    .is_none_or(|start| (start..=self.end).contains(&date)) =>
-            {
-                Some(Some(date))
-            }
+        match timestamp.and_then(parse::local_date) {
+            Some(date) if self.start.is_none_or(|start| (start..=self.end).contains(&date)) => Some(Some(date)),
             Some(_) => None,
             None if self.start.is_none() => Some(None),
             None => None,
@@ -117,181 +50,113 @@ impl CalendarRange {
     }
 }
 
-/// Builds a report from the exact roots whose revision owns the cache.
-pub(crate) fn report_from_roots(
+pub(super) struct UsageEvent {
+    pub app: AppKind,
+    pub identity: String,
+    pub session: String,
+    pub model: Option<String>,
+    pub at: Option<String>,
+    pub tokens: TokenTotals,
+}
+
+struct Accumulator {
+    calendar: CalendarRange,
+    groups: BTreeMap<GroupKey, TokenTotals>,
+    sessions: BTreeMap<GroupKey, HashSet<String>>,
+    days: BTreeMap<NaiveDate, TokenTotals>,
+    undated: TokenTotals,
+    measured: HashSet<(AppKind, String)>,
+    undated_event_tokens: u64,
+}
+impl Accumulator {
+    fn new(calendar: CalendarRange) -> Self {
+        Self { calendar, groups: BTreeMap::new(), sessions: BTreeMap::new(), days: BTreeMap::new(),
+            undated: TokenTotals::default(), measured: HashSet::new(), undated_event_tokens: 0 }
+    }
+    fn add(&mut self, event: UsageEvent) -> Result<(), String> {
+        self.measured.insert((event.app, event.session.clone()));
+        if event.tokens.total == 0 { return Ok(()); }
+        if event.at.as_deref().and_then(parse::local_date).is_none() {
+            self.undated_event_tokens = self.undated_event_tokens.checked_add(event.tokens.total).ok_or("无日期用量计数溢出")?;
+        }
+        let Some(assignment) = self.calendar.assignment(event.at.as_deref()) else { return Ok(()); };
+        let key = GroupKey { app: event.app, model: event.model };
+        let totals = self.groups.entry(key.clone()).or_default().checked_add(event.tokens)?;
+        match assignment {
+            Some(date) => { let destination = self.days.entry(date).or_default(); *destination = destination.checked_add(event.tokens)?; }
+            None => self.undated = self.undated.checked_add(event.tokens)?,
+        }
+        self.groups.insert(key.clone(), totals);
+        self.sessions.entry(key).or_default().insert(event.session);
+        Ok(())
+    }
+}
+
+pub(crate) fn report(
     range: ModelUsageRange,
-    roots: &[(AppKind, std::path::PathBuf)],
+    mut sources: Vec<crate::session_manager::SessionSource>,
+    source_issues: Vec<crate::session_manager::SessionIssue>,
     now: DateTime<Local>,
 ) -> ModelUsageReport {
-    let calendar_range = CalendarRange::new(range, now);
-    let mut groups = BTreeMap::new();
-    let mut days = BTreeMap::new();
-    let mut unassigned_tokens = TokenTotals::default();
-    let mut issues = Vec::new();
-    let mut seen_sessions = HashSet::new();
-
-    for (app, root) in roots {
-        match crate::session_manager::collect_session_jsonl_files(*app, root) {
-            Ok(paths) => {
-                for path in paths {
-                    match crate::session_manager::parser::session_id_in_session_file(&path) {
-                        Ok(Some(session_id)) => {
-                            if !seen_sessions.insert((*app, session_id)) {
-                                continue;
-                            }
-                            scan_session_file(
-                                *app,
-                                &path,
-                                calendar_range,
-                                &mut groups,
-                                &mut days,
-                                &mut unassigned_tokens,
-                                &mut issues,
-                            );
-                        }
-                        Ok(None) => scan_session_file(
-                            *app,
-                            &path,
-                            calendar_range,
-                            &mut groups,
-                            &mut days,
-                            &mut unassigned_tokens,
-                            &mut issues,
-                        ),
-                        Err(_) => issues.push(ModelUsageIssue {
-                            app: *app,
-                            message: format!("无法读取{}会话记录", (*app).label()),
-                        }),
+    let mut aggregate = Accumulator::new(CalendarRange::new(range, now));
+    sources.sort_by(|left, right| (left.meta.app, &left.meta.session_id).cmp(&(right.meta.app, &right.meta.session_id)));
+    let mut issues: Vec<ModelUsageIssue> = source_issues.into_iter()
+        .map(|issue| ModelUsageIssue { app: issue.app, message: issue.message }).collect();
+    let mut codex = HashMap::new();
+    let mut claude = HashMap::new();
+    let mut coverage = ModelUsageCoverage { source_sessions: sources.len() as u64, ..Default::default() };
+    for source in &sources {
+        for path in &source.paths {
+            coverage.scanned_files += 1;
+            let scan = match source.meta.app {
+                AppKind::Codex => crate::codex_metering::visit_token_usage(path, &source.meta.session_id, |event| {
+                    if let Err(message) = crate::codex_metering::merge_token_event(&mut codex, event) {
+                        issues.push(ModelUsageIssue { app: AppKind::Codex, message });
                     }
-                }
+                    Ok(())
+                }),
+                AppKind::Claude => parse::collect_claude(path, &source.meta.session_id, &mut claude),
+            };
+            match scan {
+                Ok(warnings) => issues.extend(warnings.into_iter().map(|message| ModelUsageIssue { app: source.meta.app, message })),
+                Err(message) => issues.push(ModelUsageIssue { app: source.meta.app, message }),
             }
-            Err(error) if error.kind() == io::ErrorKind::NotFound => {}
-            Err(_) => issues.push(ModelUsageIssue {
-                app: *app,
-                message: format!("无法读取{}会话目录", (*app).label()),
-            }),
         }
     }
-
-    ModelUsageReport {
-        range,
-        generated_at: now.with_timezone(&Utc).to_rfc3339(),
-        groups: groups
-            .into_iter()
-            .map(|(key, totals)| ModelUsageGroup {
-                app: key.app,
-                model: key.model,
-                input_tokens: totals.tokens.input,
-                cache_read_input_tokens: totals.tokens.cache_read,
-                cache_creation_input_tokens: totals.tokens.cache_creation,
-                output_tokens: totals.tokens.output,
-                total_tokens: totals.tokens.total,
-                session_count: totals.session_count,
-            })
-            .collect(),
-        days: days
-            .into_iter()
-            .map(|(date, totals)| ModelUsageDay {
-                date: date.format("%F").to_string(),
-                input_tokens: totals.input,
-                cache_read_input_tokens: totals.cache_read,
-                cache_creation_input_tokens: totals.cache_creation,
-                output_tokens: totals.output,
-                total_tokens: totals.total,
-            })
-            .collect(),
-        unassigned_tokens: unassigned_tokens.into_contract(),
-        issues: unique_issues(issues),
+    for event in codex.into_values() {
+        let tokens = event.tokens;
+        let total = tokens.total().expect("validated receipt total");
+        let result = aggregate.add(UsageEvent { app: AppKind::Codex, identity: event.identity, session: event.owner,
+            model: event.model, at: event.at, tokens: TokenTotals {
+                input: tokens.input - tokens.cached_input - tokens.cache_write_input,
+                cache_read: tokens.cached_input, cache_creation: tokens.cache_write_input, output: tokens.output, total } });
+        if let Err(message) = result { issues.push(ModelUsageIssue { app: AppKind::Codex, message }); }
     }
-}
-
-fn scan_session_file(
-    app: AppKind,
-    path: &Path,
-    calendar_range: CalendarRange,
-    groups: &mut BTreeMap<GroupKey, GroupTotals>,
-    days: &mut BTreeMap<NaiveDate, TokenTotals>,
-    unassigned_tokens: &mut TokenTotals,
-    issues: &mut Vec<ModelUsageIssue>,
-) {
-    let file = match File::open(path) {
-        Ok(file) => file,
-        Err(_) => {
-            issues.push(ModelUsageIssue {
-                app,
-                message: format!("无法读取{}会话记录", (app).label()),
-            });
-            return;
-        }
-    };
-    let mut file_groups = BTreeSet::new();
-    match app {
-        AppKind::Codex => scan_codex_session(
-            BufReader::new(file),
-            calendar_range,
-            groups,
-            days,
-            unassigned_tokens,
-            &mut file_groups,
-            issues,
-        ),
-        AppKind::Claude => scan_claude_session(
-            BufReader::new(file),
-            calendar_range,
-            groups,
-            days,
-            unassigned_tokens,
-            &mut file_groups,
-            issues,
-        ),
+    for candidate in claude.into_values() {
+        if let Err(message) = aggregate.add(candidate.event) { issues.push(ModelUsageIssue { app: AppKind::Claude, message }); }
     }
-    for key in file_groups {
-        if let Some(totals) = groups.get_mut(&key) {
-            totals.session_count = totals.session_count.saturating_add(1);
-        }
-    }
+    coverage.sessions_without_usage = sources.iter()
+        .filter(|source| !aggregate.measured.contains(&(source.meta.app, source.meta.session_id.clone()))).count() as u64;
+    coverage.undated_event_tokens = aggregate.undated_event_tokens;
+    finish(range, now, aggregate, coverage, issues)
 }
 
-fn add_tokens(
-    groups: &mut BTreeMap<GroupKey, GroupTotals>,
-    days: &mut BTreeMap<NaiveDate, TokenTotals>,
-    unassigned_tokens: &mut TokenTotals,
-    file_groups: &mut BTreeSet<GroupKey>,
-    assignment: Option<NaiveDate>,
-    key: GroupKey,
-    tokens: TokenTotals,
-) {
-    let destination = match assignment {
-        Some(date) => days.entry(date).or_default(),
-        None => unassigned_tokens,
-    };
-    let Some(updated_destination) = destination.checked_add(tokens) else {
-        return;
-    };
-    let totals = groups.entry(key.clone()).or_default();
-    let Some(updated) = totals.tokens.checked_add(tokens) else {
-        return;
-    };
-    *destination = updated_destination;
-    totals.tokens = updated;
-    file_groups.insert(key);
+fn finish(
+    range: ModelUsageRange, now: DateTime<Local>, aggregate: Accumulator,
+    coverage: ModelUsageCoverage, issues: Vec<ModelUsageIssue>,
+) -> ModelUsageReport {
+    let mut seen_issues = HashSet::new();
+    ModelUsageReport { range, generated_at: now.with_timezone(&Utc).to_rfc3339(),
+        groups: aggregate.groups.into_iter().map(|(key, totals)| ModelUsageGroup {
+            session_count: aggregate.sessions.get(&key).map_or(0, |sessions| sessions.len()) as u64,
+            app: key.app, model: key.model, input_tokens: totals.input, cache_read_input_tokens: totals.cache_read,
+            cache_creation_input_tokens: totals.cache_creation, output_tokens: totals.output, total_tokens: totals.total }).collect(),
+        days: aggregate.days.into_iter().map(|(date, totals)| ModelUsageDay { date: date.to_string(),
+            input_tokens: totals.input, cache_read_input_tokens: totals.cache_read,
+            cache_creation_input_tokens: totals.cache_creation, output_tokens: totals.output, total_tokens: totals.total }).collect(),
+        unassigned_tokens: aggregate.undated.into_contract(), coverage,
+        issues: issues.into_iter().filter(|issue| seen_issues.insert((issue.app, issue.message.clone()))).collect() }
 }
 
-fn report_corruption(app: AppKind, issues: &mut Vec<ModelUsageIssue>, reported: &mut bool) {
-    if *reported {
-        return;
-    }
-    *reported = true;
-    issues.push(ModelUsageIssue {
-        app,
-        message: format!("{}会话记录中存在无法解析的条目", (app).label()),
-    });
-}
-
-fn unique_issues(issues: Vec<ModelUsageIssue>) -> Vec<ModelUsageIssue> {
-    let mut seen = HashSet::new();
-    issues
-        .into_iter()
-        .filter(|issue| seen.insert((issue.app, issue.message.clone())))
-        .collect()
-}
+#[cfg(test)]
+mod tests;

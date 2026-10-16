@@ -89,7 +89,7 @@ interface HeaderProps {
   };
   officialReset: ReturnType<typeof useCodexOfficialReset>;
   resetSignal: ReturnType<typeof useCodexResetSignal>;
-  radar: Omit<RadarControlsProps, "active">;
+  radar: RadarControlsProps;
 }
 
 function ConsumptionControls({ active, range, onRangeChange, usage }: HeaderProps["consumption"]) {
@@ -142,7 +142,7 @@ export function UsageWorkspaceHeader({ id, section, onSectionChange, consumption
       {resetSignal.snapshot ? freshnessLabel(resetSignal.snapshot.freshness, t) : t("usage.quota.noCache")}
     </>;
   } else {
-    actions = <RadarControls active={section === "radar"} {...radar} />;
+    actions = <RadarControls {...radar} />;
     status = t("usage.radar.statusNote");
   }
   return <WorkspaceHeader title={t("nav.page.usage")} primary={

@@ -1,4 +1,4 @@
-use super::{bookmarks, parser, resolve_session, SessionMessage};
+use super::{bookmarks, resolve_session, SessionMessage, SessionSource};
 use asb_core::contracts::{AppKind, LocalizedMessage};
 use serde::{Deserialize, Serialize};
 use std::ops::ControlFlow;
@@ -30,11 +30,12 @@ pub struct MessagePreview {
     pub content_length: usize,
     pub at: Option<String>,
     pub bookmarked: Option<bool>,
+    pub image_count: usize,
 }
 
 impl From<SessionMessage> for MessagePreview {
     fn from(message: SessionMessage) -> Self {
-        Self { id: message.id, role: message.role, at: message.at, bookmarked: None,
+        Self { id: message.id, role: message.role, at: message.at, bookmarked: None, image_count: message.images.len(),
             content_length: message.content.chars().count(),
             content: message.content.chars().take(PREVIEW_CHARS).collect() }
     }
@@ -43,11 +44,13 @@ impl From<SessionMessage> for MessagePreview {
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct MessagePage {
+    pub session: super::SessionMeta,
     pub items: Vec<MessagePreview>,
     pub total: usize,
     pub offset: usize,
     pub page_size: usize,
     pub bookmark_issue: Option<LocalizedMessage>,
+    pub issues: Vec<String>,
 }
 
 #[derive(Debug, Clone, Deserialize)]
@@ -66,6 +69,8 @@ pub struct ContentPage {
     pub offset: usize,
     pub total: usize,
     pub page_size: usize,
+    pub images: Vec<String>,
+    pub issues: Vec<String>,
 }
 
 impl ContentPage {
@@ -74,7 +79,7 @@ impl ContentPage {
             || content.chars().count() != total.saturating_sub(offset).min(CONTENT_PAGE_CHARS) {
             return Err("正文页码无效；请重新打开消息".into());
         }
-        Ok(Self { content, offset, total, page_size: CONTENT_PAGE_CHARS })
+        Ok(Self { content, offset, total, page_size: CONTENT_PAGE_CHARS, images: Vec::new(), issues: Vec::new() })
     }
 }
 
@@ -85,13 +90,17 @@ pub(super) fn content_page(content: &str, offset: usize) -> Result<ContentPage, 
 
 pub fn load_content(request: MessageContentRequest) -> Result<ContentPage, String> {
     let source = resolve_session(request.app, &request.session_id)?;
-    content_page(&parser::find_message(&source.path, &request.message_id)?.content, request.offset)
+    let message = source.find(&request.message_id)?;
+    let mut page = content_page(&message.content, request.offset)?;
+    if request.offset == 0 { (page.images, page.issues) = super::images::resolve(&message.images); }
+    Ok(page)
 }
 
 pub fn load_page(root: &Path, request: MessagePageRequest) -> Result<MessagePage, String> {
     if request.offset % PAGE_SIZE != 0 { return Err("消息页码无效".into()); }
     let source = resolve_session(request.app, &request.session_id)?;
-    let mut page = scan_page(&source.path, request.offset, request.anchor_id.as_deref())?;
+    let mut page = scan_page(&source, request.offset, request.anchor_id.as_deref())?;
+    super::organization::apply(&mut page.session, &super::organization::load(root)?);
     if let Err(detail) = bookmarks::mark_messages(root, request.app, &request.session_id, &mut page.items) {
         for item in &mut page.items { item.bookmarked = None; }
         page.bookmark_issue = Some(LocalizedMessage::new("sessions.bookmarks.readUnavailable",
@@ -100,13 +109,13 @@ pub fn load_page(root: &Path, request: MessagePageRequest) -> Result<MessagePage
     Ok(page)
 }
 
-fn scan_page(path: &Path, requested_offset: usize, anchor: Option<&str>) -> Result<MessagePage, String> {
-    let mut page = MessagePage { items: Vec::new(), total: 0, offset: requested_offset,
-        page_size: PAGE_SIZE, bookmark_issue: None };
+fn scan_page(source: &SessionSource, requested_offset: usize, anchor: Option<&str>) -> Result<MessagePage, String> {
+    let mut page = MessagePage { session: source.meta.clone(), items: Vec::new(), total: 0, offset: requested_offset,
+        page_size: PAGE_SIZE, bookmark_issue: None, issues: Vec::new() };
     let mut bucket = Vec::with_capacity(PAGE_SIZE);
     let mut bucket_offset = 0;
     let mut found_anchor = false;
-    parser::visit_messages(path, |message| {
+    page.issues = source.visit(|message| {
         if bucket.len() == PAGE_SIZE {
             if bucket_offset == page.offset && (anchor.is_none() || found_anchor) {
                 page.items = std::mem::take(&mut bucket);

@@ -188,10 +188,7 @@ pub async fn delete_codex_profile(
             if let Err(error) = crate::usage_cache::invalidate(&state, &cache_profile_id) {
                 log::warn!("无法清除已删除 Codex 供应商的托盘用量缓存: {error}");
             }
-            if let Err(error) = crate::usage_history::invalidate_provider(&state, &cache_profile_id)
-            {
-                log::warn!("无法清除已删除 Codex 供应商的用量历史: {error}");
-            }
+
         }
         crate::tray::refresh(&refresh_app);
     }
@@ -331,10 +328,7 @@ pub async fn delete_profile(
             if let Err(error) = crate::usage_cache::invalidate(&state, &cache_profile_id) {
                 log::warn!("无法清除已删除供应商的托盘用量缓存: {error}");
             }
-            if let Err(error) = crate::usage_history::invalidate_provider(&state, &cache_profile_id)
-            {
-                log::warn!("无法清除已删除供应商的用量历史: {error}");
-            }
+
         }
         crate::codex_official_quota::invalidate(&cache_profile_id);
         crate::tray::refresh(&refresh_app);

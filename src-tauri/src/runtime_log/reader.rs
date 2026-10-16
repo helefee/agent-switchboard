@@ -1,4 +1,4 @@
-use super::{is_runtime_log_file, RuntimeLogEntry, MAX_VISIBLE_ENTRIES};
+use super::{is_runtime_log_file, RuntimeLogEntry, RuntimeLogRead, RuntimeLogSeverity, MAX_VISIBLE_ENTRIES};
 use std::cmp::Ordering;
 use std::collections::BinaryHeap;
 use std::fs::{self, File};
@@ -22,14 +22,16 @@ impl Ord for Candidate {
     }
 }
 
-pub(super) fn list_from_dir(directory: &Path) -> Result<Vec<RuntimeLogEntry>, String> {
+pub(super) fn list_from_dir(directory: &Path, level: Option<RuntimeLogSeverity>) -> Result<RuntimeLogRead, String> {
     let files = match fs::read_dir(directory) {
         Ok(files) => files,
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(vec![]),
+        Err(error) if error.kind() == std::io::ErrorKind::NotFound => return Ok(RuntimeLogRead { entries: Vec::new(), total: 0, skipped: 0 }),
         Err(_) => return Err("应用日志目录不可读".into()),
     };
     let mut latest = BinaryHeap::<Candidate>::with_capacity(MAX_VISIBLE_ENTRIES);
     let mut sequence = 0;
+    let mut total = 0;
+    let mut skipped = 0;
     for file in files {
         let file = file.map_err(|_| "应用日志目录不可读")?;
         if !file.file_type().map_err(|_| "应用日志目录不可读")?.is_file()
@@ -37,9 +39,11 @@ pub(super) fn list_from_dir(directory: &Path) -> Result<Vec<RuntimeLogEntry>, St
         let mut reader = BufReader::new(File::open(file.path()).map_err(|_| "应用日志不可读")?);
         let mut line = Vec::new();
         while let Some(valid_length) = read_line(&mut reader, &mut line).map_err(|_| "应用日志不可读")? {
-            if !valid_length { continue; }
-            let Ok(entry) = serde_json::from_slice::<RuntimeLogEntry>(&line) else { continue; };
-            if !entry.is_valid() { continue; }
+            if !valid_length { skipped += 1; continue; }
+            let Ok(entry) = serde_json::from_slice::<RuntimeLogEntry>(&line) else { skipped += 1; continue; };
+            if !entry.is_valid() { skipped += 1; continue; }
+            if level.is_some_and(|level| entry.level != level) { continue; }
+            total += 1;
             sequence += 1;
             let candidate = Candidate { entry, sequence };
             if latest.len() < MAX_VISIBLE_ENTRIES { latest.push(candidate); }
@@ -50,7 +54,7 @@ pub(super) fn list_from_dir(directory: &Path) -> Result<Vec<RuntimeLogEntry>, St
     }
     let mut candidates = latest.into_vec();
     candidates.sort_by(|left, right| right.entry.at.cmp(&left.entry.at).then(left.sequence.cmp(&right.sequence)));
-    Ok(candidates.into_iter().map(|candidate| candidate.entry).collect())
+    Ok(RuntimeLogRead { entries: candidates.into_iter().map(|candidate| candidate.entry).collect(), total, skipped })
 }
 
 fn read_line(reader: &mut impl BufRead, line: &mut Vec<u8>) -> std::io::Result<Option<bool>> {

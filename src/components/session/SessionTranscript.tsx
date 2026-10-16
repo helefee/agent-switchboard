@@ -61,6 +61,7 @@ export function SessionTranscript({ session, detail, bookmarks }: Props) {
         <span>{t("sessions.transcript.heading")}</span><span className="asb-session-count">{page.total}</span>
       </div>
       {page.bookmarkIssue && <p className="asb-warn-text" role="alert">{localizedMessageText(page.bookmarkIssue, t)}</p>}
+      {page.issues.map((issue, index) => <p key={index} className="asb-warn-text" role="alert">{issue}</p>)}
       <ScrollArea className="asb-session-transcript" viewportRef={container} aria-label={t("sessions.transcript.aria")}
         onScroll={onScroll}>
         {messages.length === 0 && <p>{t("sessions.transcript.empty")}</p>}

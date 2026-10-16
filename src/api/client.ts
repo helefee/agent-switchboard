@@ -137,6 +137,7 @@ export async function invoke<T>(command: string, args?: InvokeArgs): Promise<T> 
  * their public surface so consumers keep importing from "./api/client". */
 export * from "./shared";
 export * from "./usage";
+export * from "./model-usage";
 export * from "./providers";
 export * from "./provider-request";
 export * from "./switching";

@@ -37,7 +37,7 @@ fn usage_comes_only_from_the_exact_session_even_with_concurrent_sessions() {
 }
 
 #[test]
-fn mismatched_metadata_and_ambiguous_files_never_supply_usage() {
+fn mismatched_metadata_is_rejected_and_archived_replays_are_counted_once() {
     let root = tempfile::tempdir().unwrap();
     let path = write_rollout(root.path(), ID, 190);
     let source = std::fs::read_to_string(&path).unwrap();
@@ -47,5 +47,5 @@ fn mismatched_metadata_and_ambiguous_files_never_supply_usage() {
     let archived = root.path().join("archived_sessions");
     std::fs::create_dir(&archived).unwrap();
     std::fs::write(archived.join(path.file_name().unwrap()), source).unwrap();
-    assert!(read_session_usage(root.path(), ID).is_err());
+    assert_eq!(read_session_usage(root.path(), ID).unwrap().total, Some(190));
 }

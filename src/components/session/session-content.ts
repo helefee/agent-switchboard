@@ -16,6 +16,7 @@ const ROLE_MESSAGE_KEYS: Record<string, MessageKey | undefined> = {
   assistant: "sessions.role.assistant",
   system: "sessions.role.system",
   tool: "sessions.role.tool",
+  reasoning: "sessions.role.reasoning",
 };
 
 export function messageRole(role: string): string {

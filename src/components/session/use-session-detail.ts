@@ -1,5 +1,5 @@
 import { useCallback, useEffect, useRef, useState } from "react";
-import { getSessionMessagePage, getSessionMetadata, type SessionMessagePage, type SessionMeta } from "../../api/client";
+import { getSessionMessagePage, type SessionMessagePage, type SessionMeta } from "../../api/client";
 import { useMessageState } from "../../i18n/use-message-state";
 import { sessionKey } from "./session-content";
 import { useSessionReadQueue } from "./use-session-read-queue";
@@ -31,11 +31,10 @@ export function useSessionDetail(active: boolean) {
     const run = async () => {
       if (!current) return;
       try {
-        const [next, metadata] = await Promise.all([getSessionMessagePage(app, sessionId,
-          position.current.offset, position.current.anchorId), getSessionMetadata(app, sessionId)]);
+        const next = await getSessionMessagePage(app, sessionId, position.current.offset, position.current.anchorId);
         if (!current || generation.current !== version) return;
         position.current = { offset: next.offset, anchorId: null };
-        if (metadataVersion === metadataGeneration.current) setSelected(metadata);
+        if (metadataVersion === metadataGeneration.current) setSelected(next.session);
         setContentOffsets((current) => Object.fromEntries(next.items.map((item) => [item.id, current[item.id] ?? 0])));
         setExpanded((current) => new Set(next.items.filter((item) => current.has(item.id)).map((item) => item.id)));
         setPage(next);

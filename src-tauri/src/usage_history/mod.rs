@@ -5,10 +5,16 @@
 //! path, and never persists provider credentials, endpoints, raw responses,
 //! account identifiers, or query source.
 
-mod ledger;
+mod data;
+mod store;
+mod migration;
 mod query;
 mod record;
 
 
 pub(crate) use query::{official_series, provider_series};
-pub(crate) use record::{invalidate_provider, record_official, record_provider};
+pub(crate) use record::{record_official, record_provider};
+pub(crate) use store::initialize;
+
+#[cfg(test)]
+mod tests;

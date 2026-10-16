@@ -3,6 +3,10 @@ import type { MessageEntry } from "../types";
 /** Domain dictionary for usage (zh-CN / en-US pairs). Keys are prefixed with
  * "usage." and must never collide with another domain file. */
 export const messages = {
+  "usage.history.sampled": ["图表显示 {shown} 个原始采样点，完整保留 {total} 条记录", "Chart shows {shown} original samples; all {total} records are retained"],
+  "usage.coverage": ["发现 {sessions} 条会话，扫描 {files} 个记录文件；仅汇总可核实的调用用量。", "Found {sessions} sessions and scanned {files} record files; totals include verifiable call usage only."],
+  "usage.coverage.missing": ["{count} 条会话没有可核实的调用用量，可能尚未完成调用或原记录已缺失，未计入消费总数。", "{count} sessions have no verifiable call usage. Calls may not have completed or original records may be missing; these sessions are excluded from consumption totals."],
+  "usage.undated.excluded": ["另有 {count} tokens 的事件未保留有效日期，仅计入「全部」。", "Another {count} tokens have no retained valid event date and are included only in All."],
 	"usage.workspace.aria": ["用量工作区", "Usage workspace"],
 	"usage.tabs.aria": ["用量分类", "Usage sections"],
 
@@ -49,7 +53,7 @@ export const messages = {
 	"usage.undated": ["{count} tokens 未记录时间，已保留在明细总计中，但未纳入日趋势。", "{count} tokens have no recorded time; they stay in the detail totals but are excluded from the daily trend."],
 	"usage.model.unrecorded": ["未记录", "Unrecorded"],
 
-	"usage.label.total": ["总计", "Total"],
+	"usage.label.total": ["已记录用量", "Recorded usage"],
 	"usage.label.freshInput": ["新输入", "Fresh input"],
 	"usage.label.cache": ["缓存", "Cached"],
 	"usage.label.output": ["输出", "Output"],

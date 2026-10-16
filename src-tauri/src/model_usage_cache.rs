@@ -8,7 +8,7 @@ use crate::local_state::LocalState;
 use asb_core::contracts::{
     ModelUsageFreshness, ModelUsageRange, ModelUsageRead, ModelUsageReport, ModelUsageRequest,
 };
-use chrono::{DateTime, Duration, Utc};
+use chrono::{DateTime, Duration, Local, Utc};
 
 pub(crate) const MODEL_USAGE_REFRESH_INTERVAL: Duration = Duration::minutes(5);
 
@@ -68,9 +68,12 @@ pub(crate) fn get_or_refresh(
     request: ModelUsageRequest,
 ) -> Result<ModelUsageRead, String> {
     let roots = crate::session_manager::session_roots()?;
-    let encoded = serde_json::to_string(&roots).map_err(|_| "会话来源目录无法序列化")?;
+    let native_root = crate::local_state::codex_paths::sqlite_root(&crate::session_manager::codex_root()?);
+    let calendar = Local::now().format("%Y-%m-%d%:z").to_string();
+    let encoded = serde_json::to_string(&("response-receipts-v1", &roots, native_root, calendar)).map_err(|_| "会话来源目录无法序列化")?;
     resolve_source(state, request, asb_switch::sha256_hex(&encoded), |range| {
-        crate::model_usage::report_from_roots(range, &roots, chrono::Local::now())
+        let (sources, issues) = crate::session_manager::scan_sources()?;
+        Ok(crate::model_usage::report(range, sources, issues, chrono::Local::now()))
     })
 }
 
@@ -83,7 +86,7 @@ fn resolve<F>(
 where
     F: FnOnce(ModelUsageRange) -> ModelUsageReport,
 {
-    resolve_source(state, request, "fixture-session-roots".into(), scan)
+    resolve_source(state, request, "fixture-session-roots".into(), |range| Ok(scan(range)))
 }
 
 fn resolve_source<F>(
@@ -93,7 +96,7 @@ fn resolve_source<F>(
     scan: F,
 ) -> Result<ModelUsageRead, String>
 where
-    F: FnOnce(ModelUsageRange) -> ModelUsageReport,
+    F: FnOnce(ModelUsageRange) -> Result<ModelUsageReport, String>,
 {
     let (mut cache, mut warnings) = match state.load_model_usage_cache() {
         Ok(Some(cache)) if cache.validate().is_ok() => (cache, Vec::new()),
@@ -112,12 +115,14 @@ where
     }
 
     if !request.force_refresh {
-        if let Some(cached) = cache.cached(request.range) {
+        if let Some(cached) = cache.cached(request.range).filter(|entry|
+            refresh_after(&entry.cached_at).ok().and_then(|at| DateTime::parse_from_rfc3339(&at).ok())
+                .is_some_and(|after| after.with_timezone(&Utc) > Utc::now())) {
             return cached_read(cached);
         }
     }
 
-    let report = scan(request.range);
+    let report = scan(request.range)?;
     let cached = CachedModelUsage {
         range: request.range,
         cached_at: Utc::now().to_rfc3339(),
@@ -152,10 +157,14 @@ fn refresh_after(cached_at: &str) -> Result<String, String> {
     let cached_at = DateTime::parse_from_rfc3339(cached_at)
         .map_err(|_| "本地会话快照格式无效".to_string())?
         .with_timezone(&Utc);
-    cached_at
+    let expires = cached_at
         .checked_add_signed(MODEL_USAGE_REFRESH_INTERVAL)
-        .map(|timestamp| timestamp.to_rfc3339())
-        .ok_or_else(|| "本地会话快照格式无效".to_string())
+        .ok_or_else(|| "本地会话快照格式无效".to_string())?;
+    let midnight = cached_at.with_timezone(&Local).date_naive().succ_opt()
+        .and_then(|date| date.and_hms_opt(0, 0, 0))
+        .and_then(|date| date.and_local_timezone(Local).earliest())
+        .ok_or("无法确定本机日期边界，不能重用上一日期的用量快照")?.with_timezone(&Utc);
+    Ok(expires.min(midnight).to_rfc3339())
 }
 
 #[cfg(test)]
@@ -181,7 +190,7 @@ mod tests {
                 total_tokens,
                 ..ModelUsageTokens::default()
             },
-            issues: Vec::new(),
+            issues: Vec::new(), coverage: Default::default(),
         }
     }
 
@@ -265,7 +274,7 @@ mod tests {
                 &state,
                 request(ModelUsageRange::Today, false),
                 source.to_string(),
-                |range| report(range, total),
+                |range| Ok(report(range, total)),
             )
             .unwrap();
             assert_eq!(read.freshness, ModelUsageFreshness::Fresh);
@@ -280,5 +289,31 @@ mod tests {
         .unwrap();
         assert_eq!(cached.freshness, ModelUsageFreshness::Cached);
         assert_eq!(cached.report.unassigned_tokens.total_tokens, 29);
+    }
+
+    #[test]
+    fn expired_cache_refreshes_and_failed_refresh_does_not_replace_the_snapshot() {
+        let directory = tempfile::tempdir().unwrap();
+        let state = LocalState::from_root(directory.path().join("state"));
+        resolve(&state, request(ModelUsageRange::Today, false), |range| report(range, 42)).unwrap();
+        let mut cache = state.load_model_usage_cache().unwrap().unwrap();
+        cache.entries[0].cached_at = (Utc::now() - Duration::hours(1)).to_rfc3339();
+        state.save_model_usage_cache(&cache).unwrap();
+        let failure = resolve_source(&state, request(ModelUsageRange::Today, false),
+            "fixture-session-roots".into(), |_| Err("source unavailable".into()));
+        assert!(failure.is_err());
+        assert_eq!(state.load_model_usage_cache().unwrap().unwrap().entries[0].report.unassigned_tokens.total_tokens, 42);
+        let next = resolve(&state, request(ModelUsageRange::Today, false), |range| report(range, 99)).unwrap();
+        assert_eq!(next.freshness, ModelUsageFreshness::Fresh);
+        assert_eq!(next.report.unassigned_tokens.total_tokens, 99);
+    }
+
+    #[test]
+    fn refresh_deadline_never_reuses_a_snapshot_across_the_local_day_boundary() {
+        use chrono::TimeZone;
+        let before = Local.with_ymd_and_hms(2026, 10, 16, 23, 59, 30).single().unwrap();
+        let after = DateTime::parse_from_rfc3339(&refresh_after(&before.to_rfc3339()).unwrap()).unwrap().with_timezone(&Local);
+        assert_eq!(after.date_naive(), before.date_naive().succ_opt().unwrap());
+        assert_eq!(after.time(), chrono::NaiveTime::from_hms_opt(0, 0, 0).unwrap());
     }
 }

@@ -10,12 +10,12 @@ fn search(sources: Vec<SessionSource>, issues: Vec<SessionIssue>, query: &str, a
 }
 
 fn source(path: &Path, id: &str) -> SessionSource {
-    SessionSource { path: path.to_path_buf(), meta: SessionMeta {
+    SessionSource { paths: vec![path.to_path_buf()], native_history: None, meta: SessionMeta {
         app: AppKind::Codex, session_id: id.into(), title: "metadata title".into(),
         summary: "summary".into(), project_dir: Some("/projects/example".into()),
         created_at: None, last_active_at: Some("2026-09-22T00:00:00Z".into()),
         resume_command: String::new(),
-        alias: None, pinned: false, tags: Vec::new(),
+        alias: None, pinned: false, tags: Vec::new(), parent_session_id: None, can_delete: true,
     } }
 }
 
@@ -66,8 +66,10 @@ fn metadata_matches_only_without_message_hits_and_failures_are_visible() {
     assert!(page.results[0].message_id.is_none());
     fs::write(&path, message("metadata") + "{invalid\n").unwrap();
     let page = search(vec![source(&path, "s")], vec![], "metadata", None, 0);
+    assert_eq!(page.total, 1);
+    assert!(page.results[0].message_id.is_some());
     assert_eq!(page.issues.len(), 1);
-    assert!(page.issues[0].message.contains("第 2 行"));
+    assert!(page.issues[0].message.contains("第 2 条记录"));
 }
 
 #[test]

@@ -207,14 +207,12 @@ pub(super) fn prepare_profile_save_data(
     }
 }
 
-pub(super) fn invalidate_provider_readings(app: &AppHandle, profile_id: &str) {
+pub(super) fn invalidate_provider_cache(app: &AppHandle, profile_id: &str) {
     if let Ok(state) = crate::local_state::LocalState::from_app(app) {
         if let Err(error) = crate::usage_cache::invalidate(&state, profile_id) {
             log::warn!("无法清除更新供应商的托盘用量缓存: {error}");
         }
-        if let Err(error) = crate::usage_history::invalidate_provider(&state, profile_id) {
-            log::warn!("无法清除更新供应商的用量历史: {error}");
-        }
+
     }
     crate::codex_official_quota::invalidate(profile_id);
     crate::tray::refresh(app);

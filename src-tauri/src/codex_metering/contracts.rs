@@ -84,10 +84,7 @@ impl CodexUsageOrigin {
 /// `codex-session-v1:<thread uuid>:<event index>`; the owner of session row identity.
 pub(crate) const CODEX_SESSION_ID_PREFIX: &str = "codex-session-v1";
 
-#[expect(dead_code)] // reserved: session-usage sync slate
-pub(crate) fn session_request_id(thread_id: &str, event_index: u32) -> String {
-    format!("{CODEX_SESSION_ID_PREFIX}:{thread_id}:{event_index}")
-}
+
 
 /// Only allowlisted accounting metadata is persisted. No request body, URL or headers.
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -121,6 +118,53 @@ pub(crate) struct CodexRequestRecord {
 }
 impl CodexRequestRecord {
     pub(crate) fn validate(&self) -> Result<(), String> {
+        self.validate_identity()?;
+        self.billing.validate()?;
+        for value in [
+            Some(self.at_ms),
+            Some(self.duration_ms),
+            self.first_byte_latency_ms,
+            self.first_token_latency_ms,
+            self.input_tokens,
+            self.output_tokens,
+            self.cache_read_tokens,
+            self.cache_creation_tokens,
+            self.reasoning_tokens,
+        ] {
+            if value.is_some_and(|value| value > i64::MAX as u64) {
+                return Err("Codex 请求计数超出可存储范围".into());
+            }
+        }
+        if self
+            .status
+            .is_some_and(|status| !(100..=599).contains(&status))
+        {
+            return Err("Codex 请求状态码无效".into());
+        }
+        for value in [
+            &self.profile_id,
+            &self.route_revision,
+            &self.thread_id,
+            &self.request_model,
+            &self.mapped_model,
+            &self.response_model,
+            &self.pricing_error,
+        ]
+        .into_iter()
+        .flatten()
+        {
+            if value.len() > 2048 || value.chars().any(|c| c.is_control()) {
+                return Err("Codex 请求元数据过长或含有控制字符".into());
+            }
+        }
+        if let Some(cost) = &self.cost {
+            if asb_core::contracts::decimal_micros(&cost.total_usd)? > i64::MAX as u64 {
+                return Err("Codex 请求费用超出可存储范围".into());
+            }
+        }
+        Ok(())
+    }
+    fn validate_identity(&self) -> Result<(), String> {
         match self.origin {
             CodexUsageOrigin::Proxy => {
                 if uuid::Uuid::parse_str(&self.id).is_err() || self.attempts.len() > 32 {
@@ -172,49 +216,6 @@ impl CodexRequestRecord {
                 {
                     return Err("Codex 会话记录缺少 token 总量".into());
                 }
-            }
-        }
-        self.billing.validate()?;
-        for value in [
-            Some(self.at_ms),
-            Some(self.duration_ms),
-            self.first_byte_latency_ms,
-            self.first_token_latency_ms,
-            self.input_tokens,
-            self.output_tokens,
-            self.cache_read_tokens,
-            self.cache_creation_tokens,
-            self.reasoning_tokens,
-        ] {
-            if value.is_some_and(|value| value > i64::MAX as u64) {
-                return Err("Codex 请求计数超出可存储范围".into());
-            }
-        }
-        if self
-            .status
-            .is_some_and(|status| !(100..=599).contains(&status))
-        {
-            return Err("Codex 请求状态码无效".into());
-        }
-        for value in [
-            &self.profile_id,
-            &self.route_revision,
-            &self.thread_id,
-            &self.request_model,
-            &self.mapped_model,
-            &self.response_model,
-            &self.pricing_error,
-        ]
-        .into_iter()
-        .flatten()
-        {
-            if value.len() > 2048 || value.chars().any(|c| c.is_control()) {
-                return Err("Codex 请求元数据过长或含有控制字符".into());
-            }
-        }
-        if let Some(cost) = &self.cost {
-            if asb_core::contracts::decimal_micros(&cost.total_usd)? > i64::MAX as u64 {
-                return Err("Codex 请求费用超出可存储范围".into());
             }
         }
         Ok(())

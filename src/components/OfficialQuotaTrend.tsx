@@ -2,6 +2,7 @@ import { officialQuotaWindowName } from "../lib/usage-format";
 import type { UsageHistorySeries } from "../api/client";
 import { useI18n } from "../i18n";
 import { UsageTrendChart } from "./charts/UsageTrendChart";
+import { Time } from "./Time";
 
 interface Props {
   series: UsageHistorySeries[];
@@ -26,6 +27,10 @@ export function OfficialQuotaTrend({ series, loading, error, ariaLabel }: Props)
   return (
     <section className="asb-usage-history" aria-label={ariaLabel}>
       <h4 className="asb-section-title">{t("clientConfig.quota.trendTitle")}</h4>
+      {series.filter((entry) => entry.totalPoints > entry.points.length).map((entry) => <p key={entry.id} className="asb-scope-note">
+        {t("usage.history.sampled", { shown: entry.points.length, total: entry.totalPoints })}
+        {" · "}<Time iso={entry.firstAt} />{" — "}<Time iso={entry.lastAt} />
+      </p>)}
       {loading && quotaSeries.length === 0 ? (
         <span className="asb-skeleton asb-usage-history-skeleton" role="status" aria-label={t("clientConfig.quota.historyLoading")} />
       ) : (

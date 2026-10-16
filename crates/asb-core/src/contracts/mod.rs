@@ -61,7 +61,7 @@ pub use subagents::{
 pub use usage::{
     CodexOfficialQuota, CodexOfficialQuotaReset, CodexOfficialQuotaResetKind,
     CodexOfficialQuotaStatus, CodexOfficialQuotaWindow, CodexQuotaReadFailure,
-    CodexQuotaReadFailureKind, CodexTransportClass, ModelUsageDay, ModelUsageFreshness,
+    CodexQuotaReadFailureKind, CodexTransportClass, ModelUsageCoverage, ModelUsageDay, ModelUsageFreshness,
     ModelUsageGroup, ModelUsageIssue, ModelUsageRange, ModelUsageRead, ModelUsageReport,
     ModelUsageRequest, ModelUsageTokens, UsageHistoryMetric, UsageHistoryPoint,
     UsageHistoryRequest, UsageHistorySeries, UsageQuery, UsageReading, UsageReadingInput,

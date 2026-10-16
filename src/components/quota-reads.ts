@@ -63,7 +63,7 @@ export function useCodexOfficialReset(enabled: boolean) {
   }, [enabled]);
 
   const readStatus = async () => {
-    if (requestRef.current !== null) return;
+    if (!enabled || requestRef.current !== null) return;
 
     cacheRevisionRef.current += 1;
     setCacheLoading(false);
@@ -140,7 +140,7 @@ export function useCodexResetSignal(enabled: boolean) {
   }, [enabled]);
 
   const readStatus = async () => {
-    if (requestRef.current !== null) return;
+    if (!enabled || requestRef.current !== null) return;
 
     cacheRevisionRef.current += 1;
     setCacheLoading(false);

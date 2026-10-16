@@ -212,6 +212,17 @@ pub struct ModelUsageReport {
     /// ranges cannot decide whether an undated record belongs inside them.
     pub unassigned_tokens: ModelUsageTokens,
     pub issues: Vec<ModelUsageIssue>,
+    pub coverage: ModelUsageCoverage,
+}
+
+#[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct ModelUsageCoverage {
+    pub source_sessions: u64,
+    pub scanned_files: u64,
+    /// Includes sessions with no completed calls and histories missing call receipts.
+    pub sessions_without_usage: u64,
+    pub undated_event_tokens: u64,
 }
 
 /// One read request for the local-session usage cache. A forced refresh
@@ -284,6 +295,9 @@ pub struct UsageHistoryPoint {
 #[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct UsageHistorySeries {
+    pub total_points: u64,
+    pub first_at: String,
+    pub last_at: String,
     pub id: String,
     pub label: String,
     pub unit: Option<String>,

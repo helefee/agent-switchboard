@@ -3,6 +3,8 @@ import type { MessageEntry } from "../types";
 /** Domain dictionary for backup (zh-CN / en-US pairs). Keys are prefixed with
  * "backup." and must never collide with another domain file. */
 export const messages = {
+  "backup.logs.coverage": ["显示当前筛选最新 {shown} 条，共匹配 {total} 条；完整日志可从日志文件夹查看。", "Showing the latest {shown} of {total} matching events. Full logs are available in the log folder."],
+  "backup.logs.skipped": ["有 {count} 条日志无法解析或超过单条读取上限，未计入当前结果。", "{count} log records could not be parsed or exceeded the record limit and are excluded."],
   "backup.action.storageCacheMaintained": ["维护浏览器缓存", "Maintain browser cache"],
   "backup.action.outboundProxySaved": ["保存出站代理", "Save outbound proxy"],
   "backup.action.outboundProxyRepaired": ["检查并修复出站代理", "Check and repair outbound proxy"],

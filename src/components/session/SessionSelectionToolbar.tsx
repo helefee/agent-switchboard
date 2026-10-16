@@ -39,7 +39,7 @@ export function SessionSelectionToolbar({ search, selection, organization }: {
           {t("sessions.organize.tags")}
         </Button>
         <Button variant="unstyled" className="asb-session-quiet-action asb-session-selection-delete"
-          disabled={busy || !sessions.length} onClick={() => selection.setPending(sessions)}>
+          disabled={busy || !sessions.length || sessions.some((session) => !session.canDelete)} onClick={() => selection.setPending(sessions)}>
           {t("sessions.batch.deleteSelected", { count: sessions.length })}
         </Button>
         <Button variant="unstyled" className="asb-session-quiet-action" disabled={busy}

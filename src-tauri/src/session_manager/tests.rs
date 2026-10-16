@@ -62,7 +62,7 @@ fn scans_supported_sources_without_exposing_paths() {
 }
 
 #[test]
-fn claude_discovery_excludes_nested_workflow_journals() {
+fn claude_discovery_reports_journals_without_a_session_identity() {
     let temp = tempdir().expect("temp");
     let root = temp.path().join("projects");
     let project = root.join("encoded-project");
@@ -78,13 +78,14 @@ fn claude_discovery_excludes_nested_workflow_journals() {
 
     let scan = scan_session_roots(&[(AppKind::Claude, root)], &HashMap::new());
 
-    assert!(scan.issues.is_empty());
+    assert_eq!(scan.issues.len(), 1);
+    assert!(scan.issues[0].message.contains("不含可识别的会话身份"));
     assert_eq!(scan.sessions.len(), 1);
     assert_eq!(scan.sessions[0].session_id, "claude-session");
 }
 
 #[test]
-fn duplicate_session_ids_keep_the_first_configured_source() {
+fn duplicate_session_ids_share_metadata_and_keep_all_fragments() {
     let temp = tempdir().expect("temp");
     let active_root = temp.path().join("codex").join("sessions");
     let archived_root = temp.path().join("codex").join("archived_sessions");
@@ -129,7 +130,7 @@ fn duplicate_session_ids_keep_the_first_configured_source() {
 }
 
 #[test]
-fn extracts_messages_only_when_a_record_has_a_role_and_content() {
+fn preserves_plain_messages_and_structured_tool_calls() {
     let temp = tempdir().expect("temp");
     let path = temp.path().join("session.jsonl");
     write(
@@ -143,7 +144,9 @@ fn extracts_messages_only_when_a_record_has_a_role_and_content() {
     );
 
     let messages = collect_messages(&path).expect("read messages");
-    assert_eq!(messages.len(), 2);
+    assert_eq!(messages.len(), 3);
+    assert_eq!(messages[2].role, "tool");
+    assert!(messages[2].content.contains("shell"));
     assert_eq!(messages[0].content, "你好");
     assert_eq!(messages[1].role, "assistant");
 }
@@ -158,27 +161,82 @@ fn invalid_session_ids_are_not_made_resumable() {
 }
 
 #[test]
-fn metadata_records_beyond_the_line_cap_are_ignored() {
-    let temp = tempdir().expect("temp");
-    let mut content = String::new();
-    for _ in 0..(parser::METADATA_LINE_LIMIT + 1) {
-        content.push_str(
-            "{\"type\":\"user\",\"message\":{\"role\":\"user\",\"content\":\"噪声\"}}\n",
-        );
-    }
-    content.push_str(
-        "{\"sessionId\":\"late-1\",\"cwd\":\"C:/work/late\",\"message\":{\"role\":\"user\",\"content\":\"很晚才出现\"}}\n",
-    );
-    write(&temp.path().join("late.jsonl"), &content);
+fn discovers_metadata_and_real_requests_after_long_injected_context() {
+    let temp = tempdir().unwrap();
+    let path = temp.path().join("late.jsonl");
+    let mut records = vec![serde_json::json!({"type":"user","message":{"role":"user","content":"# AGENTS.md instructions for fixture"}}); 100];
+    records.push(serde_json::json!({"type":"user","sessionId":"late-1","cwd":"C:/work/late",
+        "timestamp":"2026-10-16T02:00:00Z","message":{"role":"user",
+        "content":"# Context from my IDE setup:\n## My request for Codex: 真正请求"}}));
+    write(&path, &records.iter().map(|record| format!("{record}\n")).collect::<String>());
+    let scan = scan_session_roots(&[(AppKind::Claude, temp.path().to_path_buf())], &HashMap::new());
+    assert!(scan.issues.is_empty());
+    assert_eq!(scan.sessions[0].session_id, "late-1");
+    assert_eq!(scan.sessions[0].summary, "真正请求");
+    assert_eq!(scan.sessions[0].last_active_at.as_deref(), Some("2026-10-16T02:00:00+00:00"));
+}
 
-    let scan = scan_session_roots(
-        &[(AppKind::Claude, temp.path().to_path_buf())],
-        &HashMap::new(),
-    );
-    assert!(
-        scan.sessions.is_empty(),
-        "会话 ID 在限界之后才出现时不应被收录"
-    );
+#[test]
+fn claude_subagents_have_separate_identity_and_resume_their_parent() {
+    let temp = tempdir().unwrap();
+    let root = temp.path().join("projects");
+    for (path, text) in [(root.join("project/main.jsonl"), "main"),
+        (root.join("project/main/subagents/agent-one.jsonl"), "child")] {
+        write(&path, &format!("{}\n", serde_json::json!({"type":"user","sessionId":"main",
+            "message":{"role":"user","content":text}})));
+    }
+    let scan = scan_session_roots(&[(AppKind::Claude, root)], &HashMap::new());
+    assert!(scan.issues.is_empty());
+    assert_eq!(scan.sessions.len(), 2);
+    let child = scan.sessions.iter().find(|session| session.parent_session_id.is_some()).unwrap();
+    assert_eq!(child.session_id, "main-agent-one");
+    assert_eq!(child.resume_command, "claude --resume main");
+}
+
+#[test]
+fn continuation_fragments_keep_new_messages_and_deduplicate_replayed_prefixes() {
+    let temp = tempdir().unwrap();
+    let first = temp.path().join("a.jsonl");
+    let next = temp.path().join("b.jsonl");
+    let header = format!("{}\n", serde_json::json!({"type":"session_meta","payload":{"id":"same"}}));
+    let user = format!("{}\n", serde_json::json!({"role":"user","content":"question"}));
+    let answer = format!("{}\n", serde_json::json!({"role":"assistant","content":"answer"}));
+    write(&first, &(header.clone() + &user));
+    write(&next, &(header + &user + &answer));
+    let (sources, issues) = scan_session_source_roots(&[(AppKind::Codex, temp.path().to_path_buf())], &HashMap::new());
+    assert!(issues.is_empty());
+    assert_eq!(sources.len(), 1);
+    assert_eq!(sources[0].paths.len(), 2);
+    let mut messages = Vec::new();
+    sources[0].visit(|message| { messages.push(message); Ok(std::ops::ControlFlow::Continue(())) }).unwrap();
+    assert_eq!(messages.len(), 2);
+    assert_eq!(messages[1].content, "answer");
+}
+
+#[test]
+fn raw_fragments_follow_event_time_across_active_and_archive_directories() {
+    let temp = tempdir().unwrap();
+    for (name, day, text) in [("a-archive/new.jsonl", 16, "new"), ("z-active/old.jsonl", 15, "old")] {
+        write(&temp.path().join(name), &format!("{}\n{}\n",
+            serde_json::json!({"type":"session_meta","payload":{"id":"same"}}),
+            serde_json::json!({"role":"user","content":text,"timestamp":format!("2026-10-{day}T00:00:00Z")})));
+    }
+    let (sources, issues) = scan_session_source_roots(&[(AppKind::Codex, temp.path().to_path_buf())], &HashMap::new());
+    assert!(issues.is_empty());
+    let mut contents = Vec::new();
+    sources[0].visit(|message| { contents.push(message.content); Ok(std::ops::ControlFlow::Continue(())) }).unwrap();
+    assert_eq!(contents, ["old", "new"]);
+}
+
+#[test]
+fn deleting_claude_sidecars_cleans_only_metadata_whose_entire_source_is_removed() {
+    let temp = tempdir().unwrap();
+    let main = fixture_source(&temp.path().join("main.jsonl"), AppKind::Claude, "main");
+    let inside = fixture_source(&temp.path().join("main/subagents/agent-one.jsonl"), AppKind::Claude, "main-agent-one");
+    let mut copied = fixture_source(&temp.path().join("main/subagents/agent-two.jsonl"), AppKind::Claude, "main-agent-two");
+    copied.paths.push(temp.path().join("retained/subagents/agent-two.jsonl"));
+    let sources = vec![main.clone(), inside, copied];
+    assert_eq!(removed_organization_ids(&main, &sources), ["main", "main-agent-one"]);
 }
 
 #[test]
@@ -208,11 +266,9 @@ fn removes_the_record_and_claude_sidecar_without_touching_siblings() {
 }
 
 #[test]
-fn deleting_a_missing_record_reports_failure() {
+fn a_resolved_record_that_is_already_absent_can_finish_metadata_cleanup() {
     let temp = tempdir().expect("temp");
-    let error = remove_session_source(AppKind::Codex, &temp.path().join("gone.jsonl"))
-        .expect_err("missing record must fail");
-    assert!(error.contains("无法删除会话记录"));
+    remove_session_source(AppKind::Codex, &temp.path().join("gone.jsonl")).unwrap();
 }
 
 #[test]

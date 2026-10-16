@@ -3,6 +3,11 @@ import type { MessageEntry } from "../types";
 /** Domain dictionary for sessions (zh-CN / en-US pairs). Keys are prefixed with
  * "sessions." and must never collide with another domain file. */
 export const messages = {
+  "sessions.message.expandImages": ["展开消息与 {count} 张图片", "Expand message and {count} images"],
+  "sessions.message.imageAlt": ["会话图片 {index}", "Session image {index}"],
+  "sessions.message.imageUnavailable": ["图片 {index} 无法解码，原始内容仍可复制或导出。", "Image {index} cannot be decoded. The original content can still be copied or exported."],
+  "sessions.nativeHistoryManaged": ["Codex 原生历史在此只读；无法确认原生登记时也不执行删除。请在 Codex 中删除，会话阅读、搜索、收藏和导出仍可使用。", "Codex native history is read-only here. Deletion is also disabled when its registration cannot be verified. Delete it in Codex; reading, search, bookmarks and export remain available."],
+  "sessions.role.reasoning": ["推理", "Reasoning"],
   "sessions.message.copyPreview": ["复制摘要", "Copy preview"],
   "sessions.message.copyFull": ["复制完整消息", "Copy full message"],
   "sessions.message.copyBusy": ["已有复制操作正在进行，请稍后重试。", "Another copy operation is in progress. Try again shortly."],

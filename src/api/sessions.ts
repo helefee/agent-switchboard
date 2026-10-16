@@ -16,6 +16,8 @@ export interface SessionMeta {
   alias: string | null;
   pinned: boolean;
   tags: string[];
+  parentSessionId: string | null;
+  canDelete: boolean;
 }
 
 export interface SessionMessagePreview {
@@ -25,14 +27,17 @@ export interface SessionMessagePreview {
   contentLength: number;
   at: string | null;
   bookmarked: boolean | null;
+  imageCount: number;
 }
 
 export interface SessionMessagePage {
+  session: SessionMeta;
   items: SessionMessagePreview[];
   offset: number;
   total: number;
   pageSize: number;
   bookmarkIssue: LocalizedMessage | null;
+  issues: string[];
 }
 
 export interface SessionContentPage {
@@ -40,6 +45,8 @@ export interface SessionContentPage {
   offset: number;
   total: number;
   pageSize: number;
+  images: string[];
+  issues: string[];
 }
 
 export type SessionCopySource = { kind: "session"; app: AppKind; sessionId: string; messageId: string }
@@ -109,6 +116,7 @@ export function updateSessionOrganization(
 }
 
 export interface SessionBookmarkSummary {
+  imageCount: number;
   id: string;
   app: AppKind;
   sessionId: string;

@@ -1,4 +1,5 @@
 pub(crate) mod archive;
+pub(crate) mod publish;
 pub(crate) mod sqlite;
 mod cache;
 mod sizes;

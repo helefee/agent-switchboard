@@ -20,29 +20,33 @@ export function useUsageHistory(request: UsageHistoryRequest, enabled: boolean) 
     () => (request.kind === "provider" ? { kind: "provider", profileId: request.profileId } : { kind: "official" }),
     [key],
   );
-  const [series, setSeries] = useState<UsageHistorySeries[]>([]);
+  const [snapshot, setSnapshot] = useState<{ key: string; series: UsageHistorySeries[] } | null>(null);
+  const [readKey, setReadKey] = useState(key);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useMessageState();
   const version = useRef(0);
+  const visible = useRef(enabled);
+  visible.current = enabled;
 
   const refresh = useCallback(async () => {
+    if (!visible.current) return;
     const current = ++version.current;
+    setReadKey(key);
     setLoading(true);
     setError(null);
     try {
       const next = await getUsageHistory(currentRequest);
       if (!Array.isArray(next)) throw uiMessage("usage.history.invalidResponse");
-      if (version.current === current) setSeries(next);
+      if (version.current === current) setSnapshot({ key, series: next });
     } catch (reason) {
       if (version.current === current) setError(reason);
     } finally {
       if (version.current === current) setLoading(false);
     }
-  }, [currentRequest]);
+  }, [currentRequest, key]);
 
   useEffect(() => {
-    if (!enabled) return undefined;
-    setSeries([]);
+    if (!enabled) { setLoading(false); return undefined; }
     setError(null);
     void refresh();
     return () => {
@@ -50,5 +54,6 @@ export function useUsageHistory(request: UsageHistoryRequest, enabled: boolean) 
     };
   }, [enabled, refresh]);
 
-  return { series, loading, error, refresh };
+  return { series: snapshot?.key === key ? snapshot.series : [],
+    loading: readKey === key ? loading : enabled, error: readKey === key ? error : null, refresh };
 }

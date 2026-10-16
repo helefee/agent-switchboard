@@ -9,6 +9,14 @@ import { toast, toastMessage } from "../use-toast";
 import { copyText } from "./session-content";
 import { useSessionReadQueue } from "./use-session-read-queue";
 
+function SessionImage({ src, index }: { src: string; index: number }) {
+  const { t } = useI18n();
+  const [failed, setFailed] = useState(false);
+  useEffect(() => setFailed(false), [src]);
+  return failed ? <p className="asb-warn-text" role="alert">{t("sessions.message.imageUnavailable", { index: index + 1 })}</p>
+    : <img src={src} alt={t("sessions.message.imageAlt", { index: index + 1 })} loading="lazy" onError={() => setFailed(true)} />;
+}
+
 export function SessionText({ content, partial = false, preview = false }: {
   content: string; partial?: boolean; preview?: boolean;
 }) {
@@ -51,6 +59,9 @@ export function SessionContent({ read, offset, onOffsetChange }: {
     {loading && <p role="status">{t("sessions.transcript.loading.aria")}</p>}
     {error && <p className="asb-warn-text" role="alert">{error}</p>}
     {part && <>
+      {part.issues.map((issue, index) => <p key={index} className="asb-warn-text" role="alert">{issue}</p>)}
+      {part.images.length > 0 && <div className="asb-session-images">{part.images.map((src, index) =>
+        <SessionImage key={index} src={src} index={index} />)}</div>}
       {part.total > part.pageSize && <p className="asb-scope-note">{t("sessions.message.pagedText")}</p>}
       <SessionText content={part.content} partial={part.total > part.pageSize} />
       <Pagination total={part.total} page={Math.floor(part.offset / part.pageSize) + 1} pageSize={part.pageSize}

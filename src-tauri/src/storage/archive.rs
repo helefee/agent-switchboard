@@ -74,33 +74,6 @@ impl Drop for Temporary {
     fn drop(&mut self) { let _ = fs::remove_file(&self.0); }
 }
 
-#[cfg(windows)]
-fn publish(source: &Path, target: &Path) -> Result<(), String> {
-    use std::os::windows::ffi::OsStrExt;
-    use windows_sys::Win32::Storage::FileSystem::{MoveFileExW, MOVEFILE_REPLACE_EXISTING, MOVEFILE_WRITE_THROUGH};
-    let source = source.canonicalize().map_err(|error| error.to_string())?;
-    let target = target.parent().ok_or("归档位置无效")?.canonicalize().map_err(|error| error.to_string())?
-        .join(target.file_name().ok_or("归档文件名无效")?);
-    let wide = |path: &Path| -> Result<Vec<u16>, String> {
-        let mut value = path.as_os_str().encode_wide().collect::<Vec<_>>();
-        if value.contains(&0) { return Err("归档路径包含无效字符".into()); }
-        value.push(0); Ok(value)
-    };
-    let source = wide(&source)?;
-    let target = wide(&target)?;
-    if unsafe { MoveFileExW(source.as_ptr(), target.as_ptr(), MOVEFILE_REPLACE_EXISTING | MOVEFILE_WRITE_THROUGH) } == 0 {
-        return Err(std::io::Error::last_os_error().to_string());
-    }
-    Ok(())
-}
-
-#[cfg(not(windows))]
-fn publish(source: &Path, target: &Path) -> Result<(), String> {
-    fs::rename(source, target).map_err(|error| error.to_string())?;
-    File::open(target.parent().ok_or("归档位置无效")?).and_then(|directory| directory.sync_all())
-        .map_err(|error| format!("归档已写入，但目录持久化未确认；历史未清理：{error}"))
-}
-
 pub(crate) fn execute(local: &LocalState, expected: &HistoryArchivePlan, target: &Path) -> Result<ArchiveOutcome, String> {
     if plan(local, &expected.cutoff, &mut std::io::sink())? != *expected {
         return Err("待归档历史已经变化，请重新预览".into());
@@ -121,7 +94,7 @@ pub(crate) fn execute(local: &LocalState, expected: &HistoryArchivePlan, target:
     }
     file.sync_all().map_err(|error| error.to_string())?;
     drop(file);
-    publish(&temporary.0, target)?;
+    super::publish::replace(&temporary.0, target)?;
     let date = cutoff_date(&expected.cutoff)?;
     let mut result = ArchiveOutcome { path: target.to_string_lossy().into_owned(), removed: 0, warnings: Vec::new() };
     for app in [AppKind::Codex, AppKind::Claude] {

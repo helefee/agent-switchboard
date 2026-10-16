@@ -1,11 +1,12 @@
 mod filters;
 pub use filters::{SessionProject, SessionSearchRequest};
 use filters::{catalog, Filters};
-use super::{messages::aligned_content_offset, organization, parser::visit_messages, scan_sources,
+use super::{messages::aligned_content_offset, organization, scan_sources,
     text::{raw_offset, TextQuery}, SessionIssue, SessionMeta, SessionSource};
 #[cfg(test)]
 use super::parser::collect_messages;
 use serde::Serialize;
+use std::collections::HashSet;
 use std::ops::ControlFlow;
 use std::path::Path;
 
@@ -70,8 +71,7 @@ fn search_sources(
             continue;
         }
         let before = total;
-        let saved = results.len();
-        let scan = visit_messages(&source.path, |message| {
+        let scan = source.visit(|message| {
             if let Some(position) = query.find(&message.content) {
                 if total >= offset && results.len() < PAGE_SIZE {
                     let raw = raw_offset(&message.content, position).ok_or("搜索正文位置无效")?;
@@ -82,10 +82,9 @@ fn search_sources(
             }
             Ok(ControlFlow::Continue(()))
         });
-        if let Err(message) = scan {
-            results.truncate(saved);
-            total = before;
-            issues.push(SessionIssue { app: source.meta.app, message });
+        match scan {
+            Ok(warnings) => issues.extend(warnings.into_iter().map(|message| SessionIssue { app: source.meta.app, message })),
+            Err(message) => issues.push(SessionIssue { app: source.meta.app, message }),
         }
         if total == before && metadata_fields(&source.meta)
             .iter().any(|field| query.find(field).is_some()) {
@@ -95,6 +94,8 @@ fn search_sources(
             total += 1;
         }
     }
+    let mut seen = HashSet::new();
+    issues.retain(|issue| seen.insert((issue.app, issue.message.clone())));
     SessionSearchPage { results, total, issues, projects, tags }
 }
 

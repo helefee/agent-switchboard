@@ -58,7 +58,7 @@ function BookmarkDetail({ item, offset, scrollTop, onOffsetChange, busy, onRemov
     <ScrollArea className="asb-session-transcript" viewportRef={container} onScroll={onScroll}
       aria-label={t("sessions.bookmarks.detail")}>
       <SessionMessageView message={{ id: item.messageId, role: item.role, content: item.excerpt,
-        contentLength: item.contentLength, bookmarked: true, at: item.at }}
+        contentLength: item.contentLength, bookmarked: true, at: item.at, imageCount: item.imageCount }}
         readContent={readContent} readCopyText={readCopyText} targeted={false} expanded contentOffset={offset}
         onContentOffsetChange={(_id, next) => onOffsetChange(item.id, next)} />
     </ScrollArea>

@@ -248,8 +248,14 @@ export function discardGatewayPortChange(confirmWrite: boolean): Promise<Gateway
   return invoke<GatewayStatus>("gateway_discard_port_change", { confirmWrite });
 }
 
-export function listRuntimeLogs(): Promise<RuntimeLogEntry[]> {
-  return invoke<RuntimeLogEntry[]>("list_runtime_logs");
+export interface RuntimeLogRead {
+  entries: RuntimeLogEntry[];
+  total: number;
+  skipped: number;
+}
+
+export function listRuntimeLogs(level: RuntimeLogSeverity | null): Promise<RuntimeLogRead> {
+  return invoke<RuntimeLogRead>("list_runtime_logs", { level });
 }
 
 /** Opens the app-owned runtime-log directory without exposing its path to the UI. */

@@ -7,8 +7,6 @@
 
 use chrono::DateTime;
 use serde::{Deserialize, Serialize};
-#[cfg(test)]
-use std::fs;
 use std::path::{Path, PathBuf};
 use std::sync::atomic::{AtomicU8, Ordering};
 use tauri::AppHandle;
@@ -16,6 +14,14 @@ use tauri::AppHandle;
 const LOG_FILE_STEM: &str = "agent-switchboard";
 const LOG_TARGET: &str = "agent-switchboard.runtime";
 const MAX_VISIBLE_ENTRIES: usize = 500;
+
+#[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
+pub struct RuntimeLogRead {
+    pub entries: Vec<RuntimeLogEntry>,
+    pub total: usize,
+    pub skipped: usize,
+}
 
 /// Persisted threshold for application runtime-event recording.
 ///
@@ -204,9 +210,9 @@ fn record(level: RuntimeLogSeverity, action: RuntimeLogAction, error_code: Optio
 
 /// Reads only this application's current and rotated runtime-event files.
 /// An empty log directory is a normal first-run state.
-pub fn list(app: &AppHandle) -> Result<Vec<RuntimeLogEntry>, String> {
+pub fn list(app: &AppHandle, level: Option<RuntimeLogSeverity>) -> Result<RuntimeLogRead, String> {
     let directory = log_directory(app)?;
-    list_from_dir(&directory)
+    list_from_dir(&directory, level)
 }
 
 /// Resolves the only directory that contains this application's runtime logs.
@@ -250,147 +256,5 @@ fn is_error_code(code: &str) -> bool {
 }
 
 #[cfg(test)]
-mod tests {
-    use super::*;
-
-    fn entry(at: &str, level: RuntimeLogSeverity, action: RuntimeLogAction) -> RuntimeLogEntry {
-        RuntimeLogEntry {
-            at: at.to_string(),
-            level,
-            action,
-            error_code: (level == RuntimeLogSeverity::Error)
-                .then(|| "operation-failed".to_string()),
-        }
-    }
-
-    #[test]
-    fn log_levels_apply_standard_thresholds() {
-        assert!(RuntimeLogLevel::Debug.allows(RuntimeLogSeverity::Debug));
-        assert!(RuntimeLogLevel::Debug.allows(RuntimeLogSeverity::Info));
-        assert!(RuntimeLogLevel::Debug.allows(RuntimeLogSeverity::Warn));
-        assert!(RuntimeLogLevel::Debug.allows(RuntimeLogSeverity::Error));
-
-        assert!(!RuntimeLogLevel::Info.allows(RuntimeLogSeverity::Debug));
-        assert!(RuntimeLogLevel::Info.allows(RuntimeLogSeverity::Info));
-        assert!(RuntimeLogLevel::Info.allows(RuntimeLogSeverity::Warn));
-        assert!(RuntimeLogLevel::Info.allows(RuntimeLogSeverity::Error));
-
-        assert!(!RuntimeLogLevel::Warn.allows(RuntimeLogSeverity::Debug));
-        assert!(!RuntimeLogLevel::Warn.allows(RuntimeLogSeverity::Info));
-        assert!(RuntimeLogLevel::Warn.allows(RuntimeLogSeverity::Warn));
-        assert!(RuntimeLogLevel::Warn.allows(RuntimeLogSeverity::Error));
-
-        assert!(!RuntimeLogLevel::Error.allows(RuntimeLogSeverity::Debug));
-        assert!(!RuntimeLogLevel::Error.allows(RuntimeLogSeverity::Info));
-        assert!(!RuntimeLogLevel::Error.allows(RuntimeLogSeverity::Warn));
-        assert!(RuntimeLogLevel::Error.allows(RuntimeLogSeverity::Error));
-
-        assert!(!RuntimeLogLevel::Silent.allows(RuntimeLogSeverity::Debug));
-        assert!(!RuntimeLogLevel::Silent.allows(RuntimeLogSeverity::Info));
-        assert!(!RuntimeLogLevel::Silent.allows(RuntimeLogSeverity::Warn));
-        assert!(!RuntimeLogLevel::Silent.allows(RuntimeLogSeverity::Error));
-    }
-
-    #[test]
-    fn reads_current_and_rotated_files_in_reverse_time_order() {
-        let directory = tempfile::tempdir().expect("temporary log directory");
-        let older = entry(
-            "2026-08-31T01:02:03.000Z",
-            RuntimeLogSeverity::Info,
-            RuntimeLogAction::AppStarted,
-        );
-        let newer = entry(
-            "2026-08-31T02:03:04.000Z",
-            RuntimeLogSeverity::Error,
-            RuntimeLogAction::ConfigurationSwitched,
-        );
-        fs::write(
-            directory
-                .path()
-                .join("agent-switchboard_2026-08-31_01-00-00.log"),
-            serde_json::to_string(&older).expect("serialize older"),
-        )
-        .expect("write archived log");
-        fs::write(
-            directory.path().join("agent-switchboard.log"),
-            serde_json::to_string(&newer).expect("serialize newer"),
-        )
-        .expect("write current log");
-
-        let entries = list_from_dir(directory.path()).expect("read logs");
-        assert_eq!(entries, vec![newer, older]);
-    }
-
-    #[test]
-    fn reads_all_event_severities_except_silent() {
-        let directory = tempfile::tempdir().expect("temporary log directory");
-        let debug = entry(
-            "2026-08-31T01:02:03.000Z",
-            RuntimeLogSeverity::Debug,
-            RuntimeLogAction::AppStarted,
-        );
-        let warn = entry(
-            "2026-08-31T02:03:04.000Z",
-            RuntimeLogSeverity::Warn,
-            RuntimeLogAction::ProfileStoreRepaired,
-        );
-        fs::write(
-            directory.path().join("agent-switchboard.log"),
-            format!(
-                "{}\n{}\n{{\"at\":\"2026-08-31T03:04:05.000Z\",\"level\":\"silent\",\"action\":\"appStarted\"}}",
-                serde_json::to_string(&debug).expect("serialize debug"),
-                serde_json::to_string(&warn).expect("serialize warn"),
-            ),
-        )
-        .expect("write log entries");
-
-        let entries = list_from_dir(directory.path()).expect("read logs");
-        assert_eq!(entries, vec![warn, debug]);
-    }
-
-    #[test]
-    fn ignores_malformed_and_non_contract_log_lines() {
-        let directory = tempfile::tempdir().expect("temporary log directory");
-        fs::write(
-            directory.path().join("agent-switchboard.log"),
-            concat!(
-                "not json\n",
-                "{\"at\":\"2026-08-31T01:02:03.000Z\",\"level\":\"info\",\"action\":\"appStarted\",\"message\":\"sk-secret\"}\n",
-                "{\"at\":\"bad-time\",\"level\":\"error\",\"action\":\"appStarted\",\"errorCode\":\"operation-failed\"}\n"
-            ),
-        )
-        .expect("write malformed lines");
-
-        assert_eq!(list_from_dir(directory.path()).expect("read logs"), vec![]);
-    }
-
-    #[test]
-    fn retains_only_the_newest_display_entries() {
-        let directory = tempfile::tempdir().expect("temporary log directory");
-        let path = directory.path().join("agent-switchboard.log");
-        let lines = (0..=MAX_VISIBLE_ENTRIES)
-            .map(|index| {
-                serde_json::to_string(&entry(
-                    &format!(
-                        "2026-08-31T00:{:02}:{:02}.000Z",
-                        (index / 60) % 60,
-                        index % 60
-                    ),
-                    RuntimeLogSeverity::Info,
-                    RuntimeLogAction::ProfileCreated,
-                ))
-                .expect("serialize entry")
-            })
-            .collect::<Vec<_>>()
-            .join("\n");
-        fs::write(path, lines).expect("write log entries");
-
-        let entries = list_from_dir(directory.path()).expect("read logs");
-        assert_eq!(entries.len(), MAX_VISIBLE_ENTRIES);
-        assert_eq!(entries[0].at, "2026-08-31T00:08:20.000Z");
-        assert_eq!(
-            entries.last().map(|entry| entry.at.as_str()),
-            Some("2026-08-31T00:00:01.000Z")
-        );
-    }
-}
+#[path = "runtime_log/tests.rs"]
+mod tests;

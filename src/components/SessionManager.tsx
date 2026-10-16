@@ -1,4 +1,5 @@
-import { useEffect, useState } from "react";
+import { useState } from "react";
+import { useWorkspaceVisible } from "../hooks/use-workspace-visible";
 import type { SessionMeta } from "../api/client";
 import { useI18n } from "../i18n";
 import { Button } from "./Button";
@@ -21,13 +22,7 @@ export function SessionManager({ active }: { active: boolean }) {
   const [view, setView] = useState<"history" | "bookmarks">("history");
   const [bookmarkQuery, setBookmarkQuery] = useState("");
   const [bookmarkFilter, setBookmarkFilter] = useState<ClientFilterValue>("all");
-  const [visible, setVisible] = useState(() => document.visibilityState === "visible");
-  useEffect(() => {
-    const sync = () => setVisible(document.visibilityState === "visible");
-    document.addEventListener("visibilitychange", sync);
-    return () => document.removeEventListener("visibilitychange", sync);
-  }, []);
-  const current = active && visible;
+  const current = useWorkspaceVisible(active);
   const search = useSessionSearch(current && view === "history");
   const detail = useSessionDetail(current && view === "history");
   const bookmarks = useSessionBookmarks(current && view === "bookmarks", bookmarkQuery, bookmarkFilter);

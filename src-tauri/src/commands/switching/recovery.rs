@@ -1,5 +1,5 @@
 use super::plan::{build_plan, execute_projection_with_auth, preview_projection};
-use super::profile_save::invalidate_provider_readings;
+use super::profile_save::invalidate_provider_cache;
 use crate::commands::error::CommandError;
 use tauri::{AppHandle, Manager};
 
@@ -14,7 +14,7 @@ pub(crate) fn recover_pending_profile_save(app: &AppHandle) -> Result<(), String
         .inner()
         .clone();
     if let Some(id) = recover_saved_profile(&state, &gateway)? {
-        invalidate_provider_readings(app, &id);
+        invalidate_provider_cache(app, &id);
     }
     Ok(())
 }

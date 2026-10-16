@@ -44,7 +44,7 @@ use codex_profile_save::{
 };
 use plan::{build_plan, preview_projection};
 use profile_save::{
-    commit_prepared_profile_save, invalidate_provider_readings, prepare_profile_save_data,
+    commit_prepared_profile_save, invalidate_provider_cache, prepare_profile_save_data,
     PreparedProfileSave,
 };
 use std::time::Instant;
@@ -157,7 +157,7 @@ pub async fn commit_profile_save(
     .await;
     if invalidates_readings {
         if let Ok(record) = &result {
-            invalidate_provider_readings(&refresh_app, &record.profile.id);
+            invalidate_provider_cache(&refresh_app, &record.profile.id);
         }
     }
     result
@@ -267,7 +267,7 @@ pub async fn commit_codex_profile_save(
     })
     .await;
     if let Ok(record) = &result {
-        invalidate_provider_readings(&refresh_app, &record.profile.id);
+        invalidate_provider_cache(&refresh_app, &record.profile.id);
     }
     result
 }

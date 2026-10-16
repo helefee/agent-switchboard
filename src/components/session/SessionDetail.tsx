@@ -82,7 +82,7 @@ function SessionMoreActions({ session, organization, disabled, onExport, onOrgan
           onAction={() => void organization.save([session], { kind: "pin", pinned: !session.pinned })}>
           {t(session.pinned ? "sessions.organize.unpin" : "sessions.organize.pin")}
         </MenuItem>
-        <MenuItem id="delete" className="asb-session-more-item is-danger" isDisabled={disabled}
+        <MenuItem id="delete" className="asb-session-more-item is-danger" isDisabled={disabled || !session.canDelete}
           onAction={onDelete}>{t("sessions.delete.title")}</MenuItem>
       </Menu>
     </Popover>
@@ -112,6 +112,7 @@ export function SessionDetail({ detail, session, bookmarks, deleting, onDelete, 
       </div>
     </header>
     <SessionFacts session={session} copy={actions.copy} />
+    {!session.canDelete && <p className="asb-scope-note">{t("sessions.nativeHistoryManaged")}</p>}
     {organizing && <SessionOrganizationEditor session={session} organization={organization}
       disabled={deleting || detail.busy} onClose={() => setOrganizing(false)} />}
     {actions.status && <p className="asb-scope-note" role="status">{actions.status}</p>}

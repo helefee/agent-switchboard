@@ -130,13 +130,13 @@ fn validate_value(value: &Organization) -> Result<(), String> {
     Ok(())
 }
 
-pub(super) fn delete_with_source(
-    root: &Path, app: AppKind, session_id: &str, remove: impl FnOnce() -> Result<(), String>,
+pub(super) fn delete_with_sources(
+    root: &Path, app: AppKind, session_ids: &[String], remove: impl FnOnce() -> Result<(), String>,
 ) -> Result<(), String> {
     if !store::exists(root)? { return remove(); }
     let mut connection = store::open(root)?;
     let transaction = connection.transaction_with_behavior(TransactionBehavior::Immediate).map_err(store::error)?;
-    store::remove(&transaction, app, session_id)?;
+    for session_id in session_ids { store::remove(&transaction, app, session_id)?; }
     remove()?;
     transaction.commit().map_err(|error| format!("会话文件已删除，但本地整理数据清理提交失败：{error}"))
 }

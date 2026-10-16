@@ -28,7 +28,7 @@ function MessageHeader({ message, readCopyText, onBookmark, bookmarked, bookmark
   const { t } = useI18n();
   const [copying, setCopying] = useState(false);
   const [error, setError] = useMessageState();
-  const isLong = message.contentLength > [...message.content].length;
+  const isLong = message.contentLength > [...message.content].length || message.imageCount > 0;
   const copy = async () => {
     setCopying(true); setError(null);
     try {
@@ -64,7 +64,7 @@ export function SessionMessageView({
   bookmarkBusy,
 }: Props) {
   const { t } = useI18n();
-  const isLong = message.contentLength > [...message.content].length;
+  const isLong = message.contentLength > [...message.content].length || message.imageCount > 0;
   const read = useCallback((offset: number) => readContent(message.id, offset), [readContent, message.id]);
   // Preview and full reader render the same text, so only one may exist at a
   // time: the preview returns exactly when the collapse transition ends and
@@ -99,6 +99,7 @@ export function SessionMessageView({
         >
           {expanded
             ? t("sessions.message.collapse")
+            : message.imageCount > 0 ? t("sessions.message.expandImages", { count: message.imageCount })
             : t("sessions.message.expand", { size: Math.ceil(message.contentLength / 1000) })}
         </Button>
       )}

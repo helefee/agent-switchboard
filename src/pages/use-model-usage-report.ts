@@ -40,7 +40,10 @@ export function useModelUsageReport(active: boolean, range: ModelUsageRange) {
       }
       return next;
     } catch (caught) {
-      if (requestVersion.current === version) setError(caught);
+      if (requestVersion.current === version) {
+        setError(caught);
+        setRefreshPlan({ range, refreshAfter: new Date(Date.now() + 30_000).toISOString() });
+      }
       return null;
     } finally {
       if (requestVersion.current === version) setLoading(false);
@@ -76,7 +79,7 @@ export function useModelUsageReport(active: boolean, range: ModelUsageRange) {
   const isCurrentRange = displayRange === range;
 
   return {
-    read: isCurrentRange ? read : null,
+    read: read?.report.range === range ? read : null,
     loading: isCurrentRange ? loading : false,
     error: isCurrentRange ? error : null,
     refresh,

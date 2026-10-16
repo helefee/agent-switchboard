@@ -15,7 +15,7 @@ const SCHEMA: &str = "CREATE TABLE organization (
 ) STRICT";
 
 fn path(root: &Path) -> PathBuf {
-    root.join("state").join("sessions").join("organization.sqlite3")
+    super::super::layout::directory(root).join("organization.sqlite3")
 }
 
 pub(super) fn exists(root: &Path) -> Result<bool, String> {

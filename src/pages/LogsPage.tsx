@@ -9,7 +9,7 @@ import { Time } from "../components/Time";
 import { ModuleHeader } from "../components/WorkspaceHeader";
 import { ScrollTextIcon } from "../components/icons";
 import { Button } from "../components/Button";
-import { useI18n, type MessageKey } from "../i18n";
+import { useI18n, type MessageKey, type TFunction } from "../i18n";
 import { RUNTIME_LOG_PAGE_SIZE, levelLabel, useRuntimeLogs } from "./use-runtime-logs";
 
 const ACTION_LABEL: Record<RuntimeLogAction, MessageKey> = {
@@ -44,14 +44,8 @@ const ACTION_LABEL: Record<RuntimeLogAction, MessageKey> = {
   officialLoginCompleted: "backup.action.officialLoginCompleted",
 };
 
-/** Read-only view of the application's own bounded diagnostic event files.
- * The record-level setting, level filter and refresh actions live in the
- * diagnostics page header; the card renders the current page of entries. */
-export function LogsPage({ logs }: { logs: ReturnType<typeof useRuntimeLogs> }) {
-  const { t } = useI18n();
-  const { entries, visibleEntries, pageEntries, page, setPage, filter, loading, error, folderError } = logs;
-
-  const columns: Array<TableColumn<RuntimeLogEntry>> = [
+function logColumns(t: TFunction): Array<TableColumn<RuntimeLogEntry>> {
+  return [
     {
       key: "at",
       header: t("backup.col.time"),
@@ -78,10 +72,22 @@ export function LogsPage({ logs }: { logs: ReturnType<typeof useRuntimeLogs> }) 
       render: (entry) => entry.errorCode ?? "—",
     },
   ];
+}
+
+/** Read-only view of the application's own bounded diagnostic event files.
+ * The record-level setting, level filter and refresh actions live in the
+ * diagnostics page header; the card renders the current page of entries. */
+export function LogsPage({ logs }: { logs: ReturnType<typeof useRuntimeLogs> }) {
+  const { t } = useI18n();
+  const { entries, visibleEntries, pageEntries, page, setPage, filter, loading, error, folderError, total, skipped } = logs;
+
+  const columns = logColumns(t);
 
   return (
     <section className="asb-panel asb-runtime-logs" aria-labelledby="runtime-logs-heading">
       <ModuleHeader id="runtime-logs-heading" title={t("backup.logs.title")} />
+      {total > entries.length && <p className="asb-scope-note">{t("backup.logs.coverage", { shown: entries.length, total })}</p>}
+      {skipped > 0 && <p className="asb-warn-text" role="alert">{t("backup.logs.skipped", { count: skipped })}</p>}
       {error && (
         <p className="asb-runtime-log-notice" role="alert">
           {t("backup.logs.readError", { message: commandErrorText(error, t) })}
