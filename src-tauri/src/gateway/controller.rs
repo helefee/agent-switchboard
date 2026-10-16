@@ -143,38 +143,6 @@ impl GatewayController {
         })
     }
 
-    /// Status compares the full current parameter intent even when the
-    /// gateway's routing identity stayed stable or its listener is offline.
-    pub(crate) fn active_route_projection(
-        &self,
-        plan: &SwitchPlan,
-    ) -> Result<Option<SwitchPlan>, String> {
-        let route = self
-            .inner
-            .routes
-            .read()
-            .map_err(|_| "本机协议网关路由锁不可用".to_string())?
-            .get(&plan.app())
-            .cloned();
-        let Some(route) = route else {
-            return Ok(None);
-        };
-        if route.profile_id != plan.profile.id
-            || route.fingerprint != route_fingerprint(&plan.profile)?
-        {
-            return Ok(None);
-        }
-        Ok(Some(
-            SwitchPlan::through_gateway(
-                plan.profile.clone(),
-                plan.client_settings.clone(),
-                route.client_endpoint(&self.configured_base_url()),
-                route.client_token.clone(),
-            )
-            .with_claude_route_revision(route.claude_revision()),
-        ))
-    }
-
     /// Persists and publishes one post-switch route. Returning an error makes
     /// the surrounding switch transaction restore the client configuration.
     pub(crate) fn commit<F>(&self, projection: &GatewayProjection, persist: F) -> Result<(), String>

@@ -75,10 +75,7 @@
   border-bottom: 1px solid var(--asb-hairline);
 }
 
-.asb-information-list {
-  min-height: 0;
-  overflow-y: auto;
-  scrollbar-gutter: stable;
+.asb-information-list > .asb-scroll-viewport {
   overscroll-behavior: contain;
 }
 

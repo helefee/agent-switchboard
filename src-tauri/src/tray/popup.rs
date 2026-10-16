@@ -270,7 +270,21 @@ fn position(app: &AppHandle, window: &WebviewWindow) -> Result<(), String> {
         width: 0.0,
         height: 0.0,
     });
-    let bounds = place(work, anchor, monitor.scale_factor(), height);
+    let config = app
+        .config()
+        .app
+        .windows
+        .iter()
+        .find(|config| config.label == LABEL)
+        .ok_or("托盘窗口配置缺失")?;
+    let max_height = config.max_height.ok_or("托盘窗口高度上限配置缺失")?;
+    let bounds = place(
+        work,
+        anchor,
+        monitor.scale_factor(),
+        config.width,
+        height.min(max_height),
+    );
     window
         .set_size(PhysicalSize::new(
             bounds.width.round() as u32,

@@ -1,5 +1,4 @@
 use std::io::Read;
-use std::sync::OnceLock;
 use std::time::Duration;
 
 use super::{HttpFetch, SourceError};
@@ -21,9 +20,8 @@ pub fn http_fetch(url: &str) -> Result<(u16, Vec<u8>), String> {
     if !parsed.username().is_empty() || parsed.password().is_some() || parsed.port().is_some() {
         return Err("来源地址不能包含凭据或自定义端口".into());
     }
-    static CLIENT: OnceLock<reqwest::blocking::Client> = OnceLock::new();
-    let client = CLIENT.get_or_init(|| {
-        reqwest::blocking::Client::builder()
+    let client = crate::outbound_proxy::cached_blocking_client("extension-sources", |builder| {
+        builder
             .user_agent("Agent Switchboard")
             .connect_timeout(Duration::from_secs(5))
             .timeout(Duration::from_secs(45))

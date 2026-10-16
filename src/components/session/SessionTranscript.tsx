@@ -4,6 +4,7 @@ import { useI18n } from "../../i18n";
 import { localizedMessageText } from "../../i18n/errors";
 import { Button } from "../Button";
 import { Pagination } from "../Pagination";
+import { ScrollArea } from "../ScrollArea";
 import { SessionMessageView } from "./SessionMessageView";
 import { codexOutlinePreview, previewLine } from "./session-content";
 import type { SessionBookmarks } from "./use-session-bookmarks";
@@ -60,7 +61,7 @@ export function SessionTranscript({ session, detail, bookmarks }: Props) {
         <span>{t("sessions.transcript.heading")}</span><span className="asb-session-count">{page.total}</span>
       </div>
       {page.bookmarkIssue && <p className="asb-warn-text" role="alert">{localizedMessageText(page.bookmarkIssue, t)}</p>}
-      <div className="asb-session-transcript" ref={container} aria-label={t("sessions.transcript.aria")}
+      <ScrollArea className="asb-session-transcript" viewportRef={container} aria-label={t("sessions.transcript.aria")}
         onScroll={onScroll}>
         {messages.length === 0 && <p>{t("sessions.transcript.empty")}</p>}
         {messages.map((message) => <SessionMessageView key={message.id} message={message}
@@ -71,20 +72,20 @@ export function SessionTranscript({ session, detail, bookmarks }: Props) {
           onBookmark={["user", "assistant"].includes(message.role) ? () => {
             void bookmarks.save(session, message.id).then((saved) => { if (saved && mounted.current) detail.markBookmarked(message.id); });
           } : undefined} />)}
-      </div>
+      </ScrollArea>
       <Pagination total={page.total} page={Math.floor(page.offset / page.pageSize) + 1} pageSize={page.pageSize}
         label={t("sessions.transcript.pagination")} onPageChange={detail.changePage} />
     </div>
     {items.length > 2 && <nav className="asb-session-toc" aria-label={t("sessions.toc.aria")}>
       <div className="asb-session-toc-heading">{t("sessions.toc.heading")}</div>
-      <div className="asb-session-toc-items">{items.map((item, index) =>
+      <ScrollArea className="asb-session-toc-items" aria-label={t("sessions.toc.aria")}>{items.map((item, index) =>
         <Button variant="unstyled" key={item.id} onClick={() => {
           detail.setTarget(item.id); setJump((value) => value + 1);
           setExpanded((current) => new Set([...current, item.id]));
         }}>
           <span className="asb-session-toc-index">{index + 1}</span>
           <span className="asb-session-toc-preview" title={item.preview}>{item.preview}</span>
-        </Button>)}</div>
+        </Button>)}</ScrollArea>
     </nav>}
   </div>;
 }

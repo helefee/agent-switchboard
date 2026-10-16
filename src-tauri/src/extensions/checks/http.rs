@@ -34,7 +34,7 @@ impl HttpConnection {
             .map_err(|_| CheckError::transport("无法启动 HTTP 检测运行时"))?;
         let client = {
             let _entered = runtime.enter();
-            reqwest::Client::builder().build()
+            crate::outbound_proxy::apply(reqwest::Client::builder()).build()
                 .map_err(|_| CheckError::transport("无法创建 HTTP 检测连接"))?
         };
         let mut request_headers = HeaderMap::new();

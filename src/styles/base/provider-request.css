@@ -58,14 +58,14 @@
 .asb-request-receipt p { color: var(--asb-text-muted); line-height: 1.6; }
 .asb-request-receipt[data-phase="success"] h4 svg { color: var(--asb-safe); }
 .asb-request-receipt[data-phase="failure"] h4 { color: var(--asb-danger); }
-.asb-request-receipt blockquote {
+.asb-request-reply {
   --asb-receipt-block-max-height: 240px;
   max-height: var(--asb-receipt-block-max-height);
   margin: var(--asb-space-4) 0;
-  overflow: auto;
   white-space: pre-wrap;
   font: var(--asb-text-body);
 }
+.asb-request-reply blockquote { margin: 0; }
 .asb-request-metrics { font: var(--asb-text-code); }
 .asb-request-diagnostic dl { display: grid; gap: var(--asb-space-2); margin: var(--asb-space-3) 0; }
 .asb-request-diagnostic dt { color: var(--asb-text-muted); }
@@ -76,18 +76,18 @@
   padding-block: var(--asb-space-2);
   cursor: pointer;
 }
-.asb-request-diagnostic pre {
+.asb-request-diagnostic-body {
   --asb-diagnostic-block-max-height: 240px;
   max-height: var(--asb-diagnostic-block-max-height);
   margin: var(--asb-space-1) 0 0;
-  padding: var(--asb-space-2);
-  overflow: auto;
   border-radius: var(--asb-radius);
   background: var(--asb-content-muted);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
   font: var(--asb-text-code);
 }
+.asb-request-diagnostic-body > .asb-scroll-viewport { padding: var(--asb-space-2); }
+.asb-request-diagnostic-body pre { margin: 0; white-space: pre-wrap; overflow-wrap: anywhere; font: inherit; }
 .asb-request-footer { flex-wrap: wrap; gap: var(--asb-space-3); }
 
 @media (max-width: 700px) {

@@ -90,9 +90,8 @@
   color: var(--asb-warning);
 }
 
-/* Model usage is a local-session ledger, not a provider-quota surface. The
-   shared Table wrap owns the horizontal overflow; the panel stretches it so
-   exact token columns stay legible without widening the workspace. */
+/* Model usage grows with its summary and charts in the page scroll surface;
+   the shared Table handles only horizontal overflow of exact token columns. */
 .asb-panel.asb-model-usage {
   display: flex;
   flex: 1;
@@ -158,17 +157,6 @@
   flex: 1;
   justify-content: center;
   min-height: 0;
-}
-
-.asb-model-usage .asb-table-scroll {
-  flex: 1;
-  min-height: 0;
-}
-
-.asb-model-usage-table th {
-  position: sticky;
-  top: 0;
-  z-index: 1;
 }
 
 .asb-model-usage-content,

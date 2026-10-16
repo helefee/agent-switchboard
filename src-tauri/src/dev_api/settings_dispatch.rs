@@ -6,6 +6,11 @@ use tauri::AppHandle;
 
 pub(super) async fn dispatch(app: &AppHandle, request: &InvokeRequest) -> Result<Option<Value>, CommandError> {
     let result = match request.command.as_str() {
+        "get_outbound_proxy_settings" => as_json(commands::get_outbound_proxy_settings(app.clone()).await),
+        "set_outbound_proxy_settings" => as_json(commands::set_outbound_proxy_settings(
+            app.clone(), argument(&request.args, "settings")?, argument(&request.args, "expectedRevision")?,
+        ).await),
+        "repair_outbound_proxy_settings" => as_json(commands::repair_outbound_proxy_settings(app.clone()).await),
         "storage_usage" => as_json(commands::storage::storage_usage(app.clone()).await),
         "clear_webview_cache" => as_json(commands::storage::clear_webview_cache(app.clone()).await),
         "preview_history_archive" => as_json(commands::storage::preview_history_archive(app.clone(), argument(&request.args, "cutoff")?).await),

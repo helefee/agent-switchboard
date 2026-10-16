@@ -299,15 +299,6 @@ export function reorderCodexProfiles(
   });
 }
 
-export interface ProfileStoreRepairReport {
-  repairedFiles: string[];
-  backupPath: string | null;
-}
-
-export function repairProfileStore(): Promise<ProfileStoreRepairReport> {
-  return invoke<ProfileStoreRepairReport>("repair_profile_store");
-}
-
 export function prepareProfileSave(
   profileId: string | null,
   draft: ProviderDraft,

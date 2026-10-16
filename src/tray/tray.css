@@ -2,10 +2,6 @@
    tray text and layout consume Frosted Relay tokens (user directive
    2026-09-11: the panel previously borrowed the chart layer's utility
    classes; that second language is gone). */
-:root {
-  --asb-tray-surface: color-mix(in srgb, var(--asb-surface-menu) 82%, transparent);
-}
-
 html, body, #root { background: transparent; overflow: hidden; }
 .tray-panel {
   display: flex;
@@ -15,7 +11,7 @@ html, body, #root { background: transparent; overflow: hidden; }
   /* The native window owns the outer silhouette; no second inset card. */
   border: 0;
   border-radius: 0;
-  background: var(--asb-tray-surface);
+  background: var(--asb-chrome-bg);
   color: var(--asb-text);
   overflow: hidden;
 }
@@ -30,30 +26,29 @@ html, body, #root { background: transparent; overflow: hidden; }
   /* Single identity cluster; the shared space-between belongs to the
      footer's two-ended command layout. */
   justify-content: flex-start;
-  padding: var(--asb-space-1) var(--asb-space-4);
-  border-bottom: 1px solid var(--asb-hairline);
+  gap: var(--asb-space-2);
+  padding: var(--asb-space-2) var(--asb-space-3);
 }
 .tray-app-logo { width: 24px; height: 24px; object-fit: contain; }
 .tray-app-name {
   color: var(--asb-text);
-  font: var(--asb-text-label);
-  font-weight: 600;
+  font: var(--asb-text-section);
 }
 .tray-list {
   min-height: 0;
   overflow: auto;
   padding-inline: var(--asb-space-1);
 }
-.tray-group { padding-block: var(--asb-space-unit); }
-.tray-group + .tray-group { border-top: 1px solid var(--asb-hairline); }
+.tray-group { padding-block: var(--asb-space-unit) var(--asb-space-1); }
+.tray-group + .tray-group { padding-top: var(--asb-space-2); }
 .tray-group-heading {
   display: flex;
   align-items: center;
   gap: var(--asb-space-1);
   margin: 0;
-  padding: 0 var(--asb-space-1) var(--asb-space-unit);
+  padding: 0 var(--asb-space-1) var(--asb-space-1);
   color: var(--asb-text-muted);
-  font: var(--asb-text-label);
+  font: var(--asb-text-caption);
   font-weight: 600;
 }
 .tray-group-empty {
@@ -62,20 +57,17 @@ html, body, #root { background: transparent; overflow: hidden; }
   color: var(--asb-text-muted);
   font: var(--asb-text-label);
 }
-.tray-client-logo { width: 20px; height: 20px; padding: var(--asb-space-hairline); border-radius: var(--asb-radius); background: var(--asb-text-on-action); }
+.tray-client-logo { width: 18px; height: 18px; padding: var(--asb-space-hairline); border-radius: var(--asb-radius); background: var(--asb-text-on-action); }
 
-/* Provider rows. .tray-provider owns the row silhouette and the fixed
-   column order [switch button | usage refresh | switch rail]; the switch
-   action spans every column as one native button and the usage warning
-   carries a second native refresh button — a button cannot be nested, so
-   the old single-button row is gone. */
+/* The switch button owns both text lines; warning refresh remains a sibling
+   button so each action has its own keyboard and pointer target. */
 .tray-provider {
   display: flex;
   align-items: center;
   width: 100%;
-  gap: calc(var(--asb-space-unit) + var(--asb-space-hairline));
-  min-height: var(--asb-control-height-compact);
-  padding: var(--asb-space-hairline) var(--asb-space-2);
+  gap: var(--asb-space-1);
+  min-height: var(--asb-control-height);
+  padding: var(--asb-space-1);
   border: 1px solid transparent;
   border-radius: var(--asb-radius);
   color: var(--asb-text);
@@ -87,17 +79,17 @@ html, body, #root { background: transparent; overflow: hidden; }
 }
 
 .tray-provider.is-active {
-  border-color: var(--asb-action);
-  background: var(--asb-row-selected);
+  border-color: var(--asb-focus-ring);
+  background: var(--asb-chrome-selected);
 }
 
-/* The switch action inherits the row's full-column geometry and typography. */
 .tray-provider-main {
-  display: flex;
+  display: grid;
+  grid-template-columns: var(--asb-icon-size-md) minmax(0, 1fr) auto;
   align-items: center;
   flex: 1;
   min-width: 0;
-  gap: calc(var(--asb-space-unit) + var(--asb-space-hairline));
+  gap: var(--asb-space-unit) var(--asb-space-1);
   padding: 0;
   border: 0;
   border-radius: var(--asb-radius);
@@ -112,19 +104,21 @@ html, body, #root { background: transparent; overflow: hidden; }
 .tray-provider-main:disabled,
 .tray-provider-refresh:disabled { opacity: 1; }
 
-.tray-provider:has(.tray-provider-main:not(:disabled)):hover { background: var(--asb-content-muted); }
+.tray-provider:has(.tray-provider-main:not(:disabled)):hover { background: var(--asb-chrome-hover); }
 
 /* Fixed-width slot, always rendered: inactive rows keep it empty so the name
    column starts at the same x on every row and state. */
 .tray-provider-check {
   display: flex;
-  flex: none;
+  grid-column: 1;
+  grid-row: 1;
   width: var(--asb-icon-size-md);
   color: var(--asb-action);
 }
 
 .tray-provider-name {
-  flex: 1;
+  grid-column: 2;
+  grid-row: 1;
   min-width: 0;
   overflow: hidden;
   white-space: nowrap;
@@ -132,22 +126,24 @@ html, body, #root { background: transparent; overflow: hidden; }
   font-weight: 600;
 }
 
-/* Content-sized, right-anchored against the switch rail; rendered only when
-   a cached reading exists. */
+/* Usage has the full name/status width on a second line. Its actual grid
+   width is also the budget used by the reading ruler. */
 .tray-provider-balance {
   display: flex;
-  flex: 0 1 auto;
+  grid-column: 2 / -1;
+  grid-row: 2;
   align-items: center;
   gap: var(--asb-space-2);
   min-width: 0;
-  max-width: 60%;
+  width: 100%;
   position: relative;
   white-space: nowrap;
   color: var(--asb-text-muted);
+  font: var(--asb-text-caption);
   font-variant-numeric: tabular-nums;
 }
 .tray-usage-reading { display: inline-flex; align-items: baseline; gap: var(--asb-space-1); min-width: 0; }
-.tray-usage-name { max-width: 5em; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+.tray-usage-name { max-width: 9em; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
 .tray-usage-value { flex: none; color: var(--asb-text); font-weight: 600; }
 .tray-usage-reading[data-tone="danger"] .tray-usage-value { color: var(--asb-danger); }
 /* Warning states are one non-interactive icon; the hover title carries the
@@ -162,8 +158,8 @@ html, body, #root { background: transparent; overflow: hidden; }
   align-items: center;
   justify-content: center;
   flex: none;
-  width: var(--asb-icon-size-xl);
-  height: var(--asb-icon-size-xl);
+  width: var(--asb-control-height-compact);
+  height: var(--asb-control-height-compact);
   padding: 0;
   border: 0;
   border-radius: var(--asb-radius);
@@ -171,7 +167,7 @@ html, body, #root { background: transparent; overflow: hidden; }
   color: var(--asb-text-muted);
 }
 .tray-provider-refresh:not(:disabled):hover {
-  background: var(--asb-content-muted);
+  background: var(--asb-chrome-hover);
   color: var(--asb-text);
 }
 .tray-provider-refresh .is-busy { animation: asb-tray-refresh-spin 1s linear infinite; }
@@ -187,22 +183,23 @@ html, body, #root { background: transparent; overflow: hidden; }
 :root[data-motion="reduce"] .tray-provider-refresh .is-busy { animation: none; }
 
 
-/* Fixed right rail inside the switch button: the widest state text (切换中)
-   reserves the width so every row and state keeps an identical name column.
-   切换 is a hover-only affordance — hidden on idle rows, revealed under the
-   pointer — while a switching row always shows its 切换中 feedback. */
+/* Only the name line reserves status space; the usage line stays full-width. */
 .tray-provider-switch {
-  flex: none;
-  min-width: 3em;
+  grid-column: 3;
+  grid-row: 1;
+  min-width: 4em;
   text-align: right;
   color: var(--asb-action);
+  font: var(--asb-text-caption);
   visibility: hidden;
 }
 .tray-provider-main:not(:disabled):hover .tray-provider-switch,
 .tray-provider-main:focus-visible .tray-provider-switch,
+.tray-provider-switch.is-current,
 .tray-provider.is-switching .tray-provider-switch {
   visibility: visible;
 }
+.tray-provider-switch.is-current { color: var(--asb-text-muted); }
 .tray-footer {
   padding: var(--asb-space-1);
   border-top: 1px solid var(--asb-hairline);
@@ -221,8 +218,9 @@ html, body, #root { background: transparent; overflow: hidden; }
   border-radius: var(--asb-radius);
   background: transparent;
   color: var(--asb-text);
+  font: var(--asb-text-label);
 }
-.tray-ghost-button:not(:disabled):hover { background: var(--asb-content-muted); }
+.tray-ghost-button:not(:disabled):hover { background: var(--asb-chrome-hover); }
 .tray-error {
   padding: var(--asb-space-1) var(--asb-space-4);
   color: var(--asb-danger);

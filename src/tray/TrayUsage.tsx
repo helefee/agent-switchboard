@@ -1,107 +1,60 @@
 import { useLayoutEffect, useRef, useState } from "react";
 import { TriangleAlert } from "lucide-react";
-import type { TrayUsage as Usage, UsageReading } from "../api/client";
-import { formatTrayReading, officialQuotaReadings, usageTone } from "../lib/usage-format";
-import { timeLabel } from "../lib/time";
-import { tr } from "../i18n/current";
-import type { MessageKey } from "../i18n/messages";
+import type { TrayReading, TrayUsageContent } from "./tray-usage";
 
-/** One warning state of a provider's usage. `title` names the state in the
- * row summary; `detail` is the hover content: state label, backend error
- * text and the last successful read, one per line. */
-export interface TrayUsageAlert {
-  title: string;
-  detail: string;
-}
-
-interface TrayUsageState {
-  readings: UsageReading[];
-  alert: TrayUsageAlert | null;
-}
-
-function lastReadingLine(at: string | null | undefined): string | null {
-  if (!at || !Number.isFinite(new Date(at).getTime())) return null;
-  return tr("tray.usage.lastReading", { time: timeLabel(at) });
-}
-
-export function trayUsageContent(usage: Usage | null): TrayUsageState {
-  if (!usage) return { readings: [], alert: null };
-  if (usage.kind === "script") {
-    const readings = usage.reading.summary?.readings ?? [];
-    if (!usage.reading.error) return { readings, alert: null };
-    return { readings, alert: {
-      title: tr("tray.state.queryFailed"),
-      detail: [
-        tr("tray.state.queryFailed"),
-        usage.reading.error,
-        lastReadingLine(usage.reading.summary?.at),
-      ].filter(Boolean).join("\n"),
-    } };
-  }
-  const reading = usage.reading;
-  const readings = officialQuotaReadings(reading, true);
-  const statusKey: MessageKey | null = reading.status === "signInRequired" ? "tray.state.signInRequired"
-    : reading.status === "reauthenticationRequired" ? "tray.state.reauthRequired"
-    : reading.status === "unavailable" ? "tray.state.queryFailed" : null;
-  const staleKey: MessageKey | null = !statusKey && reading.stale && readings.length > 0
-    ? "tray.state.stale" : null;
-  const stateKey = statusKey ?? staleKey;
-  if (!stateKey) return { readings, alert: null };
-  return { readings, alert: { title: tr(stateKey),
-    detail: [tr(stateKey), lastReadingLine(reading.at)].filter(Boolean).join("\n") } };
-}
-
-function Reading({ reading }: { reading: UsageReading }) {
-  return <span className="tray-usage-reading" data-tone={usageTone(reading)}>
-    {reading.planName && <span className="tray-usage-name">{reading.planName}</span>}
-    <span className="tray-usage-value">{formatTrayReading(reading)}</span>
+function Reading({ reading }: { reading: TrayReading }) {
+  return <span className="tray-usage-reading" data-tone={reading.tone}>
+    {reading.name && <span className="tray-usage-name" title={reading.name}>{reading.name}</span>}
+    <span className="tray-usage-value">{reading.value}</span>
   </span>;
 }
 
-export function TrayUsage({ usage }: { usage: Usage | null }) {
-  const { readings, alert } = trayUsageContent(usage);
+export function TrayUsage({ content }: { content: TrayUsageContent }) {
+  const { readings, alert } = content;
   const host = useRef<HTMLSpanElement>(null);
   const measure = useRef<HTMLSpanElement>(null);
   const [visible, setVisible] = useState(2);
   const total = readings.length;
-  const signature = JSON.stringify({ readings, alert });
   useLayoutEffect(() => {
     const element = host.current;
     const ruler = measure.current;
-    if (!element || !ruler || !element.parentElement) return;
+    if (!element || !ruler) return;
     const resize = () => {
-      const row = element.parentElement!;
-      const available = row.clientWidth * 0.60;
+      const available = element.clientWidth;
+      const gap = parseFloat(getComputedStyle(element).columnGap) || 0;
       const children = Array.from(ruler.children) as HTMLElement[];
-      const fixed = children.filter((child) => child.dataset.measure === "fixed")
-        .reduce((sum, child) => sum + child.offsetWidth + 8, 0);
+      const fixed = children.find((child) => child.dataset.measure === "fixed");
+      const more = children.find((child) => child.dataset.measure === "more");
       const values = children.filter((child) => child.dataset.measure === "reading");
-      let width = fixed;
+      let width = fixed?.getBoundingClientRect().width ?? 0;
       let count = 0;
       for (const child of values) {
-        const more = count + 1 < total ? 40 : 0;
-        if (width + child.offsetWidth + 8 + more > available) break;
-        width += child.offsetWidth + 8;
+        const nextWidth = width + child.getBoundingClientRect().width + (count > 0 || fixed ? gap : 0);
+        const overflowWidth = count + 1 < content.readings.length ? (more?.getBoundingClientRect().width ?? 0) + gap : 0;
+        if (nextWidth + overflowWidth > available) break;
+        width = nextWidth;
         count += 1;
       }
       setVisible(count);
     };
     resize();
     const observer = new ResizeObserver(resize);
-    observer.observe(element.parentElement);
+    observer.observe(element);
     observer.observe(ruler);
+    for (const child of ruler.children) observer.observe(child);
     return () => observer.disconnect();
-  }, [signature, total]);
+  }, [content]);
   if (readings.length === 0 && !alert) return null;
   return <span ref={host} className="tray-provider-balance">
     {readings.slice(0, visible).map((reading, index) => <Reading key={index} reading={reading} />)}
     {readings.length > visible && <span className="tray-usage-more" title={readings.slice(visible)
-      .map((reading) => `${reading.planName ?? ""} ${formatTrayReading(reading)}`.trim()).join("\n")}>
+      .map((reading) => reading.summary).join("\n")}>
       +{readings.length - visible}</span>}
     {alert && <span className="tray-usage-alert" role="img" aria-label={alert.title} title={alert.detail}>
       <TriangleAlert size={14} aria-hidden="true" /></span>}
     <span ref={measure} className="tray-usage-measure" aria-hidden="true">
       {readings.slice(0, 2).map((reading, index) => <span key={index} data-measure="reading"><Reading reading={reading} /></span>)}
+      <span data-measure="more">+{total}</span>
       {alert && <span data-measure="fixed"><TriangleAlert size={14} aria-hidden="true" /></span>}
     </span>
   </span>;

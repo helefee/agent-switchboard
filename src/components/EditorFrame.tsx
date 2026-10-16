@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState, type ReactNode, type Ref } from "react";
 import { Button } from "./Button";
 import { WorkspaceHeader } from "./WorkspaceHeader";
+import { ScrollArea } from "./ScrollArea";
 
 interface Props {
   title: string;
@@ -60,7 +61,7 @@ export function EditorFrame({
         }
         primary={primary}
       />
-      <div className="asb-edit-panel">{children}</div>
+      <ScrollArea className="asb-edit-panel" aria-label={title}>{children}</ScrollArea>
       {footer && <footer className="asb-editor-footer">{footer}</footer>}
     </div>
   );

@@ -6,8 +6,8 @@
    (2026-09-02 user directive); the band and the last row's hover surface
    clip to those corners. The scroll region is the component's own wrap
    (2026-10-15): wide tables pan horizontally there, no module rolls its
-   own overflow wrapper; modules tune width with min-width on the table
-   element and opt into sticky headers in their own stylesheets. */
+   own overflow wrapper. Modules tune width with min-width on the table;
+   Table's explicit viewport mode owns bounded height and pinned headers. */
 .asb-table {
   width: 100%;
   border-collapse: separate;
@@ -18,12 +18,38 @@
   font: var(--asb-text-body);
 }
 
-/* The component-owned scroll region: every table can be panned when its
-   columns cannot shrink further, with the workspace-wide stable gutter and
-   a keyboard-focusable surface for keyboard panning. */
+/* Module tables keep their full height even inside a shrinking flex body.
+   The enclosing page, editor or dialog owns their vertical navigation. */
 .asb-table-scroll {
+  flex: none;
+  min-width: 0;
+  max-width: 100%;
+}
+
+.asb-table-scroll > .asb-scroll-viewport {
+  overflow-x: auto;
+  overflow-y: hidden;
+  overscroll-behavior-x: contain;
+  scrollbar-gutter: auto;
+}
+
+/* A primary workspace list replaces the enclosing body's vertical scroll. */
+.asb-table-scroll[data-scroll-mode="viewport"] {
+  flex: 1;
+  min-height: 0;
+}
+
+.asb-table-scroll[data-scroll-mode="viewport"] > .asb-scroll-viewport {
   overflow: auto;
+  overscroll-behavior: contain;
   scrollbar-gutter: stable;
+  scroll-padding-block-start: calc(var(--asb-control-height) + var(--asb-space-2));
+}
+
+.asb-table-scroll[data-scroll-mode="viewport"] > .asb-scroll-viewport > .asb-table > thead > tr > th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
 }
 
 /* Tables compare numbers down columns, so figures are tabular table-wide. */

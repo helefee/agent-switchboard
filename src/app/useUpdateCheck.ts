@@ -10,6 +10,7 @@ import {
   type UpdateChannel,
   type UpdateCheck,
 } from "../api/client";
+import { toast, toastMessage } from "../components/use-toast";
 
 export interface UpdateDownloadProgress {
   downloadedBytes: number;
@@ -49,7 +50,7 @@ export function useUpdateCheck({ onError }: UpdateCheckDeps) {
     [discardUpdate],
   );
 
-  const runUpdateCheck = useCallback(async (reportFailure: boolean) => {
+  const runUpdateCheck = useCallback(async (source: "manual" | "startup") => {
     if (inFlight.current) return;
     inFlight.current = true;
     setChecking(true);
@@ -61,8 +62,11 @@ export function useUpdateCheck({ onError }: UpdateCheckDeps) {
       }
       replaceUpdate(next);
       setLastCheckedAt(next?.checkedAt ?? new Date().toISOString());
+      if (source === "manual" && next === null) {
+        toast({ kind: "success", title: toastMessage("backup.update.upToDate") });
+      }
     } catch (caught) {
-      if (reportFailure) onError(caught as CommandError);
+      if (source === "manual" && !disposed.current) onError(caught as CommandError);
     } finally {
       inFlight.current = false;
       if (!disposed.current) setChecking(false);
@@ -85,7 +89,7 @@ export function useUpdateCheck({ onError }: UpdateCheckDeps) {
       .then((channel) => {
         if (disposed.current) return;
         setUpdateChannel(channel);
-        if (channel === "github") void runUpdateCheck(false);
+        if (channel === "github") void runUpdateCheck("startup");
       })
       .catch(() => undefined);
   }, [runUpdateCheck]);
@@ -155,7 +159,7 @@ export function useUpdateCheck({ onError }: UpdateCheckDeps) {
     downloadProgress,
     lastCheckedAt,
     restartRequired,
-    runUpdateCheck: () => runUpdateCheck(true),
+    runUpdateCheck: () => runUpdateCheck("manual"),
     installAvailableUpdate,
     restartInstalledUpdate,
   };

@@ -1,5 +1,6 @@
 import { Fragment, type ReactNode } from "react";
 import { cx } from "@/utils/cx";
+import { ScrollArea } from "./ScrollArea";
 
 export interface TableColumn<T> {
   /** Stable column identity; also the header/cell React key. */
@@ -18,8 +19,11 @@ interface Props<T> {
   rowKey: (row: T, index: number) => string;
   /** Accessible name of the whole table. */
   ariaLabel: string;
-  /** Module-owned width or scroll hints appended to the table element. */
+  /** Module-owned width and cell styles appended to the table element. */
   className?: string;
+  /** Module tables grow with their page; a workspace's primary list may
+   * fill a bounded flex column and own both axes with a pinned header. */
+  scrollMode?: "horizontal" | "viewport";
   /** Optional whole-row activation (pointer); keyboard users keep the
    * in-cell buttons. */
   onRowClick?: (row: T) => void;
@@ -31,16 +35,17 @@ interface Props<T> {
 
 /**
  * The single data-table renderer: one markup and style contract for every
- * tabular module. The component owns the table's scroll region: the wrap
- * pans wide tables horizontally with the workspace-wide stable gutter and a
- * keyboard-focusable surface, so no module rolls its own overflow wrapper.
- * Headers are in normal flow; a module may opt into sticky headers for its
- * own table in its own stylesheet. Visual values come from
+ * tabular module. Module tables expand vertically inside the enclosing page
+ * or dialog, with horizontal panning here. Only a workspace's primary list
+ * opts into a bounded viewport; this component then owns its vertical scroll
+ * and pinned header as well. Visual values come from
  * styles/base/tables-backups.css via the .asb-table rules.
  */
-export function Table<T>({ columns, rows, rowKey, ariaLabel, className, onRowClick, renderExpansion }: Props<T>) {
+export function Table<T>({
+  columns, rows, rowKey, ariaLabel, className, scrollMode = "horizontal", onRowClick, renderExpansion,
+}: Props<T>) {
   return (
-    <div className="asb-table-scroll" tabIndex={0}>
+    <ScrollArea className="asb-table-scroll" data-scroll-mode={scrollMode} role="region" aria-label={ariaLabel} tabIndex={0}>
       <table className={cx("asb-table", className)} aria-label={ariaLabel}>
         <thead>
           <tr>
@@ -76,6 +81,6 @@ export function Table<T>({ columns, rows, rowKey, ariaLabel, className, onRowCli
           })}
         </tbody>
       </table>
-    </div>
+    </ScrollArea>
   );
 }

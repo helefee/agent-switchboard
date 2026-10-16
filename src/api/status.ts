@@ -16,6 +16,7 @@ export type RuntimeLogAction =
   | "providersSqlImported"
   | "appSettingsRepaired"
   | "profileStoreRepaired"
+  | "applicationDataRepaired"
   | "profileCreated"
   | "profileUpdated"
   | "profileDeleted"
@@ -49,13 +50,6 @@ export interface RuntimeLogEntry {
   errorCode?: string;
 }
 
-export type MatchStatus =
-  | { kind: "matchesProfile"; profileId: string; profileName: string }
-  | { kind: "profileChanged"; profileName: string }
-  | { kind: "restoredBackup"; at: string }
-  | { kind: "unmanaged" }
-  | { kind: "unknown" };
-
 export interface ConfigFileStatus {
   app: AppKind;
   path: string;
@@ -68,8 +62,8 @@ export interface ConfigFileStatus {
   /** Values read from the real client configuration, never from ASB storage. */
   clientSettings: SettingsValues | null;
   clientSettingsError: string | null;
+  /** Connection identity, independent of model, preferences and file health. */
   activeProfileId: string | null;
-  matchStatus: MatchStatus;
   lastSwitch: ConfigWriteRecord | null;
 }
 

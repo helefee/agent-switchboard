@@ -122,7 +122,8 @@
   color: var(--asb-text);
 }
 
-.asb-route-notes {
+.asb-route-notes,
+.asb-route-info {
   list-style: none;
   display: grid;
   gap: var(--asb-space-1);
@@ -130,10 +131,12 @@
   padding: var(--asb-space-2);
   border-radius: var(--asb-radius);
   background: var(--asb-route-inner-bg);
-  color: var(--asb-warning);
   font: var(--asb-text-label);
   overflow-wrap: anywhere;
 }
+
+.asb-route-notes { color: var(--asb-warning); }
+.asb-route-info { color: var(--asb-text-muted); }
 
 @media (max-width: 480px) {
   .asb-route-values {

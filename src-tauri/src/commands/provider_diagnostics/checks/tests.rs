@@ -14,7 +14,7 @@ fn status(profile: &ProviderProfile, configuration: &str) -> ConfigFileStatus {
         app: profile.app, path: "isolated-config".into(), exists: true, syntax_ok: true,
         route: Some(route), gateway_port: crate::gateway::client_gateway_port(profile.app, configuration),
         read_error: None, recovery_issue: None, client_settings: None, client_settings_error: None,
-        match_status: MatchStatus::Unknown, active_profile_id: Some(profile.id.clone()), last_switch: None,
+        active_profile_id: Some(profile.id.clone()), last_switch: None,
     }
 }
 
@@ -104,4 +104,41 @@ fn a_live_listener_on_a_different_client_port_or_missing_route_is_not_ready() {
     observed.listening_port = Some(47821);
     observed.routes.clear();
     assert_eq!(route(&profile, &status, true, observed).status, "error");
+}
+
+#[test]
+fn projection_failure_keeps_its_structured_reason() {
+    let profile = profile();
+    let status = status(&profile, "model = 'fixture-model'\n");
+    let error = CommandError::localized(
+        "isolated-projection-failure", "providerDiagnostics.backend.projectionDetail",
+        "isolated projection detail", serde_json::json!({ "detail": "isolated projection detail" }),
+    );
+    let result = configuration(&status, true, Err(&error));
+    assert_eq!(result.status, "error");
+    assert_eq!(result.message.key, "providerDiagnostics.backend.projectionDetail");
+    assert_eq!(result.message.params.unwrap()["detail"], "isolated projection detail");
+}
+
+#[test]
+fn observed_configuration_errors_remain_diagnostic_without_a_projection() {
+    let profile = profile();
+    let error = CommandError::new("isolated-projection-failure", "projection unavailable");
+    for diagnostic in ["read", "syntax", "settings", "recovery"] {
+        let mut status = status(&profile, "model = 'fixture-model'\n");
+        match diagnostic {
+            "read" => status.read_error = Some("isolated read detail".into()),
+            "syntax" => status.syntax_ok = false,
+            "settings" => status.client_settings_error = Some("isolated setting detail".into()),
+            "recovery" => status.recovery_issue = Some("isolated recovery detail".into()),
+            _ => unreachable!(),
+        }
+        let result = configuration(&status, true, Err(&error));
+        assert_eq!(result.status, "error");
+        assert_eq!(result.category, "configuration");
+        if diagnostic != "syntax" {
+            assert_eq!(result.message.key, "providerDiagnostics.backend.configurationDetail");
+            assert!(result.message.params.unwrap()["detail"].as_str().unwrap().contains("isolated"));
+        }
+    }
 }

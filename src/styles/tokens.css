@@ -133,6 +133,7 @@
   /* One shell tint; the native window compositor owns background blur. */
   --asb-chrome-bg: hsl(240 12% 93% / 0.6);
   --asb-chrome-hover: color-mix(in srgb, var(--asb-text) 5%, transparent);
+  --asb-chrome-selected: color-mix(in srgb, var(--asb-action) 10%, transparent);
 
   /* Motion */
   --asb-motion-press: 120ms;

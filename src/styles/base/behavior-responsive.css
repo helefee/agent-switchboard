@@ -40,6 +40,9 @@
 
   .asb-session-transcript {
     flex: none;
+  }
+
+  .asb-session-transcript > .asb-scroll-viewport {
     overflow: visible;
     padding-right: 0;
   }

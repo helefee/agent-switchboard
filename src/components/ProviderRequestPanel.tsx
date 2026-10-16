@@ -8,6 +8,7 @@ import { CollapsibleSection } from "./Collapsible";
 import { Input } from "./Input";
 import { ModelPicker } from "./ModelPicker";
 import { Time } from "./Time";
+import { ScrollArea } from "./ScrollArea";
 import { CheckIcon, CloseIcon, RequestIcon } from "./icons";
 import { useProviderRequest, type RequestView } from "./use-provider-request";
 
@@ -62,7 +63,9 @@ function DiagnosticDetails({ diagnostic }: { diagnostic: ProviderDiagnostic }) {
       </dl>
       {diagnostic.body !== null && <CollapsibleSection quiet open={bodyOpen} onOpenChange={setBodyOpen}
         label={<>{t("providers.request.detail.upstreamBody")}{diagnostic.bodyTruncated ? t("providers.request.detail.bodyTruncated") : ""}</>}>
-        <pre>{diagnostic.body || t("providers.request.detail.emptyBody")}</pre>
+        <ScrollArea className="asb-request-diagnostic-body" aria-label={t("providers.request.detail.upstreamBody")}>
+          <pre>{diagnostic.body || t("providers.request.detail.emptyBody")}</pre>
+        </ScrollArea>
       </CollapsibleSection>}
     </div>
   );
@@ -86,7 +89,9 @@ function RequestReceipt({ view }: { view: RequestView }) {
       {phase === "sending" && <p>{t("providers.request.note.sending")}</p>}
       {phase === "cancelling" && <p>{t("providers.request.note.cancelling")}</p>}
       {phase === "cancelled" && <p>{t("providers.request.note.cancelled")}</p>}
-      {success && <blockquote>{result.reply}</blockquote>}
+      {success && <ScrollArea className="asb-request-reply" aria-label={t("providers.request.receipt.aria")}>
+        <blockquote>{result.reply}</blockquote>
+      </ScrollArea>}
       {diagnostic ? <DiagnosticDetails diagnostic={diagnostic} /> : result?.error && <p>{result.error}</p>}
       {result && <>
         <p className="asb-request-metrics">

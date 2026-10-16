@@ -358,29 +358,3 @@ pub struct ConfigWriteRecord {
     /// The client-file write fact represented by this record.
     pub operation: WriteOperation,
 }
-
-/// Whether the current file content still matches one current profile, a
-/// restored backup, or the app's last recorded switch.
-#[derive(Debug, Clone, PartialEq, Serialize, Deserialize)]
-#[serde(tag = "kind", rename_all = "camelCase")]
-pub enum MatchStatus {
-    /// Content equals one current profile's expected rendering.
-    #[serde(rename_all = "camelCase")]
-    MatchesProfile {
-        profile_id: String,
-        profile_name: String,
-    },
-    /// Content still equals the last switch output, but the associated profile
-    /// or client settings have since changed or been deleted.
-    #[serde(rename_all = "camelCase")]
-    ProfileChanged { profile_name: String },
-    /// Content still equals a backup restored by the application. A restore is
-    /// not a provider match and must not activate a profile row.
-    #[serde(rename_all = "camelCase")]
-    RestoredBackup { at: String },
-    /// No current profile matches the content, whether or not the app
-    /// switched this file before.
-    Unmanaged,
-    /// The file is missing or unparseable; matching is not decidable.
-    Unknown,
-}

@@ -81,6 +81,7 @@ pub enum RuntimeLogAction {
     OutboundProxyRepaired,
     AppSettingsRepaired,
     ProfileStoreRepaired,
+    ApplicationDataRepaired,
     ProfileCreated,
     ProfileUpdated,
     ProfileDeleted,

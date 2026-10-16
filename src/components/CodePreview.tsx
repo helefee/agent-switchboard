@@ -2,6 +2,7 @@ import { useId, useState, type ReactNode } from "react";
 import { useI18n } from "../i18n";
 import { CopyButton } from "./CopyButton";
 import { Button } from "./Button";
+import { ScrollArea } from "./ScrollArea";
 
 /**
  * The single owner of code-preview file rendering (DESIGN.md §8): the
@@ -80,16 +81,18 @@ export function CodePreview({ target, content }: CodePreviewProps) {
           </Button>}
         </div>
       </div>
-      <pre id={id} tabIndex={0} aria-label={target} className={`asb-filepreview-body${expanded ? " is-expanded" : ""}`}>
-        {lines.map((line, index) => (
-          <span className="asb-filepreview-line" key={index}>
-            <span className="asb-filepreview-num" aria-hidden="true">
-              {index + 1}
+      <ScrollArea id={id} tabIndex={0} aria-label={target} className={`asb-filepreview-body${expanded ? " is-expanded" : ""}`}>
+        <pre className="asb-filepreview-content">
+          {lines.map((line, index) => (
+            <span className="asb-filepreview-line" key={index}>
+              <span className="asb-filepreview-num" aria-hidden="true">
+                {index + 1}
+              </span>
+              <span className="asb-filepreview-text">{renderLine(line)}</span>
             </span>
-            <span className="asb-filepreview-text">{renderLine(line)}</span>
-          </span>
-        ))}
-      </pre>
+          ))}
+        </pre>
+      </ScrollArea>
     </div>
   );
 }

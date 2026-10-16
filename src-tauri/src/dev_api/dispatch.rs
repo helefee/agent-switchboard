@@ -92,7 +92,7 @@ pub(super) fn dispatch(app: &AppHandle, request: InvokeRequest) -> Result<Value,
                 ))
             }
             "list_profiles" => command!(commands::list_profiles(app.clone())),
-            "repair_profile_store" => command!(commands::repair_profile_store(app.clone())),
+            "repair_application_data" => command!(commands::repair_application_data(app.clone())),
             "prepare_profile_save" => command!(commands::switching::prepare_profile_save(
                 app.clone(),
                 argument::<Option<String>>(&request.args, "profileId")?,

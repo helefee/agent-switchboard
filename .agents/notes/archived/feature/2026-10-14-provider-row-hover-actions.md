@@ -1,6 +1,7 @@
 # Agent Note: 供应商行按悬浮与焦点显示操作
 
 Status: implemented
+Archived: 2026-10-16
 
 ## Problem
 

@@ -6,6 +6,7 @@ import { Button } from "../Button";
 import { ClientLogo } from "../ClientLogo";
 import { Pagination } from "../Pagination";
 import { Time } from "../Time";
+import { ScrollArea } from "../ScrollArea";
 import { SessionProjects } from "./SessionProjects";
 import { sessionKey, sessionTitle } from "./session-content";
 import { SESSION_PAGE_SIZE, type SessionSearch } from "./use-session-search";
@@ -62,7 +63,7 @@ export function SessionSearchList({ search, selected, selecting, chosen, disable
     {busy && <p role="status">{t("sessions.list.scanning.aria")}</p>}
     {error && <p className="asb-warn-text" role="alert">{error}</p>}
     {result?.total === 0 && <p className="asb-empty-state">{t("sessions.list.empty")}</p>}
-    <div className="asb-session-items">
+    <ScrollArea className="asb-session-items" aria-label={t("sessions.list.aria")}>
       {result?.results.map((hit, index) => {
         const previous = result.results[index - 1]?.session;
         const firstInProject = !search.project && (!previous || previous.app !== hit.session.app
@@ -79,7 +80,7 @@ export function SessionSearchList({ search, selected, selecting, chosen, disable
             onClick={() => selecting ? onToggle(hit.session) : onSelect(hit)} />
         </Fragment>;
       })}
-    </div>
+    </ScrollArea>
     {result && <Pagination total={result.total} page={search.page} pageSize={SESSION_PAGE_SIZE}
       onPageChange={search.setPage} label={t("sessions.search.pagination")} />}
   </section>;

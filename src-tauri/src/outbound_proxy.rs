@@ -1,4 +1,4 @@
-//! Outbound proxy policy for every gateway-side HTTP client.
+//! Outbound proxy policy for application-owned HTTP clients.
 //!
 //! One owner of the egress contract: none (always direct), system (follow the
 //! environment, minus a self-loop guard) or manual (an explicit http/https/
@@ -9,7 +9,12 @@
 
 use serde::{Deserialize, Serialize};
 use std::path::{Path, PathBuf};
-use std::sync::{Arc, OnceLock, RwLock};
+use std::sync::Mutex;
+
+mod runtime;
+pub(crate) use runtime::{apply, apply_blocking, cached_blocking_client, cached_client, note_gateway_port};
+
+static MUTATIONS: Mutex<()> = Mutex::new(());
 
 const VERSION: u64 = 1;
 
@@ -51,7 +56,7 @@ pub(crate) enum OutboundProxyError {
     Read(String),
     #[error("出站代理设置文件无效")]
     Unreadable,
-    #[error("无法写取出站代理设置：{0}")]
+    #[error("无法写入出站代理设置：{0}")]
     Write(String),
     #[error("出站代理设置已改变，请重新读取后再保存")]
     RevisionConflict,
@@ -79,7 +84,7 @@ impl OutboundProxyError {
             Self::Read(detail) | Self::Write(detail) => {
                 ("errors.outboundProxy.unavailable", serde_json::json!({ "detail": detail }))
             }
-            Self::Unreadable => ("errors.outboundProxy.unavailable", serde_json::json!({})),
+            Self::Unreadable => ("errors.outboundProxy.unreadable", serde_json::json!({})),
             Self::RevisionConflict => ("errors.outboundProxy.revisionConflict", serde_json::json!({})),
             Self::UnsupportedVersion => ("errors.outboundProxy.versionUnsupported", serde_json::json!({})),
             Self::InvalidRevision => ("errors.outboundProxy.revisionInvalid", serde_json::json!({})),
@@ -161,11 +166,12 @@ pub(crate) fn save(
     expected_revision: &str,
 ) -> Result<OutboundProxySettings, OutboundProxyError> {
     settings.validate()?;
+    let _guard = MUTATIONS.lock().map_err(|_| OutboundProxyError::Write("出口设置写入锁不可用".into()))?;
     let current = read(state_root)?;
     if current.revision != expected_revision {
         return Err(OutboundProxyError::RevisionConflict);
     }
-    if current == settings {
+    if current == settings && current.mode != OutboundProxyMode::System {
         return Ok(current);
     }
     let mut saved = settings;
@@ -183,239 +189,45 @@ pub(crate) fn save(
     .map_err(|error| OutboundProxyError::Write(error.to_string()))?;
     std::fs::rename(&temporary, &path)
         .map_err(|error| OutboundProxyError::Write(error.to_string()))?;
-    store_snapshot(Arc::new(Snapshot {
-        revision: saved.revision.clone(),
-        mode: saved.mode,
-        url: saved.url.clone(),
-    }));
+    runtime::update(&saved);
     Ok(saved)
 }
 
-/// One-click reset for a settings file that no longer parses — written by
-/// another version or corrupted on disk. Removal returns the machine to the
-/// absent-file default (direct egress) and reloads the process snapshot; the
-/// UI only offers this after a failed read, so a valid file never reaches it.
-pub(crate) fn repair(state_root: &Path) -> Result<OutboundProxySettings, OutboundProxyError> {
-    let path = settings_path(state_root);
-    match std::fs::remove_file(&path) {
-        Ok(()) => {}
-        Err(error) if error.kind() == std::io::ErrorKind::NotFound => {}
-        Err(error) => return Err(OutboundProxyError::Write(error.to_string())),
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+pub(crate) struct OutboundProxyRepairReport {
+    pub settings: OutboundProxySettings,
+    pub backup_path: Option<String>,
+}
+
+/// Rechecks before repair: valid settings survive, unreadable files are
+/// reported, and invalid bytes are retained before returning to direct mode.
+pub(crate) fn repair(state_root: &Path) -> Result<OutboundProxyRepairReport, OutboundProxyError> {
+    let _guard = MUTATIONS.lock().map_err(|_| OutboundProxyError::Write("出口设置写入锁不可用".into()))?;
+    match read(state_root) {
+        Ok(settings) => {
+            runtime::update(&settings);
+            return Ok(OutboundProxyRepairReport { settings, backup_path: None });
+        }
+        Err(error) if error.is_io() && error != OutboundProxyError::Unreadable => return Err(error),
+        Err(_) => {}
     }
-    let default = OutboundProxySettings::default();
-    store_snapshot(Arc::new(Snapshot {
-        revision: default.revision.clone(),
-        mode: default.mode,
-        url: None,
-    }));
-    Ok(default)
+    let backup = state_root.join(format!("outbound-proxy-repair-backup-{}.json", uuid::Uuid::new_v4()));
+    std::fs::rename(settings_path(state_root), &backup)
+        .map_err(|error| OutboundProxyError::Write(error.to_string()))?;
+    let settings = OutboundProxySettings::default();
+    runtime::update(&settings);
+    Ok(OutboundProxyRepairReport { settings, backup_path: Some(backup.display().to_string()) })
+}
+
+/// The only startup projection of persisted egress settings.
+pub(crate) fn load(state_root: &Path) -> Result<(), String> {
+    let settings = read(state_root).map_err(|error| error.to_string())?;
+    runtime::update(&settings);
+    Ok(())
 }
 
 fn settings_path(state_root: &Path) -> PathBuf {
     state_root.join("outbound-proxy.json")
-}
-
-// ---------------------------------------------------------------------------
-// Runtime policy
-// ---------------------------------------------------------------------------
-
-struct Snapshot {
-    revision: String,
-    mode: OutboundProxyMode,
-    url: Option<String>,
-}
-
-fn cell() -> &'static RwLock<Arc<Snapshot>> {
-    static SNAPSHOT: OnceLock<RwLock<Arc<Snapshot>>> = OnceLock::new();
-    SNAPSHOT.get_or_init(|| {
-        RwLock::new(Arc::new(Snapshot {
-            revision: OutboundProxySettings::default().revision,
-            mode: OutboundProxyMode::None,
-            url: None,
-        }))
-    })
-}
-
-fn snapshot() -> Arc<Snapshot> {
-    cell()
-        .read()
-        .map(|current| current.clone())
-        .unwrap_or_else(|_| {
-            Arc::new(Snapshot {
-                revision: OutboundProxySettings::default().revision,
-                mode: OutboundProxyMode::None,
-                url: None,
-            })
-        })
-}
-
-fn store_snapshot(next: Arc<Snapshot>) {
-    if let Ok(mut current) = cell().write() {
-        *current = next;
-    }
-}
-
-/// Loads persisted settings into the process snapshot. Called at startup and
-/// by the settings command after a save; reading the file lazily per client
-/// build would race concurrent writes.
-pub(crate) fn load(state_root: &Path) -> Result<(), String> {
-    let settings = read(state_root).map_err(|error| error.to_string())?;
-    store_snapshot(Arc::new(Snapshot {
-        revision: settings.revision.clone(),
-        mode: settings.mode,
-        url: settings.url.clone(),
-    }));
-    Ok(())
-}
-
-fn port_cell() -> &'static RwLock<Option<u16>> {
-    static PORT: OnceLock<RwLock<Option<u16>>> = OnceLock::new();
-    PORT.get_or_init(|| RwLock::new(None))
-}
-
-fn gateway_port() -> Option<u16> {
-    port_cell().read().ok().and_then(|port| *port)
-}
-
-/// The gateway records its listening port so System mode can refuse to egress
-/// through itself.
-pub(crate) fn note_gateway_port(port: u16) {
-    if let Ok(mut current) = port_cell().write() {
-        *current = Some(port);
-    }
-}
-
-fn system_proxy_points_at_self() -> bool {
-    let Some(port) = gateway_port() else {
-        return false;
-    };
-    let mut variables = Vec::new();
-    for name in ["http_proxy", "https_proxy", "all_proxy"] {
-        variables.push(std::env::var(name).or_else(|_| std::env::var(name.to_uppercase())));
-    }
-    variables
-        .into_iter()
-        .flatten()
-        .filter_map(|value| reqwest::Url::parse(value.trim()).ok())
-        .any(|url| {
-            let host_is_loopback = url
-                .host_str()
-                .is_some_and(|host| host.eq_ignore_ascii_case("localhost"))
-                || url
-                    .host_str()
-                    .is_some_and(|host| matches!(host, "127.0.0.1" | "[::1]" | "::1" | "0.0.0.0"));
-            host_is_loopback && url.port() == Some(port)
-        })
-}
-
-/// The resolved egress policy; pure so tests can pin it without sockets.
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub(crate) enum EgressDecision {
-    /// Force direct egress regardless of the environment.
-    Direct,
-    /// Follow the environment/system proxy configuration.
-    System,
-    /// Route through this explicit proxy URL.
-    Proxy(String),
-}
-
-fn decision_for(current: &Snapshot) -> EgressDecision {
-    match current.mode {
-        OutboundProxyMode::None => EgressDecision::Direct,
-        OutboundProxyMode::System => {
-            if system_proxy_points_at_self() {
-                EgressDecision::Direct
-            } else {
-                EgressDecision::System
-            }
-        }
-        OutboundProxyMode::Manual => match current
-            .url
-            .as_deref()
-            .map(str::trim)
-            .filter(|url| !url.is_empty())
-        {
-            Some(url) => EgressDecision::Proxy(url.to_string()),
-            None => EgressDecision::Direct,
-        },
-    }
-}
-
-/// Applies the current policy to an async client builder. `None` forces direct
-/// egress; `System` keeps reqwest's environment handling unless the detected
-/// proxy is this gateway itself (a request loop); `Manual` routes everything
-/// through the configured proxy.
-pub(crate) fn apply(builder: reqwest::ClientBuilder) -> reqwest::ClientBuilder {
-    match decision_for(&snapshot()) {
-        EgressDecision::Direct => builder.no_proxy(),
-        EgressDecision::System => builder,
-        EgressDecision::Proxy(url) => match reqwest::Proxy::all(&url) {
-            Ok(proxy) => builder.proxy(proxy),
-            Err(_) => builder.no_proxy(),
-        },
-    }
-}
-
-/// Blocking twin of [`apply`] for the probe transport.
-pub(crate) fn apply_blocking(
-    builder: reqwest::blocking::ClientBuilder,
-) -> reqwest::blocking::ClientBuilder {
-    match decision_for(&snapshot()) {
-        EgressDecision::Direct => builder.no_proxy(),
-        EgressDecision::System => builder,
-        EgressDecision::Proxy(url) => match reqwest::Proxy::all(&url) {
-            Ok(proxy) => builder.proxy(proxy),
-            Err(_) => builder.no_proxy(),
-        },
-    }
-}
-
-/// Blocking twin of [`cached_client` for the probe transport.
-pub(crate) fn cached_blocking_client(
-    key: &'static str,
-    build: impl FnOnce(reqwest::blocking::ClientBuilder) -> reqwest::blocking::Client,
-) -> reqwest::blocking::Client {
-    static CLIENTS: OnceLock<RwLock<Vec<(&'static str, String, reqwest::blocking::Client)>>> =
-        OnceLock::new();
-    let cell = CLIENTS.get_or_init(|| RwLock::new(Vec::new()));
-    let current = snapshot();
-    if let Ok(clients) = cell.read() {
-        for (existing, revision, client) in clients.iter() {
-            if *existing == key && *revision == current.revision {
-                return client.clone();
-            }
-        }
-    }
-    let client = build(apply_blocking(reqwest::blocking::ClientBuilder::new()));
-    if let Ok(mut clients) = cell.write() {
-        clients.retain(|(existing, revision, _)| *existing != key || *revision == current.revision);
-        clients.push((key, current.revision.clone(), client.clone()));
-    }
-    client
-}
-
-/// Revision-keyed client registry: long-lived holders re-fetch by key and get
-/// a fresh client exactly when the policy revision changed.
-pub(crate) fn cached_client(
-    key: &'static str,
-    build: impl FnOnce(reqwest::ClientBuilder) -> reqwest::Client,
-) -> reqwest::Client {
-    static CLIENTS: OnceLock<RwLock<Vec<(&'static str, String, reqwest::Client)>>> =
-        OnceLock::new();
-    let cell = CLIENTS.get_or_init(|| RwLock::new(Vec::new()));
-    let current = snapshot();
-    if let Ok(clients) = cell.read() {
-        for (existing, revision, client) in clients.iter() {
-            if *existing == key && *revision == current.revision {
-                return client.clone();
-            }
-        }
-    }
-    let client = build(apply(reqwest::Client::builder()));
-    if let Ok(mut clients) = cell.write() {
-        clients.retain(|(existing, revision, _)| *existing != key || *revision == current.revision);
-        clients.push((key, current.revision.clone(), client.clone()));
-    }
-    client
 }
 

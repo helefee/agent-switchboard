@@ -303,12 +303,9 @@
   grid-column: 1 / -1;
 }
 
-.asb-client-setting-code-body > code {
-  display: block;
+.asb-client-setting-code-body {
   max-height: 12rem;
   margin-bottom: var(--asb-space-2);
-  overflow: auto;
-  padding: var(--asb-space-2);
   border: 1px solid var(--asb-hairline);
   border-radius: var(--asb-radius);
   background: var(--asb-content);
@@ -318,6 +315,8 @@
   overflow-wrap: anywhere;
   white-space: pre-wrap;
 }
+.asb-client-setting-code-body > .asb-scroll-viewport { padding: var(--asb-space-2); }
+.asb-client-setting-code-body > .asb-scroll-viewport > code { display: block; font: inherit; }
 .asb-client-setting-code-old,
 .asb-client-setting-code-new {
   display: block;

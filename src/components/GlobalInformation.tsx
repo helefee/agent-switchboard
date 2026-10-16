@@ -1,19 +1,21 @@
 import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import { Dialog, Popover } from "react-aria-components";
 import type { CommandError } from "../api/client";
+import { canRepairApplicationData } from "../api/data-repair";
 import { useI18n } from "../i18n";
 import { commandErrorText } from "../i18n/errors";
 import { Button } from "./Button";
 import { CloseIcon } from "./icons";
 import { ToastStatusIcon } from "./ToastStatusIcon";
 import { ToastText } from "./ToastContent";
+import { ScrollArea } from "./ScrollArea";
 import { useToast, type ToastContent, type ToastKind } from "./use-toast";
 
 interface Props {
   error: CommandError | null;
   settingsError: string | null;
   busy: boolean;
-  onRepairStore: () => void;
+  onRepairData: () => void;
   onRepairSettings: () => void;
 }
 
@@ -51,7 +53,7 @@ function InformationRow({ message, onDismiss }: {
   );
 }
 
-function useInformationMessages({ error, settingsError, busy, onRepairStore, onRepairSettings }: Props) {
+function useInformationMessages({ error, settingsError, busy, onRepairData, onRepairSettings }: Props) {
   const { t } = useI18n();
   const queue = useToast();
   const messages: InformationMessage[] = [];
@@ -62,8 +64,8 @@ function useInformationMessages({ error, settingsError, busy, onRepairStore, onR
   });
   if (error) messages.push({
     id: "operation-error", kind: "error", title: commandErrorText(error, t),
-    action: (error.code === "profile-store-unsupported" || error.code === "profile-store-repair-failed")
-      ? <Button variant="secondary" disabled={busy} onClick={onRepairStore}>{t("shell.banner.repairStore")}</Button>
+    action: canRepairApplicationData(error)
+      ? <Button variant="secondary" disabled={busy} onClick={onRepairData}>{t("shell.banner.repairData")}</Button>
       : undefined,
   });
   const toastMessages = queue.toasts.map((toast): InformationMessage => ({
@@ -134,9 +136,9 @@ export function GlobalInformation(props: Props) {
                   <CloseIcon />
                 </Button>
               </div>
-              <div className="asb-information-list">
+              <ScrollArea className="asb-information-list" aria-label={t("shell.information.aria")}>
                 {messages.map((message) => <InformationRow key={message.id} message={message} onDismiss={dismiss} />)}
-              </div>
+              </ScrollArea>
             </Dialog>
           </Popover>
         </>

@@ -141,7 +141,7 @@ Preview and execution share the same provider write scope, preserving live clien
 
 Generated immutable model catalogs are retained; undo restores configuration and authentication. A repair that only recreates a missing catalog explains this outcome and does not offer an empty undo action.
 
-When provider storage fails validation, **Repair provider data** fills only missing automatic setting intents or removes a leading JSON BOM. It validates a complete staged copy before activation and retains the original configuration directory. Ambiguous files, retired layouts, and pending transactions are reported with their paths and left unchanged. This action does not clear profiles or edit live Codex or Claude Code configuration.
+When provider storage or egress settings fail validation, **Repair application data** checks both domains and reports repaired files, all backup paths, and any unresolved issues separately. Provider repair validates a complete staged copy before activation and retains the original configuration directory. Egress repair rechecks the current file, preserves valid settings, and backs up invalid bytes before restoring direct mode; unreadable files are left unchanged. Ambiguous provider files, retired layouts, and pending transactions are reported and preserved. This action does not clear profiles or edit live Codex or Claude Code configuration.
 
 ### Quota cache and degradation radar
 

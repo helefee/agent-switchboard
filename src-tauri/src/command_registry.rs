@@ -55,7 +55,7 @@ macro_rules! handler {
             crate::commands::create_codex_profile,
             crate::commands::delete_codex_profile,
             crate::commands::reorder_codex_profiles,
-            crate::commands::repair_profile_store,
+            crate::commands::repair_application_data,
             crate::commands::switching::prepare_profile_save,
             crate::commands::switching::commit_profile_save,
             crate::commands::switching::prepare_codex_profile_save,

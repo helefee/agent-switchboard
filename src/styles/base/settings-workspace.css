@@ -15,10 +15,14 @@
   gap: var(--asb-space-2);
 }
 
-/* Client configuration keeps its expanded modules on the muted-gray module
-   surface; preference rows themselves are whitespace-separated, not boxed.
-   The toolbar and the save footer stay on the page surface as the unwrapped
-   operation areas. */
+/* The retiring panel must not cover the entering content with an opaque surface. */
+.asb-client-configuration-route[data-client-route-leaving] > .asb-panel {
+  background: transparent;
+  border-color: transparent;
+}
+
+/* Client configuration keeps expanded modules on the muted-gray surface;
+   the toolbar and save footer remain unwrapped operation areas. */
 .asb-client-settings-panel .asb-client-configuration-review,
 .asb-client-settings-panel .asb-client-settings-reset-preview,
 .asb-client-settings-panel .asb-official-directory,

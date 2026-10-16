@@ -9,6 +9,7 @@ import { DiffView } from "./DiffView";
 import { RadioOption } from "./RadioOption";
 import { Slider } from "./Slider";
 import { SettingInput } from "./SettingInput";
+import { ScrollArea } from "./ScrollArea";
 
 interface Props {
   specs: SettingSpec[];
@@ -200,9 +201,10 @@ function SettingCodeDisclosure({
   return (
     <CollapsibleSection quiet open={open} onOpenChange={setOpen}
       label={showDiff ? t("clientConfig.settings.viewPendingDiff") : t("clientConfig.settings.viewCurrentCode")}>
-      <div className="asb-client-setting-code-body">
+      <ScrollArea className="asb-client-setting-code-body"
+        aria-label={showDiff ? t("clientConfig.settings.pendingDiffAria", { label: catalogText(spec.label, t) }) : catalogText(spec.label, t)}>
         {showDiff ? (
-          <code aria-label={t("clientConfig.settings.pendingDiffAria", { label: catalogText(spec.label, t) })}>
+          <code>
             <span className="asb-client-setting-code-old">{prefixedCode("-", actualCode)}</span>
             {"\n"}
             <span className="asb-client-setting-code-new">{prefixedCode("+", draftCode)}</span>
@@ -210,7 +212,7 @@ function SettingCodeDisclosure({
         ) : (
           <code>{actualCode}</code>
         )}
-      </div>
+      </ScrollArea>
     </CollapsibleSection>
   );
 }

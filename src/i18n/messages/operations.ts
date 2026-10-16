@@ -12,8 +12,9 @@ export const messages = {
   "operations.save.codexPreviewMissing": ["Codex 保存预览缺失，请重新保存", "The Codex save preview is missing; save again"],
   "operations.save.patchNoApply": ["此修改只允许保存供应商资料，不能应用客户端配置", "This change may only save provider details; it cannot apply the client configuration"],
 
-  "operations.repairStore.done": ["供应商存储检查完成，修复 {count} 个文件", "Provider storage checked; repaired {count} files"],
-  "operations.repairStore.backup": ["原始数据保留在 {path}", "Original data retained at {path}"],
+  "operations.repairData.done": ["应用数据检查完成，修复 {count} 个文件", "Application data checked; repaired {count} files"],
+  "operations.repairData.partial": ["已修复 {count} 个文件，部分项目仍需处理", "Repaired {count} files; some issues still need attention"],
+  "operations.repairData.backup": ["原始数据保留在 {path}", "Original data retained at {path}"],
 
   // Delete sheet.
   "operations.delete.title": ["删除供应商", "Delete provider"],

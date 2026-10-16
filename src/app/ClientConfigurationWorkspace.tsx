@@ -1,19 +1,33 @@
+import type { RefCallback } from "react";
 import { ClientSettingsPanel } from "../components/ClientSettingsPanel";
 import { CodexSubagentSettingsPanel } from "../components/CodexSubagentSettingsPanel";
 import { GlobalPromptManager } from "../components/GlobalPromptManager";
 import { useI18n } from "../i18n";
 import type { SwitchboardModel } from "./useSwitchboardModel";
 import type { AppKind } from "../api/client";
+import { useClientRouteTransition } from "./useClientRouteTransition";
 
-export function ClientConfigurationWorkspace({ model }: { model: SwitchboardModel }) {
-  return <>{(["codex", "claude"] as const).map((app) => (
-    <div key={app} hidden={model.appFilter !== app}>
-      <ClientConfigurationPanel model={model} app={app} />
-    </div>
-  ))}</>;
+export function ClientConfigurationWorkspace({ model, active }: { model: SwitchboardModel; active: boolean }) {
+  const route = useClientRouteTransition({ app: model.appFilter, active, onSelectApp: model.providers.selectApp });
+  return <div ref={route.workspaceRef} className="asb-client-route-workspace">
+    {(["codex", "claude"] as const).map((app) => {
+      const leaving = route.leavingApp === app;
+      return <div key={app} className="asb-client-configuration-route" data-client-route={app}
+        data-client-route-leaving={leaving || undefined}
+        hidden={model.appFilter !== app && !leaving}
+        inert={leaving || undefined} aria-hidden={leaving || undefined}>
+        <ClientConfigurationPanel model={model} app={app} onSelectApp={route.selectApp} routeContentRef={route.contentRefs[app]} />
+      </div>;
+    })}
+  </div>;
 }
 
-function ClientConfigurationPanel({ model, app }: { model: SwitchboardModel; app: AppKind }) {
+function ClientConfigurationPanel({ model, app, onSelectApp, routeContentRef }: {
+  model: SwitchboardModel;
+  app: AppKind;
+  onSelectApp: (app: AppKind) => void;
+  routeContentRef: RefCallback<HTMLElement>;
+}) {
   const { t } = useI18n();
   const {
     clientSettings: settings,
@@ -27,7 +41,8 @@ function ClientConfigurationPanel({ model, app }: { model: SwitchboardModel; app
     <section className="asb-panel" aria-label={t("clientConfig.title")}>
       <ClientSettingsPanel
         app={app}
-        onSelectApp={model.providers.selectApp}
+        routeContentRef={routeContentRef}
+        onSelectApp={onSelectApp}
         editorState={settings.states[app]}
         busy={busy}
         configStatus={snapshot.statuses?.find((status) => status.app === app)}

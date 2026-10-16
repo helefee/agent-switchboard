@@ -8,11 +8,13 @@ Status: implemented
 
 ## Decision
 
+日期为空是可由用户产生的合法值。共享 `DatePicker` 在弹层内提供清空动作，发出空串并归还触发器焦点；存储归档与会话起止筛选共同消费这条路径。会话范围切为「全部」时同时清空起止草稿和实际筛选，不再恢复隐藏的旧范围。
+
 `src/components/DatePicker.tsx` 是软件内全部日历日期选择的唯一原语，`styles/base/date-picker.css` 是选择器语法的唯一拥有者：
 
 - 行为拥有者：react-aria / react-stately 的日历行为 hooks——`useCalendarState`（选中与聚焦状态机）、`useCalendar`（容器 aria、上月/下月、本地化标题、可见范围与选中变化的播报）、`useCalendarGrid`（grid 角色、网格键盘导航：方向键逐日、PageUp/Down 换月、Home/End 换周）、`useCalendarCell`（roving tabindex、按压/选中 aria）；`I18nProvider locale` 绑定界面语言（`useI18n`），星期/月份/按钮文案用内置翻译。选择一个日期即关闭弹层并经 RAC `Popover` 归还焦点到触发器（项目既有弹层惯例）。
 - 结构与外观拥有者：本仓库。触发器、月历表格、单元格的 DOM 全部由本原语构建（hooks 只回传 DOM-ready props，无高层组件、无隐式 context 接线）；触发器复用 `.asb-select-trigger` 字段形（与 Select/FontPicker 同一材料），所选日期文本走共享 `dateLabel`（时间显示体系）；弹层复用菜单材质（`surface-menu`、hairline、`shadow-modal` + `inset-highlight`）；单元格状态反馈由本原语显式写出的 data 属性表达（`[data-selected]`、`[data-today]`、`[data-outside-month]`、`[data-focus-visible]` 等，today/outside-month 由 `@internationalized/date` 判定），减少动态效果偏好由专属 reduce 块关闭过渡；弹层打开即聚焦 roving-tabindex 的当前日期格。
-- 值契约：`value`/`onChange` 用 `YYYY-MM-DD` 字符串，空串 = 未选（触发器显示 `format.date.unset` 占位）。无 min/max、无清空、不选时刻——与被替换的原生 input 行为一致，不做投机配置。
+- 值契约：`value`/`onChange` 用 `YYYY-MM-DD` 字符串，空串 = 未选（触发器显示 `format.date.unset` 占位）。弹层提供清空按钮，发出空串并关闭、归还触发器焦点；无 min/max、不选时刻，不增加手输旁路。
 - 直接依赖：`react-aria`（行为 hooks）、`react-stately`（日历状态机）、`@internationalized/date`（日期数学与 `parseDate`）。后两者此前只是 react-aria-components 的传递依赖，声明版本与其范围一致；`react-aria-components` 仍被 RAC `Popover`/`Dialog`（弹层惯例）与其他既有消费点使用。
 
 已完整接入（无兼容无过渡）：存储归档截止日期（`StorageSettings`）与会话库起止筛选（`SessionOrganizationFilters`）是仅有的两个消费点；全库 `type="date"` 零残留。随选择器只产出合法日期，会话筛选的手输防御同步删除：`dateBoundary` 收敛为纯换算器（仅保留 9999-12-31 的 +1 天溢出守卫，防 `toISOString` 抛错，此时按无上界处理），`sessions.time.invalidDate` 文案与 aria-invalid 接线删除；`from > to` 的范围错误（`sessions.time.invalid`）仍然可达，保留。`DESIGN.md` 组件清单新增 `DatePicker` 条目。
@@ -35,5 +37,5 @@ Status: implemented
 
 ## Testing
 
-- `npm run verify-notes` 通过（笔记结构门禁）。
+- 笔记结构随本批改动校验；日期清空和切换「全部」的消费链路以源码核对，未运行桌面行为验收。
 - 按工作区规则未运行 typecheck/test（用户未要求）；人工核对：全库 `type="date"`、`sessions.time.invalidDate`、旧格式校验分支、`.asb-date-group` 死选择器零残留；hooks 接线逐项对照 node_modules 源码——`useCalendar` 经 hookData 把 aria-label 传给 grid、`useCalendarGrid` 自带网格键盘导航与本地化 `weekDays`、`useCalendarCell` 返回 DOM-ready buttonProps（内部 usePress）与 roving tabindex、`useButton` 转换上月/下月 AriaButtonProps、单选 `onChange` 签名为非空 `CalendarDate`；`getDatesInWeek` 的 null 占位（历法边界）渲染空 td。

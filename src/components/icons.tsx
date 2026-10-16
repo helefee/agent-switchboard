@@ -4,6 +4,7 @@
  * up by the same ratio so the rendered line weight is unchanged. */
 import type { LucideIcon } from "lucide-react";
 import {
+  ArrowUp,
   ChartColumnIncreasing,
   Check,
   ChevronDown,
@@ -56,6 +57,7 @@ function icon(Lucide: LucideIcon, size: number, strokeWidth = 1.7) {
 }
 
 export const PreviewIcon = icon(Eye, 18);
+export const BackToTopIcon = icon(ArrowUp, 20);
 export const EyeOffIcon = icon(EyeOff, 18);
 export const EditIcon = icon(Pencil, 18);
 export const TrashIcon = icon(Trash2, 18);

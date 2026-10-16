@@ -3,10 +3,10 @@
 //! `outbound_proxy` snapshot and never accept per-request proxy input.
 
 use super::error::{blocking, observe, state, CommandError};
-use crate::outbound_proxy::{self, OutboundProxySettings};
+use crate::outbound_proxy::{self, OutboundProxyRepairReport, OutboundProxySettings};
 use crate::runtime_log::RuntimeLogAction;
 
-fn settings_error(error: crate::outbound_proxy::OutboundProxyError) -> CommandError {
+pub(super) fn settings_error(error: crate::outbound_proxy::OutboundProxyError) -> CommandError {
     let (key, params) = error.parts();
     let code = if error.is_io() { "outbound-proxy-unavailable" } else { "outbound-proxy-invalid" };
     CommandError::localized(code, key, error.to_string(), params)
@@ -37,13 +37,11 @@ pub async fn set_outbound_proxy_settings(
     Ok(saved)
 }
 
-/// One-click reset for a settings file from another version or a corrupted
-/// one: removes the file, reloads the default direct policy and returns the
-/// fresh default so the editor can start over.
+/// Uses the same recheck-and-backup repair as the global data-repair entry.
 #[tauri::command]
 pub async fn repair_outbound_proxy_settings(
     app: tauri::AppHandle,
-) -> Result<OutboundProxySettings, CommandError> {
+) -> Result<OutboundProxyRepairReport, CommandError> {
     let state = state(&app)?;
     observe(RuntimeLogAction::OutboundProxyRepaired, async move {
         blocking(move || outbound_proxy::repair(state.root()).map_err(settings_error)).await

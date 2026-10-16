@@ -62,15 +62,15 @@
 .asb-filepreview-body {
   margin: 0;
   max-height: 16rem;
-  overflow: auto;
-  scrollbar-gutter: stable;
-  padding: var(--asb-space-3);
   border: 1px solid var(--asb-hairline);
   border-radius: var(--asb-radius);
   background: var(--asb-code-bg);
   font: var(--asb-text-code);
   color: var(--asb-text);
 }
+
+.asb-filepreview-body > .asb-scroll-viewport { padding: var(--asb-space-3); }
+.asb-filepreview-content { margin: 0; font: inherit; }
 
 .asb-filepreview-body.is-expanded { max-height: 65dvh; }
 

@@ -159,6 +159,7 @@ export function ExtensionList({ workspace }: { workspace: ExtensionWorkspace }) 
   const { t } = useI18n();
   return (
     <Table
+      scrollMode="viewport"
       className="asb-ext-table"
       columns={columns(workspace)}
       rows={workspace.visible}

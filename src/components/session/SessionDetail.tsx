@@ -10,6 +10,7 @@ import { Button } from "../Button";
 import { ClientLogo } from "../ClientLogo";
 import { FactList } from "../FactList";
 import { Time } from "../Time";
+import { ScrollArea } from "../ScrollArea";
 import { copyText, sessionTitle } from "./session-content";
 import { SessionOrganizationEditor } from "./SessionOrganizationEditor";
 import type { SessionOrganization } from "./use-session-organization";
@@ -96,7 +97,7 @@ export function SessionDetail({ detail, session, bookmarks, deleting, onDelete, 
   const { t } = useI18n();
   const actions = useDetailActions(session);
   const [organizing, setOrganizing] = useState(false);
-  return <section className="asb-session-detail" aria-label={t("sessions.detail.aria")}>
+  return <ScrollArea as="section" className="asb-session-detail" aria-label={t("sessions.detail.aria")}>
     <header className="asb-session-detail-head">
       <div className="asb-session-detail-title">
         <span className="asb-session-client"><ClientLogo app={session.app} className="asb-session-logo" />
@@ -119,5 +120,5 @@ export function SessionDetail({ detail, session, bookmarks, deleting, onDelete, 
     {detail.error && <p className="asb-warn-text" role="alert">{detail.error}</p>}
     {detail.page && <SessionTranscript key={`${session.app}:${session.sessionId}:${detail.page.offset}`}
       session={session} detail={detail} bookmarks={bookmarks} />}
-  </section>;
+  </ScrollArea>;
 }

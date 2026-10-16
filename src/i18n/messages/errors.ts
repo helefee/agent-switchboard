@@ -50,6 +50,7 @@ export const messages = {
   "errors.transport.other": ["网络请求失败", "The network request failed"],
 
   "errors.outboundProxy.unavailable": ["无法读取出站代理设置：{detail}", "The outbound proxy settings are unavailable: {detail}"],
+  "errors.outboundProxy.unreadable": ["出口代理设置文件格式无效，请修复设置或重新读取。", "The egress proxy settings file is invalid. Repair it or reload the settings."],
   "errors.outboundProxy.revisionConflict": ["出口代理设置已被修改，请重新读取后再保存", "The egress proxy settings changed elsewhere; reload them before saving"],
   "errors.outboundProxy.versionUnsupported": ["出口代理设置版本不受支持", "This egress proxy settings version is not supported"],
   "errors.outboundProxy.revisionInvalid": ["出口代理设置修订无效", "The egress proxy settings revision is invalid"],

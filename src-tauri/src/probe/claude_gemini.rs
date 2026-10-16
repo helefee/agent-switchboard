@@ -31,7 +31,7 @@ pub(super) fn fetch(
         connection,
     )?;
     let (scheme, key) = asb_core::claude_gemini::credential(raw_key, selected)?;
-    let client = reqwest::blocking::Client::builder()
+    let client = crate::outbound_proxy::apply_blocking(reqwest::blocking::Client::builder())
         .user_agent("Agent Switchboard")
         .connect_timeout(Duration::from_secs(5))
         .timeout(Duration::from_secs(15))

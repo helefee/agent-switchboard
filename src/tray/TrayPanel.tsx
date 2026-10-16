@@ -1,16 +1,6 @@
-import { useMessageState } from "../i18n/use-message-state";
-import { useEffect, useLayoutEffect, useRef, useState } from "react";
+import { useEffect, useRef } from "react";
 import { ArrowUpRight, LogOut } from "lucide-react";
-import {
-  hideTray,
-  openTrayMain,
-  quitTray,
-  resizeTray,
-  switchTrayProvider,
-  trayReady,
-  type TraySnapshot,
-} from "../api/client";
-import { queryCodexOfficialQuota, queryProfileUsage } from "../api/usage";
+import { openTrayMain, quitTray, type TraySnapshot } from "../api/client";
 import appIcon from "../assets/app-icon.svg";
 import { Button } from "@/components/Button";
 import { ClientLogo } from "@/components/ClientLogo";
@@ -18,18 +8,10 @@ import { applyAppAppearance } from "@/lib/app-appearance";
 import { useI18n } from "@/i18n";
 import { TrayProviderItem } from "./TrayProviderItem";
 import { useTraySnapshot } from "./useTraySnapshot";
-
-/** Hard cap for the native popup height. The single-line row density keeps
- * realistic provider counts fully visible below it; an extreme count scrolls
- * inside .tray-list as the physical last resort instead of stretching. */
-const TRAY_MAX_HEIGHT = 560;
+import { useTrayActions } from "./useTrayActions";
+import { useTrayPanelLayout } from "./useTrayPanelLayout";
 
 type TrayApp = "codex" | "claude";
-
-/** In-flight tray action. A provider switch or usage refresh carries the row
- * id so that row can show its in-flight state; panel commands (open/manage/
- * quit) share one shape. The three kinds never share an id namespace. */
-type PendingAction = { kind: "switch" | "refresh"; providerId: string } | { kind: "panel" };
 
 interface TrayGroupProps {
   app: TrayApp;
@@ -71,100 +53,16 @@ function TrayPanelContent({ snapshot, readError, initialized, refresh }: {
   refresh: () => Promise<void>;
 }) {
   const { t } = useI18n();
-  const [actionError, setActionError] = useMessageState();
-  const [pending, setPending] = useState<PendingAction | null>(null);
-  const actionInFlight = useRef(false);
-  const readySent = useRef(false);
-  const mounted = useRef(true);
+  const { error: actionError, setError, pending, run, switchProvider, refreshUsage } = useTrayActions(refresh);
   const panel = useRef<HTMLDivElement>(null);
   const list = useRef<HTMLDivElement>(null);
   const busy = pending !== null || snapshot?.switching === true;
-
-  useEffect(() => {
-    mounted.current = true;
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === "Escape") {
-        event.preventDefault();
-        void hideTray().catch((caught) => { if (mounted.current) setActionError(caught); });
-      }
-    };
-    document.addEventListener("keydown", onKey);
-    return () => { mounted.current = false; document.removeEventListener("keydown", onKey); };
-  }, []);
-
-  useEffect(() => {
-    applyAppAppearance(snapshot?.settings ?? null);
-  }, [snapshot?.settings]);
-
-  useLayoutEffect(() => {
-    let disposed = false;
-    let revision = 0;
-    let lastHeight = 0;
-    const measure = () => {
-      if (!panel.current || !list.current) return;
-      const content = Math.ceil(panel.current.offsetHeight - list.current.clientHeight + list.current.scrollHeight);
-      const height = Math.min(content, TRAY_MAX_HEIGHT);
-      if (height <= 0 || height === lastHeight) return;
-      lastHeight = height;
-      const request = ++revision;
-      void (async () => {
-        try { await resizeTray(height); }
-        catch (caught) {
-          if (!disposed && request === revision) setActionError(caught);
-        } finally {
-          // A failed resize must still reveal the recovery controls. Only the
-          // latest committed layout may complete the initial native handshake.
-          if (!disposed && request === revision && initialized && !readySent.current) {
-            try {
-              await trayReady();
-              // Marking sent only after success keeps a one-off handshake
-              // failure retryable; marking it before the await would leave
-              // the native side never-ready and the panel could never open.
-              readySent.current = true;
-            }
-            catch (caught) { if (mounted.current) setActionError(caught); }
-          }
-        }
-      })();
-    };
-    measure();
-    const observer = new ResizeObserver(measure);
-    if (panel.current) observer.observe(panel.current);
-    if (list.current?.firstElementChild) observer.observe(list.current.firstElementChild);
-    return () => { disposed = true; observer.disconnect(); };
-  }, [snapshot, readError, actionError, initialized]);
-
-  const run = async (mark: PendingAction, action: () => Promise<void>) => {
-    if (actionInFlight.current) return;
-    actionInFlight.current = true;
-    setPending(mark);
-    setActionError(null);
-    try { await action(); }
-    catch (caught) { if (mounted.current) setActionError(caught); }
-    finally {
-      actionInFlight.current = false;
-      if (mounted.current) setPending(null);
-    }
-  };
-  const error = actionError ?? readError ?? snapshot?.error;
+  const error = actionError ?? readError ?? snapshot?.error ?? null;
   const providers = snapshot?.providers ?? [];
   const switchingId = pending?.kind === "switch" ? pending.providerId : null;
   const refreshingId = pending?.kind === "refresh" ? pending.providerId : null;
-  const switchProvider = (providerId: string) => {
-    void run({ kind: "switch", providerId }, async () => {
-      await switchTrayProvider(providerId);
-      await refresh();
-    });
-  };
-  /** The forced manual path: the same backend executors the main window's
-   * refresh buttons use, then one snapshot re-read through the shared cache. */
-  const refreshUsage = (provider: TraySnapshot["providers"][number]) => {
-    void run({ kind: "refresh", providerId: provider.id }, async () => {
-      if (provider.usage?.kind === "official") await queryCodexOfficialQuota(provider.id);
-      else await queryProfileUsage(provider.app, provider.id);
-      await refresh();
-    });
-  };
+  useTrayPanelLayout(panel, list, initialized, error, setError);
+  useEffect(() => { applyAppAppearance(snapshot?.settings ?? null); }, [snapshot?.settings]);
   return (
     <div ref={panel} className="tray-panel" aria-label={t("tray.panel.aria")}>
       <header className="tray-header">
@@ -202,13 +100,8 @@ function TrayPanelContent({ snapshot, readError, initialized, refresh }: {
   );
 }
 
-/** The snapshot is accepted before the saved language preference reaches
- * the panel before its first translated render. */
+/** Snapshot loading commits the language before publishing the first content. */
 export function TrayPanel() {
   const { snapshot, error: readError, initialized, refresh } = useTraySnapshot();
-  return (
-    <>
-      <TrayPanelContent snapshot={snapshot} readError={readError} initialized={initialized} refresh={refresh} />
-    </>
-  );
+  return <TrayPanelContent snapshot={snapshot} readError={readError} initialized={initialized} refresh={refresh} />;
 }

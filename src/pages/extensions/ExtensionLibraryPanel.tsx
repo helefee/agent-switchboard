@@ -4,6 +4,7 @@ import { SearchIcon } from "../../components/icons";
 import { useI18n } from "../../i18n";
 import { Server, Sparkles } from "lucide-react";
 import { ExtensionList } from "./ExtensionList";
+import { ScrollArea } from "../../components/ScrollArea";
 import type { ExtensionWorkspace } from "./useExtensionWorkspace";
 
 /** The library's empty state: the one shape from panels.css, with the heading
@@ -32,9 +33,8 @@ function EmptyLibrary({ workspace }: { workspace: ExtensionWorkspace }) {
   );
 }
 
-export function ExtensionLibraryPanel({ workspace }: { workspace: ExtensionWorkspace }) {
+function LibraryState({ workspace }: { workspace: ExtensionWorkspace }) {
   const { t } = useI18n();
-  if (workspace.nav.kind === null) return null;
   if (!workspace.ext.loaded) return <ExtensionLoading />;
   if (!workspace.ext.workspace)
     return (
@@ -49,19 +49,26 @@ export function ExtensionLibraryPanel({ workspace }: { workspace: ExtensionWorks
         </Button>
       </div>
     );
-  const filtered = workspace.visible.length !== workspace.kindItems.length;
+  return <EmptyLibrary workspace={workspace} />;
+}
+
+export function ExtensionLibraryPanel({ workspace }: { workspace: ExtensionWorkspace }) {
+  const { t } = useI18n();
+  if (workspace.nav.kind === null) return null;
+  const loaded = workspace.ext.loaded && workspace.ext.workspace !== null;
+  const filtered = loaded && workspace.visible.length !== workspace.kindItems.length;
   return (
     <section className="asb-ext-library-panel" aria-label={t("extensions.library.aria")}>
-      <div className="asb-ext-library-scroll">
-        {workspace.visible.length > 0 ? (
-          <ExtensionList workspace={workspace} />
-        ) : (
-          <EmptyLibrary workspace={workspace} />
-        )}
-        {filtered && (
-          <p className="asb-ext-result-count" role="status">{t("extensions.library.showing", { count: workspace.visible.length })}</p>
-        )}
-      </div>
+      {loaded && workspace.visible.length > 0 ? (
+        <ExtensionList workspace={workspace} />
+      ) : (
+        <ScrollArea className="asb-ext-library-state" role="region" aria-label={t("extensions.library.aria")} tabIndex={0}>
+          <LibraryState workspace={workspace} />
+        </ScrollArea>
+      )}
+      {filtered && (
+        <p className="asb-ext-result-count" role="status">{t("extensions.library.showing", { count: workspace.visible.length })}</p>
+      )}
     </section>
   );
 }

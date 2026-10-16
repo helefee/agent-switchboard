@@ -1,6 +1,7 @@
 # Agent Note: 移除 externallyModified 匹配状态契约
 
 Status: implemented
+Archived: 2026-10-16
 
 ## Problem
 

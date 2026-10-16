@@ -8,6 +8,7 @@ import { Pagination } from "../Pagination";
 import { ClientLogo } from "../ClientLogo";
 import { ConfirmSheet } from "../ConfirmSheet";
 import { Time } from "../Time";
+import { ScrollArea } from "../ScrollArea";
 import { SessionMessageView } from "./SessionMessageView";
 import type { SessionBookmarks } from "./use-session-bookmarks";
 import { useReadingScroll } from "./use-reading-scroll";
@@ -35,7 +36,7 @@ function BookmarkDetail({ item, offset, scrollTop, onOffsetChange, busy, onRemov
     } catch (caught) { if (mounted.current) setError(caught); }
     finally { if (mounted.current) setOpening(false); }
   };
-  return <section className="asb-session-detail" aria-label={t("sessions.bookmarks.detail")}>
+  return <ScrollArea as="section" className="asb-session-detail" aria-label={t("sessions.bookmarks.detail")}>
     <header className="asb-session-detail-head">
       <div className="asb-session-detail-title"><h3 className="asb-section-title" title={item.sessionTitle}>{item.sessionTitle}</h3>
         <span className="asb-scope-note">{t("sessions.bookmarks.savedAt")} <Time iso={item.savedAt} /></span>
@@ -54,13 +55,14 @@ function BookmarkDetail({ item, offset, scrollTop, onOffsetChange, busy, onRemov
     <p className="asb-scope-note">{t("sessions.bookmarks.snapshot")}</p>
     {item.projectDir && <p className="asb-session-bookmark-path">{item.projectDir}</p>}
     {error && <p className="asb-warn-text" role="alert">{error}</p>}
-    <div className="asb-session-transcript" ref={container} onScroll={onScroll}>
+    <ScrollArea className="asb-session-transcript" viewportRef={container} onScroll={onScroll}
+      aria-label={t("sessions.bookmarks.detail")}>
       <SessionMessageView message={{ id: item.messageId, role: item.role, content: item.excerpt,
         contentLength: item.contentLength, bookmarked: true, at: item.at }}
         readContent={readContent} readCopyText={readCopyText} targeted={false} expanded contentOffset={offset}
         onContentOffsetChange={(_id, next) => onOffsetChange(item.id, next)} />
-    </div>
-  </section>;
+    </ScrollArea>
+  </ScrollArea>;
 }
 
 export function SessionBookmarksPane({ bookmarks, onOpen }: {
@@ -79,7 +81,7 @@ export function SessionBookmarksPane({ bookmarks, onOpen }: {
           <span className="asb-session-count">{bookmarks.result?.total ?? 0}</span></div>
         {bookmarks.loading && <p role="status">{t("sessions.bookmarks.loading")}</p>}
         {!bookmarks.loading && bookmarks.items !== null && !items.length && <p>{t("sessions.bookmarks.empty")}</p>}
-        <div className="asb-session-items">{items.map((item) =>
+        <ScrollArea className="asb-session-items" aria-label={t("sessions.bookmarks.title")}>{items.map((item) =>
           <Button variant="unstyled" key={item.id} aria-pressed={reading.id === item.id}
             className={`asb-session-item${reading.id === item.id ? " is-active" : ""}`}
             onClick={() => { scrollTop.current = 0; setReading({ id: item.id, offset: item.contentOffset }); }}>
@@ -87,14 +89,14 @@ export function SessionBookmarksPane({ bookmarks, onOpen }: {
               <span title={item.sessionTitle}>{item.sessionTitle}</span></span>
             <span className="asb-session-search-excerpt">{item.excerpt.slice(0, 220)}</span>
             <span className="asb-session-item-time"><Time iso={item.savedAt} /></span>
-          </Button>)}</div>
+          </Button>)}</ScrollArea>
         {bookmarks.result && <Pagination total={bookmarks.result.total} page={bookmarks.page}
           pageSize={bookmarks.result.pageSize} label={t("sessions.bookmarks.pagination")} onPageChange={bookmarks.setPage} />}
       </section>
       {selected ? <BookmarkDetail key={selected.id} item={selected} busy={bookmarks.busy || bookmarks.loading} onOpen={onOpen}
         offset={reading.offset} scrollTop={scrollTop} onOffsetChange={(id, offset) => setReading({ id, offset })}
-        onRemove={() => setPending(selected)} /> : <section className="asb-session-detail asb-session-empty-detail"
-          aria-label={t("sessions.bookmarks.detail")}><p>{t("sessions.bookmarks.select")}</p></section>}
+        onRemove={() => setPending(selected)} /> : <ScrollArea as="section" className="asb-session-detail asb-session-empty-detail"
+          aria-label={t("sessions.bookmarks.detail")}><p>{t("sessions.bookmarks.select")}</p></ScrollArea>}
     </div>
     {pending && <ConfirmSheet title={t("sessions.bookmarks.remove")} confirmLabel={t("sessions.bookmarks.remove")}
       busy={bookmarks.busy}

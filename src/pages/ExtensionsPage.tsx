@@ -40,7 +40,7 @@ export function ExtensionsPage(props: ExtensionsPageProps) {
       {(visited.sources || sources) && <SkillSourceBrowser busy={workspace.writeBlocked} items={workspace.items}
         onScanLocal={workspace.ext.scanLocal} onImport={workspace.importCandidate} onPickDirectory={pickDirectory}
         onPickZip={() => pickFile("ZIP archives", ["zip"])} onBack={() => nav.setSourceBrowser(false)} notice={notice} />}</div>
-    <section className="asb-ext" aria-label={t("nav.page.extensions")} data-view={nav.section} hidden={editing || discovery || sources}>
+    <section className="asb-ext" aria-label={t("nav.page.extensions")} hidden={editing || discovery || sources}>
       <ExtensionToolbar workspace={workspace} />{notice}{EXTENSION_SECTIONS.map(({ value }) => <div key={value}
         id={`ext-workspace-${value}-panel`} role="tabpanel" aria-labelledby={`ext-workspace-${value}-tab`} hidden={nav.section !== value}>
         {nav.section === value && <ExtensionLibraryPanel workspace={workspace} />}</div>)}</section>

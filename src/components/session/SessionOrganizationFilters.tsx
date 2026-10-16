@@ -22,7 +22,7 @@ function SessionTimeFilter({ search, disabled }: { search: SessionSearch; disabl
     }
   };
   const change = (value: string) => {
-    search.setTimeDraft({ range: value, from, to });
+    search.setTimeDraft({ range: value, from: value === "all" ? "" : from, to: value === "all" ? "" : to });
     if (value === "custom") {
       apply(from, to);
     } else search.changeDates({ activeAfter: value === "all" ? null

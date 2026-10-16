@@ -38,7 +38,7 @@ export const messages = {
   "shell.information.aria": ["全局信息", "Global information"],
   "shell.information.show": ["查看全局信息（{count} 条）", "View global information ({count})"],
   "shell.information.close": ["收起全局信息", "Close global information"],
-  "shell.banner.repairStore": ["一键智能修复", "Repair provider data"],
+  "shell.banner.repairData": ["一键智能修复", "Repair application data"],
   "shell.banner.settingsUnavailable": ["应用设置不可用：{detail}", "App settings unavailable: {detail}"],
   "shell.banner.repair": ["一键修复", "Quick repair"],
 
@@ -75,6 +75,7 @@ export const messages = {
   "common.discardAndContinue": ["放弃修改并继续", "Discard and continue"],
   "common.keepEditing": ["继续编辑", "Keep editing"],
   "common.clearFilters": ["清除筛选", "Clear filters"],
+  "common.backToTop": ["返回顶部", "Back to top"],
 
   "pagination.aria": ["分页", "Pagination"],
   "pagination.prev": ["上一页", "Previous page"],

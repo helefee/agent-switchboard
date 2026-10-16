@@ -1,5 +1,5 @@
 import { commandErrorText } from "../i18n/errors";
-import { useId, useRef, useState, type ReactNode } from "react";
+import { useId, useRef, useState, type ReactNode, type RefCallback } from "react";
 import { type AppKind, type CodexSubagentSettings, type SettingValue, type ConfigFileStatus } from "../api/client";
 import type { ClientSettingsEditorState } from "../app/useClientSettings";
 import { useI18n, type TFunction } from "../i18n";
@@ -19,6 +19,7 @@ import { SettingsFields } from "./SettingsFields";
 import { WorkspaceHeader } from "./WorkspaceHeader";
 
 interface ClientSettingsPanelProps {
+  routeContentRef: RefCallback<HTMLElement>;
   app: AppKind;
   onSelectApp: (app: AppKind) => void;
   editorState: ClientSettingsEditorState;
@@ -37,31 +38,15 @@ interface ClientSettingsPanelProps {
   subagentDraft?: CodexSubagentSettings;
 }
 
-function clientConfigStatus(
-  t: TFunction,
-  configStatus: ConfigFileStatus | undefined,
-): string | null {
-  switch (configStatus?.matchStatus.kind) {
-    case "matchesProfile":
-      return t("clientConfig.status.matchesProfile", { name: configStatus.matchStatus.profileName });
-    case "profileChanged":
-      return t("clientConfig.status.profileChanged", { name: configStatus.matchStatus.profileName });
-    case "restoredBackup":
-      return t("clientConfig.status.restoredBackup");
-    case "unmanaged":
-      return t("clientConfig.status.unmanaged");
-    default:
-      return null;
-  }
-}
-
 function actionStatus(t: TFunction, props: ClientSettingsPanelProps) {
+  if (props.configStatus?.readError) {
+    return { message: t("providers.route.notes.readError", { detail: props.configStatus.readError }), error: true };
+  }
   if (props.configStatus?.exists && !props.configStatus.syntaxOk) {
     return { message: t("clientConfig.status.syntaxError"), error: true };
   }
   if (props.editorState.phase === "dirty") return { message: t("clientConfig.status.dirty"), error: false };
-  const message = clientConfigStatus(t, props.configStatus);
-  return message ? { message, error: false } : null;
+  return null;
 }
 
 interface ConfigurationReviewProps extends ClientSettingsPanelProps {
@@ -378,20 +363,22 @@ export function ClientSettingsPanel(props: ClientSettingsPanelProps) {
         configuration={configuration}
         onSectionChange={changeSection}
       />
-      <Collapsible open={reviewOpen} id={reviewId} ariaLabel={t("clientConfig.review.title")}>
-        <ClientConfigurationReview {...props} open={reviewOpen} />
-      </Collapsible>
-      <Collapsible open={instructionsOpen} id={instructionsId} className="is-instructions"
-        ariaLabel={t("clientConfig.toolbar.instructionsEditor")}>
-        <div className="asb-client-settings-instructions">{props.globalInstructions}</div>
-      </Collapsible>
-      <Collapsible open={directoryOpen} id={directoryId} ariaLabel={t("clientConfig.toolbar.directory")}>
-        <OfficialSettingsDirectory entries={props.editorState.editor?.directory ?? []} />
-      </Collapsible>
-      <Collapsible open={resetOpen} id={resetId} ariaLabel={t("clientConfig.reset.nativeTitle")}>
-        <ClientConfigurationResetPanel app={props.app} busy={props.busy} configuration={configuration} />
-      </Collapsible>
-      <ClientSettingsForm panel={props} directoryOpen={directoryOpen} reviewOpen={reviewOpen} resetOpen={resetOpen} configuration={configuration} />
+      <div ref={props.routeContentRef}>
+        <Collapsible open={reviewOpen} id={reviewId} ariaLabel={t("clientConfig.review.title")}>
+          <ClientConfigurationReview {...props} open={reviewOpen} />
+        </Collapsible>
+        <Collapsible open={instructionsOpen} id={instructionsId} className="is-instructions"
+          ariaLabel={t("clientConfig.toolbar.instructionsEditor")}>
+          <div className="asb-client-settings-instructions">{props.globalInstructions}</div>
+        </Collapsible>
+        <Collapsible open={directoryOpen} id={directoryId} ariaLabel={t("clientConfig.toolbar.directory")}>
+          <OfficialSettingsDirectory entries={props.editorState.editor?.directory ?? []} />
+        </Collapsible>
+        <Collapsible open={resetOpen} id={resetId} ariaLabel={t("clientConfig.reset.nativeTitle")}>
+          <ClientConfigurationResetPanel app={props.app} busy={props.busy} configuration={configuration} />
+        </Collapsible>
+        <ClientSettingsForm panel={props} directoryOpen={directoryOpen} reviewOpen={reviewOpen} resetOpen={resetOpen} configuration={configuration} />
+      </div>
     </div>
     <ClientConfigurationConfirmation
       app={props.app}

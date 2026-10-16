@@ -44,7 +44,7 @@ pub use model::{
 };
 pub use plan::{
     BackupRecord, ChangeKind, CodexCommonFragment, ConfigWriteRecord, KeyChange, LocalizedMessage,
-    MatchStatus, RouteState, SwitchPlan, SwitchPreview, WriteOperation,
+    RouteState, SwitchPlan, SwitchPreview, WriteOperation,
 };
 pub use provider::{
     classify_profile_save, codex_official_draft, ProfileSaveKind, ProviderDisplay, ProviderDraft,

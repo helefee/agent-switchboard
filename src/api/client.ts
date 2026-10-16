@@ -47,6 +47,7 @@ export const hideTray = (): Promise<void> => invoke("tray_hide");
 export const openTrayMain = (): Promise<void> => invoke("tray_open_main");
 export const switchTrayProvider = (profileId: string): Promise<void> => invoke("tray_switch", { profileId });
 export const quitTray = (): Promise<void> => invoke("tray_quit");
+/** Report full content height; native configuration and work area own the final size. */
 export const resizeTray = (height: number): Promise<void> => invoke("tray_resize", { height });
 export function onTrayChanged(handler: () => void): Promise<() => void> {
   if (isBrowserDevelopment) {

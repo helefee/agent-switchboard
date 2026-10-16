@@ -251,7 +251,7 @@
    and source browser): a pinned header row with the back control, a
    scrollable module body, and a pinned bottom action bar. The route wrapper
    replaces the page stack's natural flow for the frame. */
-.asb-main:has(> .asb-page-stack:not([hidden]) .asb-editor-route:not([hidden])) {
+.asb-main:has(> .asb-scroll-viewport > .asb-page-stack:not([hidden]) .asb-editor-route:not([hidden])) > .asb-scroll-viewport {
   overflow: hidden;
 }
 
@@ -299,15 +299,16 @@
 
 .asb-editor-frame > .asb-edit-panel {
   grid-row: 2;
+  border: 0;
+  background: transparent;
+}
+
+.asb-edit-panel > .asb-scroll-viewport {
   display: grid;
   gap: var(--asb-space-3);
   min-width: 0;
   min-height: 0;
-  overflow-y: auto;
   padding: var(--asb-space-3) 0;
-  border: 0;
-  background: transparent;
-  scrollbar-gutter: stable;
 }
 
 /* The frame's action bar is a fixed third grid row, not another content

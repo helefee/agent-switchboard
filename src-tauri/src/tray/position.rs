@@ -17,9 +17,15 @@ impl Bounds {
     }
 }
 
-pub(super) fn place(work: Bounds, anchor: Bounds, scale: f64, desired_height: f64) -> Bounds {
+pub(super) fn place(
+    work: Bounds,
+    anchor: Bounds,
+    scale: f64,
+    desired_width: f64,
+    desired_height: f64,
+) -> Bounds {
     let margin = 8.0 * scale;
-    let width = (480.0 * scale).min((work.width - margin * 2.0).max(1.0));
+    let width = (desired_width * scale).min((work.width - margin * 2.0).max(1.0));
     let height = (desired_height * scale).min((work.height - margin * 2.0).max(1.0));
     let cx = anchor.x + anchor.width / 2.0;
     let cy = anchor.y + anchor.height / 2.0;
@@ -69,6 +75,7 @@ mod tests {
             bounds(-1920.0, 0.0, 1920.0, 1040.0),
             bounds(-60.0, 1040.0, 24.0, 24.0),
             1.0,
+            480.0,
             500.0,
         );
         assert_eq!(popup.y, 532.0);
@@ -79,15 +86,15 @@ mod tests {
     fn top_and_side_panels_expand_towards_workspace() {
         let work = bounds(0.0, 30.0, 1920.0, 1050.0);
         assert_eq!(
-            place(work, bounds(900.0, 0.0, 24.0, 24.0), 1.0, 500.0).y,
+            place(work, bounds(900.0, 0.0, 24.0, 24.0), 1.0, 480.0, 500.0).y,
             38.0
         );
         assert_eq!(
-            place(work, bounds(0.0, 500.0, 24.0, 24.0), 1.0, 500.0).x,
+            place(work, bounds(0.0, 500.0, 24.0, 24.0), 1.0, 480.0, 500.0).x,
             32.0
         );
         assert_eq!(
-            place(work, bounds(1896.0, 500.0, 24.0, 24.0), 1.0, 500.0).x,
+            place(work, bounds(1896.0, 500.0, 24.0, 24.0), 1.0, 480.0, 500.0).x,
             1408.0
         );
     }
@@ -98,11 +105,24 @@ mod tests {
             bounds(2560.0, -900.0, 800.0, 600.0),
             bounds(3300.0, -300.0, 48.0, 48.0),
             2.0,
+            480.0,
             700.0,
         );
         assert_eq!(popup.width, 768.0);
         assert_eq!(popup.height, 568.0);
         assert!(popup.x >= 2576.0 && popup.x + popup.width <= 3344.0);
         assert_eq!(popup.y, -884.0);
+    }
+
+    #[test]
+    fn requested_width_is_not_replaced_by_a_second_default() {
+        let popup = place(
+            bounds(0.0, 0.0, 1920.0, 1040.0),
+            bounds(960.0, 1040.0, 24.0, 24.0),
+            1.0,
+            640.0,
+            500.0,
+        );
+        assert_eq!(popup.width, 640.0);
     }
 }

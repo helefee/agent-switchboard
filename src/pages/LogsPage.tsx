@@ -22,6 +22,7 @@ const ACTION_LABEL: Record<RuntimeLogAction, MessageKey> = {
   codexSubagentSettingsApplied: "backup.action.codexSubagentSettingsApplied",
   providersSqlImported: "backup.action.providersSqlImported",
   appSettingsRepaired: "backup.action.appSettingsRepaired",
+  applicationDataRepaired: "backup.action.applicationDataRepaired",
   profileStoreRepaired: "backup.action.profileStoreRepaired",
   profileCreated: "backup.action.profileCreated",
   profileUpdated: "backup.action.profileUpdated",

@@ -1,5 +1,4 @@
-import type { ReactNode } from "react";
-import { openConfigFileLocation, type AppKind, type ConfigFileStatus, type LockStatus, type MatchStatus, type ProviderProfile } from "../api/client";
+import { openConfigFileLocation, type AppKind, type ConfigFileStatus, type LockStatus, type ProviderProfile } from "../api/client";
 import { clientName } from "../lib/client-name";
 import { currentProviderName } from "../lib/current-provider-name";
 import { useI18n, type TFunction } from "../i18n";
@@ -17,21 +16,6 @@ export interface ConfigStatusPanelProps {
   locks: Partial<Record<AppKind, LockStatus>>;
   busy: boolean;
   onRecoverLock: (app: AppKind) => void;
-}
-
-function matchLabel(t: TFunction, status: MatchStatus): ReactNode {
-  switch (status.kind) {
-    case "matchesProfile":
-      return t("clientConfig.match.matchesProfile", { name: status.profileName });
-    case "profileChanged":
-      return t("clientConfig.match.profileChanged", { name: status.profileName });
-    case "restoredBackup":
-      return <>{t("clientConfig.match.restoredBefore")}<Time iso={status.at} />{t("clientConfig.match.restoredAfter")}</>;
-    case "unmanaged":
-      return t("clientConfig.match.unmanaged");
-    case "unknown":
-      return t("clientConfig.match.unknown");
-  }
 }
 
 function lockLabel(t: TFunction, status: LockStatus | undefined): string {
@@ -55,6 +39,7 @@ function statusPill(t: TFunction, status: ConfigFileStatus): { ok: boolean; text
   if (status.readError) return { ok: false, text: t("clientConfig.pill.readFailed") };
   if (!status.exists) return { ok: false, text: t("clientConfig.pill.missing") };
   if (!status.syntaxOk) return { ok: false, text: t("clientConfig.pill.syntaxError") };
+  if (status.clientSettingsError) return { ok: false, text: t("clientConfig.pill.settingsError") };
   return { ok: true, text: t("clientConfig.pill.ok") };
 }
 
@@ -77,8 +62,14 @@ function ConfigStatusDetails({ status, profiles, lock }: {
   if (readable) rows.push(
     { label: t("clientConfig.details.currentProvider"),
       value: <>{currentProviderName(status, profiles)} · {status.route?.model ?? t("clientConfig.details.defaultModel")}</> },
-    { label: t("clientConfig.details.matchStatus"), value: matchLabel(t, status.matchStatus) },
   );
+  if (readable && status.activeProfileId === null) rows.push({
+    label: t("clientConfig.details.profile"), value: t("providers.route.notes.unlinked"),
+  });
+  if (readable && status.clientSettingsError) rows.push({
+    label: t("clientConfig.details.settingsError"),
+    value: <span className="asb-warn-text">{status.clientSettingsError}</span>,
+  });
   if (status.lastSwitch) rows.push({ label: t("clientConfig.details.lastWrite"),
     value: <>
       <Time iso={status.lastSwitch.at} />

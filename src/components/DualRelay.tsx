@@ -18,22 +18,24 @@ interface RouteCardProps {
 }
 
 function configurationNotes(status: ConfigFileStatus | undefined, t: TFunction): string[] {
-  if (!status) return [t("providers.route.notes.notRead")];
-  if (status.readError) return [t("providers.route.notes.readError", { detail: status.readError })];
-  if (!status.exists) return [t("providers.route.notes.missing")];
-  if (!status.syntaxOk) return [t("providers.route.notes.syntaxError")];
+  if (!status) return [];
   const notes: string[] = [];
-  switch (status.matchStatus.kind) {
-    case "profileChanged": notes.push(t("providers.route.notes.profileChanged")); break;
-    case "unmanaged": notes.push(t("providers.route.notes.unmanaged")); break;
-    case "restoredBackup": notes.push(t("providers.route.notes.restoredBackup")); break;
-    case "unknown": notes.push(t("providers.route.notes.unknown")); break;
+  if (status.recoveryIssue) {
+    notes.push(t("providers.route.notes.recoveryBlocked", { detail: status.recoveryIssue }));
+  }
+  if (status.readError) {
+    return [...notes, t("providers.route.notes.readError", { detail: status.readError })];
+  }
+  if (!status.exists) return [...notes, t("providers.route.notes.missing")];
+  if (!status.syntaxOk) return [...notes, t("providers.route.notes.syntaxError")];
+  if (status.clientSettingsError) {
+    notes.push(t("providers.route.notes.settingsError", { detail: status.clientSettingsError }));
   }
   return [...notes, ...(status.route?.scopeWarnings ?? []).map((warning) => localizedMessageText(warning, t))];
 }
 
 function lockNote(lock: LockStatus | undefined, t: TFunction): string | null {
-  if (!lock) return t("providers.route.lock.notRead");
+  if (!lock) return null;
   switch (lock.state) {
     case "free": return null;
     case "stale": return t("providers.route.lock.stale");
@@ -80,6 +82,8 @@ function RouteCard({
   const activeProfile = currentProviderProfile(status, profiles);
   const modelValue = route ? route.model ?? t("providers.label.clientDefault") : t("providers.label.notRead");
   const serviceValue = serviceAddress(route, t);
+  const information = !status ? t("providers.route.notes.notRead")
+    : readable && status.activeProfileId === null ? t("providers.route.notes.unlinked") : null;
   const notes = configurationNotes(status, t);
   const lockWarning = lockNote(lock, t);
   if (lockWarning) notes.push(lockWarning);
@@ -99,6 +103,7 @@ function RouteCard({
           <div><dt className="asb-route-key">{t("providers.label.accessMode")}</dt><dd className="asb-route-value">{accessLabel(route, t)}</dd></div>
           <div><dt className="asb-route-key">{t("providers.label.website")}</dt><dd className="asb-route-value">{websiteValue(route, activeProfile?.websiteUrl ?? null, t)}</dd></div>
         </dl>
+        {information && <p className="asb-route-info" role="status">{information}</p>}
         {notes.length > 0 && (
           <ul className="asb-route-notes">
             {notes.map((note, index) => <li key={`${index}-${note}`}>{note}</li>)}

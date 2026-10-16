@@ -28,7 +28,7 @@ export default function App() {
   return (
     <>
       <AppShell page={page} onPageChange={setPage} error={error} busy={busy}
-        onRepairStore={() => void providers.runRepairStore()}
+        onRepairData={() => void model.dataRepair.run()}
         settingsError={appSettingsState.loadError} onRepairSettings={() => void appSettingsState.repairSettings()}
         pin={appSettingsState.pin} update={{
           checking: updateCheck.checking,

@@ -8,16 +8,18 @@ Status: implemented
 
 ## Decision
 
-- `Table` 组件标记自带包裹层 `.asb-table-scroll`（`tabIndex={0}`），是表格滚动面的唯一所有者：`overflow: auto` + `scrollbar-gutter: stable`（延续 DESIGN.md「滚动面预留稳定滚动条槽位」契约），键盘可聚焦、可平移（延续原扩展管理滚动壳的无条件 tabIndex 先例）。
+- `Table` 组件以 `.asb-table-scroll` 组合共享 `ScrollArea`，原生视口拥有 `tabIndex={0}`、横向平移和返回顶部。纵向归属由[工作面滚动契约](../architecture/2026-10-16-table-scroll-ownership.md)拥有：默认自然展开；主列表显式选择 viewport，由共享层统一设置有界滚动、稳定槽位与固定表头。
 - `Table` 契约补上可选行内展开行 `renderExpansion`：返回节点即在该行下方发出占满整行的 `.asb-table-expansion-row`，hover 保持中性（吸收原 `.asb-backup-diff-row` 规则）。备份历史迁移到共享 `Table` + `renderExpansion`，裸 `<table>` 镜像与 `Fragment`/`cx` 复制路径删除；分页边距只保留 `.asb-table-scroll + .asb-pagination` 一条路径。全库数据表格只剩 Table.tsx 一处 `<table>` 标记（DatePicker 日历网格是其原语自有语法，DESIGN.md §90，不属数据表格契约）。
-- 删除全部模块级滚动壳及其规则：四个 `-table-wrap`/网关 div、扩展管理 9 处 `asb-ext-table-scroll`（CSS 规则整条删除）、重置面板 `asb-codex-reset-daily-data`。检测结果的 aria-live/aria-busy 播报改为无样式的纯语义 div（不承担滚动与布局）；日额度 18rem 高度裁剪迁到 `.asb-table-scroll:has(> .asb-codex-reset-daily-table)`，滚动本身归包裹层。用量的 `flex: 1 / min-height: 0` 与 sticky 表头分别迁到 `.asb-model-usage .asb-table-scroll` 与 `.asb-model-usage-table th`；网关类名移到表格元素上改写为复合选择器。
+- 删除全部模块级滚动壳及其规则：四个 `-table-wrap`/网关 div、扩展管理 9 处 `asb-ext-table-scroll`（CSS 规则整条删除）、重置面板 `asb-codex-reset-daily-data`。检测结果的 aria-live/aria-busy 播报使用无样式的纯语义 div（不承担滚动与布局）；日额度只保留相邻间距，不再限制表格高度。用量统计随页面展开，无私有 flex / sticky 规则；网关类名位于表格元素上。
 - 模块级 `min-width`（runtime-log 680px、gateway 56rem、扩展管理 600px、用量/雷达 max-content）原样保留在表格元素上：宽度约束是模块事实，滚动与展开行是组件契约，两者分层。
 - DESIGN.md §8 `Table` 条款与 tables-backups.css 头注释同批更新，声明组件包裹层是唯一表格滚动面、展开行由组件标记发出。
 
 ## Related notes
 
+- [共享返回顶部](2026-10-16-global-back-to-top.md)拥有固定按钮与实际视口，Table 继续拥有滚动模式、表头和行内展开。
 - [滚动条静止时自动隐藏](2026-10-14-autohide-ink-scrollbars.md)：拥有滚动条显隐视觉；本篇包裹层的 stable gutter 是「显隐永不 reflow」的前提，无所有权重叠。
-- [备份历史改随页面滚动](2026-10-14-backup-history-page-scroll.md)：页面级滚动的决定不变；其「模型用量等仍在自己滚动区内 sticky」的表述继续成立，只是滚动区从模块自建 wrap 变为组件包裹层，且该表的 DOM 由此回归共享契约。
+- [备份历史改随页面滚动](2026-10-14-backup-history-page-scroll.md)：页面级滚动的决定不变；共享 Table 默认模式支持自然展开，备份 DOM 仍归共享契约。
+- [工作面滚动契约](../architecture/2026-10-16-table-scroll-ownership.md)部分取代本篇原先无差别两轴滚动及模块私有高度、sticky 的决定；本篇继续拥有唯一 DOM、横向平移和行内展开。
 - 当场审计：扩展管理与重置面板的滚动壳原先部分重叠（各带播报或高度语义），本篇已整体吸收——语义剥离到纯 aria div / `:has` 高度规则，壳与 overflow 规则全部删除，无残留双轨。
 
 ## Alternatives considered
@@ -29,8 +31,8 @@ Status: implemented
 
 ## Consequences
 
-收益：全库表格单一实现——滚动、稳定 gutter、键盘平移、行内展开行一处拥有；四处 `-table-wrap`、9 处扩展壳、1 处重置壳、备份裸表格及其 `.asb-table +` 分页分支全部消失，无兼容路径与死规则。代价：每张表常驻稳定滚动条槽（约 10px 墨线宽度的右缘预留，与用量、日志页原状一致）；不溢出的表格也多一个键盘停靠点；检测结果外层从可聚焦滚动面变为普通 div，键盘平移由内层包裹层承接；日志页加载骨架不再单独预留 gutter（骨架与表格同宽，出现时无位移）。
+收益：全库数据表格由单一组件拥有标记、键盘平移和行内展开；四处 `-table-wrap`、9 处扩展壳、1 处重置壳、备份裸表格及其 `.asb-table +` 分页分支消失，无兼容路径。代价：不溢出的表格仍有一个键盘停靠点；检测结果的播报与键盘平移分属纯语义 div 与内层包裹层。纵向高度、固定表头和槽位的取舍见工作面滚动契约。
 
 ## Verification
 
-按项目规则未运行编译、类型检查与自动化测试；静态核对：`rg "asb-ext-table-scroll|asb-codex-reset-daily-data|asb-backup-diff-row|*-table-wrap" src/` 零命中；全库 `<table>` 标记仅 Table.tsx 与 DatePicker.tsx（日历原语）两处；`.asb-table-scroll` 规则 5 处 = 1 个全局定义 + 4 个模块布局参与（用量高度、分页边距、趋势块边距、日额度高度），无 overflow 重复；`npm run verify-notes` 通过。宽表平移、备份差异展开、扩展检测播报、日额度高度裁剪等实际观感建议 dev 下抽查。
+2026-10-15 的静态核对确认旧滚动壳、备份裸表格和重复分页选择器已移除，当时 `npm run verify-notes` 通过；未运行编译、类型检查与自动化测试。其后纵向归属变更的验证范围与运行时缺口由工作面滚动契约记录，原日额度高度裁剪与用量内部 sticky 不再是当前行为。

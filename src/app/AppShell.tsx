@@ -20,8 +20,8 @@ interface AppShellProps {
   settingsError: string | null;
   /** Replaces an unreadable settings file with validated defaults. */
   onRepairSettings: () => void;
-  /** Offered only for an unsupported profile store. */
-  onRepairStore: () => void;
+  /** Repairs application-owned provider and outbound-proxy data. */
+  onRepairData: () => void;
   /** Always-on-top toggle state; null until settings load. */
   pin: { active: boolean; onToggle: () => void } | null;
   /** Sidebar update entry above the settings item; App owns the check state. */
@@ -39,7 +39,7 @@ export function AppShell({
   busy,
   settingsError,
   onRepairSettings,
-  onRepairStore,
+  onRepairData,
   pin,
   update,
   children,
@@ -56,7 +56,7 @@ export function AppShell({
           <span className="asb-titlebar-name" data-tauri-drag-region>Agent Switchboard</span>
         </span>
         <GlobalInformation error={error} settingsError={settingsError} busy={busy}
-          onRepairStore={onRepairStore} onRepairSettings={onRepairSettings} />
+          onRepairData={onRepairData} onRepairSettings={onRepairSettings} />
         <div className="asb-titlebar-actions">
           {isBrowserDevelopment ? <span className="asb-web-development-badge">{t("shell.devBadge")}</span> : null}
           {pin ? (

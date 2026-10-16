@@ -2,6 +2,7 @@ import type { SessionMeta } from "../../api/client";
 import { useI18n } from "../../i18n";
 import { clientFullName } from "../../lib/client-name";
 import { SessionDetail } from "./SessionDetail";
+import { ScrollArea } from "../ScrollArea";
 import { SessionSearchList } from "./SessionSearchList";
 import { SessionSelectionToolbar } from "./SessionSelectionToolbar";
 import { sessionKey } from "./session-content";
@@ -32,9 +33,9 @@ export function SessionHistory({ search, detail, bookmarks, organization, deleti
         onSelect={(hit) => onOpen(hit.session, hit.messageId, hit.contentOffset)} />
       {detail.selected ? <SessionDetail key={sessionKey(detail.selected)} detail={detail} session={detail.selected}
         bookmarks={bookmarks} organization={organization} deleting={busy} onDelete={(session) => deletion.setPending([session])} />
-        : <section className="asb-session-detail asb-session-empty-detail" aria-label={t("sessions.detail.aria")}>
+        : <ScrollArea as="section" className="asb-session-detail asb-session-empty-detail" aria-label={t("sessions.detail.aria")}>
           <p>{t("sessions.detail.empty")}</p>
-        </section>}
+        </ScrollArea>}
     </div>
   </>;
 }

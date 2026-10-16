@@ -1,121 +1,9 @@
 use super::ConfigFileStatus;
 use crate::commands::error::{store_error, CommandError};
 use asb_core::adapter;
-use asb_core::contracts::{
-    AppKind, ConfigWriteRecord, MatchStatus, ProviderProfile, SwitchPlan, WriteOperation,
-};
+use asb_core::contracts::{AppKind, ConfigWriteRecord, ProviderProfile, SwitchPlan};
 use asb_switch::io::{FsIo, SwitchIo};
-use asb_switch::sha256_hex;
 use std::io::ErrorKind;
-
-pub(super) fn classify_match_status(
-    last: Option<&ConfigWriteRecord>,
-    current_hash: &str,
-    matching_profile: Option<&ProviderProfile>,
-) -> MatchStatus {
-    if let Some(record) = last {
-        if record.content_hash == current_hash
-            && record.profile_id.is_none()
-            && record.operation == WriteOperation::Restore
-        {
-            return MatchStatus::RestoredBackup {
-                at: record.at.clone(),
-            };
-        }
-    }
-    if let Some(profile) = matching_profile {
-        return MatchStatus::MatchesProfile {
-            profile_id: profile.id.clone(),
-            profile_name: profile.name.clone(),
-        };
-    }
-
-    match last {
-        Some(record) if record.content_hash == current_hash => MatchStatus::ProfileChanged {
-            profile_name: record
-                .profile_name
-                .clone()
-                .unwrap_or_else(|| "客户端设置".to_string()),
-        },
-        _ => MatchStatus::Unmanaged,
-    }
-}
-
-/// Decides whether the live content still matches a current profile, a
-/// restored backup, or the app's last record. Requires the file to be readable
-/// and syntactically valid.
-pub(super) fn match_status_for(
-    state: &crate::local_state::LocalState,
-    gateway: Option<&crate::gateway::GatewayController>,
-    kind: AppKind,
-    text: &str,
-) -> Result<MatchStatus, CommandError> {
-    let configuration = state.configuration();
-    let hash = sha256_hex(text);
-    let last = configuration
-        .latest_config_write(kind)
-        .map_err(store_error)?;
-
-    let client_settings = configuration
-        .get_client_settings(kind)
-        .map_err(store_error)?
-        .settings;
-    let profiles = configuration
-        .list_providers()
-        .map_err(store_error)?
-        .into_iter()
-        .filter(|record| record.profile.app == kind)
-        .collect::<Vec<_>>();
-    let gateway_profile_id = gateway
-        .map(|gateway| gateway.active_profile_id(kind, text))
-        .transpose()
-        .map_err(|error| CommandError::new("provider-identity-unavailable", error))?
-        .flatten();
-    if kind == AppKind::Codex {
-        let matching = match super::codex::matching_profile(state, gateway, text)? {
-            Some(profile) => Some(profile),
-            None => super::codex::matching_official(state, &profiles, text)?,
-        };
-        return Ok(classify_match_status(
-            last.as_ref(),
-            &hash,
-            matching.as_ref(),
-        ));
-    }
-    let mut matching_profile = None;
-    for record in &profiles {
-        if record.profile.requires_gateway()
-            && gateway_profile_id.as_deref() != Some(&record.profile.id)
-        {
-            continue;
-        }
-        let mut plan = SwitchPlan::direct(record.profile.clone(), client_settings.clone());
-        if gateway_profile_id.as_deref() == Some(&record.profile.id) {
-            if let Some(projected) = gateway
-                .expect("gateway identity has a controller")
-                .active_route_projection(&plan)
-                .map_err(|error| CommandError::new("provider-identity-unavailable", error))?
-            {
-                plan = projected;
-            }
-        }
-        if projection_matches(text, &plan) {
-            matching_profile = Some(record.profile.clone());
-            break;
-        }
-    }
-
-    Ok(classify_match_status(
-        last.as_ref(),
-        &hash,
-        matching_profile.as_ref(),
-    ))
-}
-
-pub(super) fn projection_matches(text: &str, plan: &SwitchPlan) -> bool {
-    asb_core::validate_plan(&plan.profile, &plan.client_settings).is_ok()
-        && matches!(adapter::preview(text, plan, ""), Ok(preview) if preview.changes.is_empty())
-}
 
 pub(super) fn active_profile_id(
     profiles: &[ProviderProfile],
@@ -208,7 +96,6 @@ fn observe_client_file(
         recovery_issue: recovery_issue.map(str::to_owned),
         client_settings: None,
         client_settings_error: None,
-        match_status: MatchStatus::Unknown,
         active_profile_id: None,
         last_switch: state
             .configuration()
@@ -264,7 +151,6 @@ fn populate_route_status(
         AppKind::Claude => asb_core::redact::redact("env.ANTHROPIC_BASE_URL", &url),
     });
     status.route = Some(route);
-    status.match_status = match_status_for(state, Some(gateway), kind, text)?;
     status.active_profile_id = if kind == AppKind::Codex {
         let routed = gateway
             .active_profile_id(AppKind::Codex, text)

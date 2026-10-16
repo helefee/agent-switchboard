@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { SessionManager } from "../components/SessionManager";
+import { ScrollArea } from "../components/ScrollArea";
 import { useI18n } from "../i18n";
 import { pageLabelKey, type Page } from "./navigation";
 import { ClientConfigurationWorkspace } from "./ClientConfigurationWorkspace";
@@ -19,19 +20,19 @@ export function AppWorkspace({ model }: { model: SwitchboardModel }) {
   }, [page]);
   const visited = (target: Page) => page === target || opened.has(target);
   if (!model.navigationReady) return (
-    <main className="asb-main" aria-label={t("shell.workspaceRestoring.aria")}>
+    <ScrollArea as="main" className="asb-main" aria-label={t("shell.workspaceRestoring.aria")}>
       <div className="asb-settings-skeleton" role="status" aria-label={t("shell.startupPageReading")}>
         <div className="asb-skeleton" /><div className="asb-skeleton" /><div className="asb-skeleton" />
       </div>
-    </main>
+    </ScrollArea>
   );
   return (
-    <main className="asb-main" aria-label={pageName}>
+    <ScrollArea as="main" className="asb-main" aria-label={pageName}>
       <div hidden={page !== "providers"} className="asb-page-stack">
         <ProvidersWorkspace model={model} active={page === "providers"} />
       </div>
       {visited("clientConfiguration") && <div hidden={page !== "clientConfiguration"} className="asb-page-stack">
-        <ClientConfigurationWorkspace model={model} />
+        <ClientConfigurationWorkspace model={model} active={page === "clientConfiguration"} />
       </div>}
       {visited("extensions") && <div hidden={page !== "extensions"} className="asb-page-stack">
         <ExtensionsWorkspace model={model} />
@@ -45,6 +46,6 @@ export function AppWorkspace({ model }: { model: SwitchboardModel }) {
       {visited("settings") && <div hidden={page !== "settings"} className="asb-page-stack">
         <SettingsWorkspace model={model} active={page === "settings"} />
       </div>}
-    </main>
+    </ScrollArea>
   );
 }

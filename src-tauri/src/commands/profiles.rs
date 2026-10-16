@@ -268,37 +268,6 @@ pub async fn reorder_codex_profiles(
 }
 
 #[tauri::command]
-pub async fn repair_profile_store(
-    app: tauri::AppHandle,
-) -> Result<crate::config_store::RepairReport, CommandError> {
-    let refresh_app = app.clone();
-    let result = observe(RuntimeLogAction::ProfileStoreRepaired, async move {
-        let state = state(&app)?;
-        let gate = app.state::<super::ConfigWriteGate>().inner().clone();
-        blocking(move || {
-            let _guard = gate
-                .lock()
-                .map_err(|e| CommandError::new("config-write-gate-unavailable", e))?;
-            state
-                .configuration()
-                .repair()
-                .map_err(|error| CommandError::localized(
-                    "profile-store-repair-failed",
-                    "errors.sw.profileStoreRepairFailed",
-                    format!("供应商存储无法安全修复：{error}"),
-                    serde_json::json!({ "detail": error }),
-                ))
-        })
-        .await
-    })
-    .await;
-    if result.is_ok() {
-        crate::tray::refresh(&refresh_app);
-    }
-    result
-}
-
-#[tauri::command]
 pub async fn delete_profile(
     app: tauri::AppHandle,
     profile_id: String,

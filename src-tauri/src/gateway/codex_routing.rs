@@ -104,61 +104,6 @@ impl GatewayController {
         })
     }
 
-    /// Recreates the exact current Codex client projection from a specialized
-    /// provider file only when that file still owns the active route revision.
-    /// Status code uses this to include the catalog pointer and every managed
-    /// Codex setting in its match test.
-    pub(crate) fn active_codex_projection(
-        &self,
-        file: &asb_core::contracts::CodexProviderFile,
-        client_settings: asb_core::contracts::SettingsValues,
-    ) -> Result<Option<SwitchPlan>, String> {
-        let route = self
-            .inner
-            .routes
-            .read()
-            .map_err(|_| "本机协议网关路由锁不可用".to_string())?
-            .get(&AppKind::Codex)
-            .cloned();
-        let Some(route) = route else {
-            return Ok(None);
-        };
-        let revision = codex_route_fingerprint(file)?;
-        if route.profile_id != file.profile.id || route.fingerprint != revision {
-            return Ok(None);
-        }
-        let profile = file.client_projection().into_profile(AppKind::Codex);
-        Ok(Some(attach_fragment(
-            SwitchPlan::through_gateway(
-                profile,
-                client_settings,
-                route.client_endpoint(&self.configured_base_url()),
-                route.client_token,
-            )
-            .with_codex_model_catalog(CodexCatalogProjection::from_file(
-                &self.inner.state_root, file, &revision, None,
-            )?.file_name),
-            self.resolve_common_fragment(&file.profile.id)?,
-        )))
-    }
-
-    /// Replays an already active official route without refreshing accounts
-    /// or requiring a live listener, so fault diagnosis remains read-only.
-    pub(crate) fn active_codex_official_projection(&self, plan: &SwitchPlan) -> Result<Option<SwitchPlan>, String> {
-        let route = self.inner.routes.read().map_err(|_| "本机协议网关路由锁不可用".to_string())?
-            .get(&AppKind::Codex).cloned();
-        let Some(route) = route.filter(|route| route.profile_id == plan.profile.id) else {
-            return Ok(None);
-        };
-        let Some(auth) = &route.codex_account else { return Ok(None); };
-        Ok(Some(attach_fragment(
-            SwitchPlan::through_gateway(plan.profile.clone(), plan.client_settings.clone(),
-                route.client_endpoint(&self.configured_base_url()), route.client_token.clone())
-                .with_codex_managed_auth(auth.clone()),
-            plan.codex_common_fragment().cloned(),
-        )))
-    }
-
     /// Projects an official Codex switch through the local gateway while the
     /// policy enables takeover and a managed account is bound. The client
     /// keeps the built-in `openai` provider with the gateway entry in

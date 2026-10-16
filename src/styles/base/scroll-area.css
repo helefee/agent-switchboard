@@ -1,0 +1,38 @@
+.asb-scroll-area {
+  position: relative;
+  display: grid;
+  grid-template-rows: minmax(0, 1fr);
+  min-width: 0;
+  min-height: 0;
+}
+
+.asb-scroll-viewport {
+  min-width: 0;
+  min-height: 0;
+  overflow: auto;
+  scrollbar-gutter: stable;
+}
+
+.asb-scroll-viewport:focus-visible {
+  outline-offset: -2px;
+}
+
+.asb-back-to-top {
+  position: absolute;
+  display: flex;
+  z-index: 2;
+  inset-inline-end: calc(var(--asb-space-3) + var(--asb-scrollbar-gutter));
+  inset-block-end: calc(var(--asb-space-3) + var(--asb-scrollbar-gutter));
+}
+
+.asb-back-to-top .asb-btn {
+  border: 1px solid var(--asb-hairline-strong);
+  border-radius: var(--asb-radius-pill);
+  background: var(--asb-content);
+  color: var(--asb-action);
+}
+
+.asb-back-to-top .asb-btn:hover {
+  background: var(--asb-content-muted);
+  color: var(--asb-action);
+}

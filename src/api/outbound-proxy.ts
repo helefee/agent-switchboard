@@ -1,6 +1,6 @@
 import { invoke } from "./client";
 
-/** Egress policy for every gateway-side HTTP client: none (always direct),
+/** Egress policy for application-owned HTTP clients: none (always direct),
  * system (follow the environment) or manual (an explicit proxy URL). */
 export type OutboundProxyMode = "none" | "system" | "manual";
 
@@ -24,8 +24,12 @@ export function setOutboundProxySettings(
   return invoke<OutboundProxySettings>("set_outbound_proxy_settings", { settings, expectedRevision });
 }
 
-/** One-click reset for a settings file that no longer parses (another
- * version's format or corruption); returns the fresh default. */
-export function repairOutboundProxySettings(): Promise<OutboundProxySettings> {
-  return invoke<OutboundProxySettings>("repair_outbound_proxy_settings", {});
+export interface OutboundProxyRepairReport {
+  settings: OutboundProxySettings;
+  backupPath: string | null;
+}
+
+/** Rechecks the file and preserves invalid bytes before restoring defaults. */
+export function repairOutboundProxySettings(): Promise<OutboundProxyRepairReport> {
+  return invoke<OutboundProxyRepairReport>("repair_outbound_proxy_settings", {});
 }

@@ -10,7 +10,7 @@ Status: implemented
 
 托盘行的警示状态收敛为一个非交互警示图标（`TriangleAlert`），行内不再出现警示文字；图标以原生 `title` 悬浮承载全部详情：状态文案、后端错误正文（脚本用量）与上次成功读数时间（`tray.usage.lastReading`，`timeLabel` 绝对时间）。图标旁是该行唯一的用量刷新按钮，仅在警示态存在，调用主界面同一强制查询命令——脚本走 `query_profile_usage`（调度器同一执行器），官方额度走 `query_codex_official_quota`（`quota_refresh::refresh(force = true)`）——两个命令在执行末尾自行发出 `tray-changed`，面板仍只消费共享缓存快照，查询返回值不进渲染层，凭据不出执行器边界。
 
-结构上单按钮行被替换：`.tray-provider` 成为只拥有轮廓（内边距、描边、悬停底、选中底）的容器，切换动作是覆盖勾选、名称、用量与切换槽的原生按钮 `.tray-provider-main`，刷新按钮 `.tray-provider-refresh` 独立其右。按钮不可嵌套是硬约束，两个动作必须是两个真实按钮；旧的一体化 `<button>` 行没有兼容分支，直接删除。警示派生由 `trayUsageContent` 单点拥有，返回 `{ readings, alert: { title, detail } | null }`，在纯函数内用 `tr()` 完成翻译（与 `usage-format.ts` 同一先例）；`stale` 与 `stateKey` 两个并行布尔/枚举出口随之删除。行宽测量标尺的 `data-measure="status"` 文字测量改为 `data-measure="fixed"` 定宽图标测量。`PendingAction` 增加 `refresh` 种类，沿用单一串行 `run` 队列：刷新进行中图标旋转（`asb-tray-refresh-spin`，遵守两级减少动态偏好），期间面板动作互斥。
+`.tray-provider` 只拥有轮廓（内边距、描边、悬停底、选中底），切换动作由原生按钮 `.tray-provider-main` 覆盖勾选、名称、用量与状态槽，刷新按钮 `.tray-provider-refresh` 独立其右。按钮不可嵌套是硬约束，两个动作必须是两个真实按钮。展示派生由 `tray-usage.ts` 的 `trayUsageContent` 单点拥有，返回 `{ readings, alert: { title, detail } | null, summary }`；readings 已完成名称、数值、状态色与提示格式化，行组件、正文和测量共用一次派生，在纯函数内用 `tr()` 完成翻译（与 `usage-format.ts` 同一先例）；不保留并行的 `stale` 布尔与 `stateKey` 枚举出口。警示图标以 `data-measure="fixed"` 参与实际用量容器宽度预算，溢出提示同样测量真实宽度；名称、状态和用量的两层排版由[托盘原生玻璃与两层读数布局](2026-10-16-tray-glass-and-reading-layout.md)拥有。`PendingAction` 的 `refresh` 种类沿用单一串行 `run` 队列：刷新进行中图标旋转（`asb-tray-refresh-spin`，遵守两级减少动态偏好），期间面板动作互斥。
 
 DESIGN.md 的托盘行契约（切换槽列序、警示形态、「只读缓存」边界）与官方额度段落的托盘边界已同批改写为新事实。
 

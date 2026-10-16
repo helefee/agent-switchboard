@@ -3,6 +3,7 @@ import { Dialog, Heading, Modal, ModalOverlay } from "react-aria-components";
 import { useI18n } from "../i18n";
 import { Button } from "./Button";
 import { CloseIcon } from "./icons";
+import { ScrollArea } from "./ScrollArea";
 
 interface Props {
   title: string;
@@ -57,7 +58,7 @@ export function AppDialog({ title, busy, onClose, children, footer, wide = false
               <CloseIcon />
             </Button>
           </header>
-          <div className="asb-dialog-body">{children}</div>
+          <ScrollArea className="asb-dialog-body" aria-label={title}>{children}</ScrollArea>
           {footer && <footer className="asb-dialog-footer">{footer}</footer>}
         </Dialog>
       </Modal>

@@ -1,0 +1,23 @@
+/* Both workspaces share one overlay geometry; the hook owns actual motion. */
+.asb-client-route-workspace {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  gap: var(--asb-space-4);
+  min-width: 0;
+  min-height: 0;
+}
+
+[data-client-route-leaving] {
+  position: absolute;
+  inset: 0 0 auto;
+  z-index: 1;
+  pointer-events: none;
+}
+
+/* Keep their footprint while the current client's stationary chrome takes over. */
+[data-client-route-leaving] .asb-workspace-header,
+[data-client-route-leaving] > .asb-route-card {
+  visibility: hidden;
+}

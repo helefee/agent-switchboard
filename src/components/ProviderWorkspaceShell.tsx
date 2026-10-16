@@ -20,7 +20,7 @@ import type {
   ConfigFileStatus,
   LockStatus,
 } from "../api/client";
-import type { AnimationEvent, ReactNode } from "react";
+import type { ReactNode, RefCallback } from "react";
 import type { ActiveProfileRef } from "../lib/current-provider-name";
 import { useI18n } from "../i18n";
 import { Button } from "./Button";
@@ -31,22 +31,12 @@ import { Tooltip } from "./Tooltip";
 import { WorkspaceHeader } from "./WorkspaceHeader";
 import "../styles/base/provider-workspace.css";
 
-/** Navigation direction of the client-tab switch that mounted a provider
- * workspace. "forward" enters the right-hand tab (Claude), "back" the
- * left-hand tab (Codex); "none" marks every mount that is not a tab switch. */
-export type ClientRouteDirection = "forward" | "back" | "none";
-
 interface ProviderWorkspaceShellProps {
   /** Distinguishes the two client views for assistive technology; the visible
    * heading and toolbar are identical on both. */
   ariaLabel: string;
   app: AppKind;
-  /** Direction of the client-tab switch that mounted this workspace;
-   * "none" (any mount that is not a tab switch) skips the enter animation. */
-  routeDirection: ClientRouteDirection;
-  /** Consumes the one-shot entry: raised when the entry animation finishes,
-   * so the workspace clears the direction and no later mount can replay it. */
-  onRouteAnimationEnd: () => void;
+  routeContentRef: RefCallback<HTMLElement>;
   /** True while this workspace is being replaced by a tab switch: it stays
    * mounted for one exit cycle, overlays the entering workspace, and ignores
    * pointers and assistive technology until the parent unmounts it. */
@@ -69,8 +59,7 @@ interface ProviderWorkspaceShellProps {
 export function ProviderWorkspaceShell({
   ariaLabel,
   app,
-  routeDirection,
-  onRouteAnimationEnd,
+  routeContentRef,
   leaving,
   onSelectApp,
   busy,
@@ -83,24 +72,13 @@ export function ProviderWorkspaceShell({
   children,
 }: ProviderWorkspaceShellProps) {
   const { t } = useI18n();
-  // Leaving workspaces slide out toward their own tab side, so both shells
-  // travel the same direction by the same distance: one continuous track.
-  const routeClass = leaving
-    ? app === "codex" ? " asb-route-out-left" : " asb-route-out-right"
-    : routeDirection === "none"
-      ? ""
-      : routeDirection === "forward" ? " asb-route-in-right" : " asb-route-in-left";
-  const handleAnimationEnd = (event: AnimationEvent<HTMLElement>) => {
-    // The route animations live on the list inside this shell, and other
-    // animations (route-card flow) bubble through here; settle the route
-    // only for our own keyframes.
-    if (event.animationName.startsWith("asb-provider-route-")) onRouteAnimationEnd();
-  };
   return (
     <section
-      className={`asb-provider-workspace${routeClass}`}
+      className="asb-provider-workspace"
+      data-client-route={app}
+      data-client-route-leaving={leaving || undefined}
+      inert={leaving || undefined}
       aria-hidden={leaving || undefined}
-      onAnimationEnd={routeDirection === "none" && !leaving ? undefined : handleAnimationEnd}
       aria-label={ariaLabel}
     >
         <WorkspaceHeader
@@ -127,7 +105,7 @@ export function ProviderWorkspaceShell({
           }
         />
       <DualRelay statuses={statuses} profiles={profiles} locks={locks} />
-      <section className="asb-provider-list" aria-label={t("providers.list.aria")}>
+      <section ref={routeContentRef} className="asb-provider-list" aria-label={t("providers.list.aria")}>
         {children}
       </section>
     </section>

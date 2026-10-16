@@ -1,5 +1,5 @@
 import { toastMessage } from "../components/use-toast";
-import { useCallback, useEffect, useState } from "react";
+import { useCallback, useEffect, useState, type RefCallback } from "react";
 import {
   executeSwitch, reorderCodexProfiles,
   type AppKind, type CodexProviderDraft, type CodexProviderRecord, type CommandError,
@@ -15,16 +15,13 @@ import type { ActiveProfileRef } from "../lib/current-provider-name";
 import { useI18n } from "../i18n";
 import { CodexOfficialRow, CodexProviderRow, ConfiguredCodexProviderRow } from "../components/CodexProviderRows";
 import { CodexProviderEditor } from "../components/codex-provider-editor/CodexProviderEditor";
-import { ProviderWorkspaceShell, type ClientRouteDirection, SortableProviderRows } from "../components/ProviderWorkspaceShell";
+import { ProviderWorkspaceShell, SortableProviderRows } from "../components/ProviderWorkspaceShell";
 import { SwitchConfirmationSection } from "../components/SwitchConfirmationSection";
 import { UsageQueryWorkspace } from "../components/UsageQueryWorkspace";
 
 interface Props {
   active: boolean;
-  /** Direction of the client-tab switch that mounted this workspace's list. */
-  routeDirection: ClientRouteDirection;
-  /** Consumes the entry direction once the slide has played. */
-  onRouteAnimationEnd: () => void;
+  routeContentRef: RefCallback<HTMLElement>;
   /** Keeps the list mounted for one exit cycle while a tab switch replaces it. */
   leaving: boolean;
   records: CodexProviderRecord[];
@@ -220,8 +217,8 @@ export function CodexProvidersPage(props: Props) {
   );
   if (!props.active && !props.leaving) return null;
   return (
-      <ProviderWorkspaceShell ariaLabel={t("codex.page.providersAria")} app="codex" routeDirection={props.routeDirection}
-      onRouteAnimationEnd={props.onRouteAnimationEnd} leaving={props.leaving} onSelectApp={props.onSelectApp}
+      <ProviderWorkspaceShell ariaLabel={t("codex.page.providersAria")} app="codex"
+      leaving={props.leaving} onSelectApp={props.onSelectApp} routeContentRef={props.routeContentRef}
       busy={props.busy} statuses={props.statuses} profiles={props.relayProfiles} locks={props.locks}
       onImport={() => { state.clearCandidates(); props.onImport(); }}
       onNew={() => { state.clearCandidates(); props.onNew(); }}>

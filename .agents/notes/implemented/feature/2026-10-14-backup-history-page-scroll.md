@@ -8,7 +8,7 @@ Status: implemented
 
 ## Decision
 
-本地备份页签回归流式页面布局，不再接管工作区高度：tables-backups.css 的整条接管链（`.asb-main` 的 overflow 锁、page-stack/settings-content/tabpanel/panel 的高度链、`.asb-backup-local` 的 flex 拉伸）全部删除；`.asb-backups` 不再是滚动容器，flex/min-height/overflow 与 sticky 表头一并移除，工具栏与危险行的 `flex: none` 随 flex 父级消亡。页面滚动归 `.asb-main` 的默认 `overflow-y: auto`。TSX 结构不变：`.asb-backups` 保留为包裹表格与分页的普通块级容器。备份表因此退出「受限滚动页」名单，DESIGN.md 的铬件契约与 workspace-main.css 注释同步去除「备份表」。
+本地备份页签回归流式页面布局，不再接管工作区高度：tables-backups.css 的整条接管链（`.asb-main` 的 overflow 锁、page-stack/settings-content/tabpanel/panel 的高度链、`.asb-backup-local` 的 flex 拉伸）全部删除；`.asb-backups` 不再是滚动容器，flex/min-height/overflow 与 sticky 表头一并移除，工具栏与危险行的 `flex: none` 随 flex 父级消亡。页面滚动归 `.asb-main` 组合的共享 ScrollArea 原生视口；返回顶部由[共享滚动原语](2026-10-16-global-back-to-top.md)拥有。备份模块的 TSX 结构不变：`.asb-backups` 保留为包裹表格与分页的普通块级容器。备份表因此退出「受限滚动页」名单，DESIGN.md 的铬件契约与 workspace-main.css 注释同步去除「备份表」。
 
 ## Alternatives considered
 
@@ -17,7 +17,7 @@ Status: implemented
 
 ## Consequences
 
-收益：删去约 40 行判定脆弱的 `:has()` 高度链，「本地备份页签是否接管高度」这条契约连同它的可见性判定整体消失，设置页所有分区统一为页面级滚动；长历史、展开的差异行、确认弹层都随页面自然生长，不再依赖隐藏祖先判定。代价：滚动越过首屏后表头与分页控件不再驻留，需滚回顶部翻页——历史按 20 条分页，可接受。云端备份子页签行为不变（本就页面滚动）。模型用量等仍在自己滚动区内 sticky 的表格不受影响，那类模块本就各自持有滚动区。
+收益：删去约 40 行判定脆弱的 `:has()` 高度链，「本地备份页签是否接管高度」这条契约连同它的可见性判定整体消失，设置页所有分区统一为页面级滚动；长历史、展开的差异行、确认弹层都随页面自然生长，不再依赖隐藏祖先判定。代价：滚动越过首屏后表头与分页控件不再驻留，需滚回顶部翻页——历史按 20 条分页，可接受。云端备份子页签行为不变（本就页面滚动）。其他表格的纵向归属由[工作面滚动契约](../architecture/2026-10-16-table-scroll-ownership.md)拥有：多模块内容自然展开，主列表显式使用 Table viewport。
 
 ## Verification
 

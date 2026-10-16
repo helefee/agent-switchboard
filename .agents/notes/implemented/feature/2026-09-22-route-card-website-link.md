@@ -8,7 +8,7 @@ Status: implemented
 
 ## Decision
 
-连接卡新增第四列「官网」，事实来源是**当前匹配档案**的 `websiteUrl`，经 `@tauri-apps/plugin-opener` 打开系统浏览器；未匹配档案或未填写时如实显示「未设置」。不读取服务地址猜测官网。
+连接卡新增第四列「官网」，事实来源是**当前连接识别的档案**的 `websiteUrl`，经 `@tauri-apps/plugin-opener` 打开系统浏览器；未关联档案或未填写时如实显示「未设置」。不读取服务地址猜测官网。关联仅依赖 `app + activeProfileId`，模型和偏好差异不改变关联；状态与差异边界由[当前配置事实](../bug-fix/2026-10-16-observed-configuration-status.md)拥有。
 
 契约按三层单一所有者落地：
 

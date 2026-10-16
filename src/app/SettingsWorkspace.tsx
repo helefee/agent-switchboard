@@ -12,7 +12,9 @@ export function SettingsWorkspace({ model, active }: { model: SwitchboardModel; 
   return (
     <SettingsPage section={model.settingsSection} onSectionChange={model.setSettingsSection}
       onReturnToProviders={model.settingsReturnToProviders ? model.returnToProviders : undefined}
-      egress={<OutboundProxySettings active={active && model.settingsSection === "application"} busy={busy} />}
+      egress={<OutboundProxySettings active={active && model.settingsSection === "application"} busy={busy}
+        revision={model.dataRepair.revision} onBusy={model.setBusy} onError={model.reportError}
+        onRecovered={model.clearOutboundProxyError} />}
       storage={<StorageSettings active={active && model.settingsSection === "application"} busy={busy}
         onArchived={() => { void snapshot.refresh(); }} />}
       backups={<BackupsPage records={snapshot.backups} busy={busy} lastSwitch={model.lastSwitchOverall}

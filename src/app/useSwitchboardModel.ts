@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useState } from "react";
 import { onTrayError, openBackupDir, type AppKind, type CommandError } from "../api/client";
 import { useAppSettings } from "./useAppSettings";
+import { useApplicationDataRepair } from "./useApplicationDataRepair";
 import { useCcImport } from "./useCcImport";
 import { useCloudBackup } from "./useCloudBackup";
 import { useClientSettings } from "./useClientSettings";
@@ -86,6 +87,8 @@ export function useSwitchboardModel() {
     invalidateCandidates, clearCandidates: providerSwitch.clearCandidates, refresh, setTargetProfile,
     setTargetProfileId,
   });
+  const dataRepair = useApplicationDataRepair({ ...operationContext, invalidateCandidates, refresh,
+    onProvidersRepaired: providers.closeEditor });
   const lastSwitchOverall = useMemo(() => latestOverall(snapshot.statuses ?? []), [snapshot.statuses]);
   const openBackupFolder = useCallback(
     () => openBackupDir().catch((caught) => reportError(caught as CommandError)), [reportError],
@@ -93,7 +96,7 @@ export function useSwitchboardModel() {
 
   return { ...navigation, appFilter, ...frame, snapshot, activeProfileId, providerSwitch,
     clientSettings, codexSubagentSettings, promptDocuments, appSettingsState, cloudBackup, updateCheck, discoveryState,
-    ccImport, sqlImport, targetProfile, operations, providers, lastSwitchOverall, openBackupFolder };
+    ccImport, sqlImport, targetProfile, operations, providers, dataRepair, lastSwitchOverall, openBackupFolder };
 }
 
 export type SwitchboardModel = ReturnType<typeof useSwitchboardModel>;

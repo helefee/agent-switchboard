@@ -1,14 +1,16 @@
 //! Read-only configuration status: per-client file health, route facts,
-//! match classification against the profile store, and lock observation.
+//! connection identity, write history, and lock observation.
 
 pub(crate) mod codex;
 mod overview;
 mod report;
+#[cfg(test)]
+mod tests;
 
 
 use super::error::{blocking, observe, state, CommandError};
 use crate::runtime_log::RuntimeLogAction;
-use asb_core::contracts::{AppKind, ConfigWriteRecord, MatchStatus, RouteState, SettingsValues};
+use asb_core::contracts::{AppKind, ConfigWriteRecord, RouteState, SettingsValues};
 use asb_core::LockStatus;
 use asb_switch::io::FsIo;
 use asb_switch::lockfile::{self, RecoveryEntry};
@@ -37,7 +39,7 @@ pub struct ConfigFileStatus {
     pub client_settings: Option<SettingsValues>,
     /// A valid client file can still contain an invalid value for an owned setting.
     pub client_settings_error: Option<String>,
-    pub match_status: MatchStatus,
+    /// Connection identity only; model, preferences and write history do not prove file health.
     pub active_profile_id: Option<String>,
     pub last_switch: Option<ConfigWriteRecord>,
 }

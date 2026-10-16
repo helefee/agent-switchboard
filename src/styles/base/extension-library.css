@@ -1,4 +1,4 @@
-/* Extension management uses the shared table contract; the library owns its scroll region. */
+/* The library bounds the primary Table viewport; module tables stay in flow. */
 .asb-ext {
   display: flex;
   flex: 1;
@@ -7,7 +7,7 @@
   min-height: 0;
 }
 
-.asb-main:has(> .asb-page-stack:not([hidden]) > .asb-ext) { overflow: hidden; }
+.asb-main:has(> .asb-scroll-viewport > .asb-page-stack:not([hidden]) > .asb-ext) > .asb-scroll-viewport { overflow: hidden; }
 .asb-page-stack:has(> .asb-ext) { flex: 1; min-height: 0; }
 .asb-ext > .asb-workspace-header { flex: none; }
 .asb-ext > [role="tabpanel"]:not([hidden]) {
@@ -17,20 +17,15 @@
   min-height: 0;
 }
 
-/* The library is the workspace's only scroll region; the search row lives in
-   the page header's secondary row. */
+/* Search stays in the page header; Table owns the list's only scroll region. */
 .asb-ext-library-panel {
   display: flex;
   flex-direction: column;
   flex: 1;
+  min-width: 0;
   min-height: 0;
 }
 
-.asb-ext[data-view="discovery"] > [role="tabpanel"]:not([hidden]),
-.asb-ext[data-view="sources"] > [role="tabpanel"]:not([hidden]) {
-  overflow: auto;
-  scrollbar-gutter: stable;
-}
 .asb-ext-actions {
   display: flex;
   align-items: center;
@@ -157,12 +152,10 @@
 .asb-ext-search-clear:hover { background: var(--asb-content-muted); color: var(--asb-text); }
 .asb-ext-search input::-webkit-search-cancel-button { appearance: none; }
 
-.asb-ext-library-scroll {
+/* Empty, loading and failed lists have no Table viewport of their own. */
+.asb-ext-library-state {
   flex: 1;
   min-height: 0;
-  overflow: auto;
-  scrollbar-gutter: stable;
-  padding-bottom: var(--asb-space-4);
 }
 .asb-ext-table {
   min-width: 760px;
@@ -309,7 +302,7 @@
 }
 
 .asb-ext-loading > .asb-skeleton { height: 44px; }
-.asb-ext-result-count { margin: var(--asb-space-2) 0 0; color: var(--asb-text-muted); font: var(--asb-text-caption); }
+.asb-ext-result-count { flex: none; margin: var(--asb-space-2) 0 0; color: var(--asb-text-muted); font: var(--asb-text-caption); }
 
 .asb-ext-menu {
   min-width: var(--asb-menu-min-width);

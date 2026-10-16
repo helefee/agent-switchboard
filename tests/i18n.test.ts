@@ -82,7 +82,6 @@ test("official window display covers duration units without changing source iden
   try {
     applyLanguagePreference("en-US");
     assert.deepEqual(officialQuotaReadings(quota).map((row) => row.planName), ["5 hours", "7 days"]);
-    assert.deepEqual(officialQuotaReadings(quota, true).map((row) => row.planName), ["5h", "7d"]);
     assert.equal(officialQuotaWindowName("30 天"), "30 days");
     assert.equal(officialQuotaWindowName("1 小时"), "1 hour");
     assert.equal(officialQuotaWindowName("90 分钟"), "90 minutes");

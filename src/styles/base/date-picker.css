@@ -33,6 +33,12 @@
   outline: none;
 }
 
+.asb-date-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: var(--asb-space-2);
+}
+
 .asb-calendar {
   display: flex;
   flex-direction: column;

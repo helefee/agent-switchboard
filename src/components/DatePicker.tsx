@@ -46,6 +46,10 @@ export function DatePicker({ value, onChange, ariaLabel, disabled = false }: Pro
       <Dialog aria-label={ariaLabel} className="asb-date-dialog">
         <CalendarSheet selected={selected} disabled={disabled} ariaLabel={ariaLabel}
           onSelect={(date) => { onChange(date.toString()); setOpen(false); }} />
+        <div className="asb-date-actions">
+          <Button variant="secondary" disabled={disabled || !selected}
+            onClick={() => { onChange(""); setOpen(false); }}>{t("format.date.clear")}</Button>
+        </div>
       </Dialog>
     </Popover>}
   </I18nProvider>;

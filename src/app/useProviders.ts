@@ -8,7 +8,6 @@ import {
   prepareCodexProfileSave,
   prepareProfileSave,
   reorderClaudeProfiles,
-  repairProfileStore,
   type AppKind,
   type CommandError,
   type CodexProviderDraft,
@@ -20,7 +19,6 @@ import {
   type UsageQuery,
 } from "../api/client";
 import { codexUsageDraftFrom } from "../components/codex-provider-editor/draft";
-import { toast, toastMessage } from "../components/use-toast";
 
 /** What a Codex editor session edits: a stored third-party record or the
  * client's official-login record. The variants never convert into each other;
@@ -466,27 +464,7 @@ function useProviderRemoval(deps: ProvidersDeps, setEditorSession: SetEditorSess
   }, [busy, clearError, codexOfficialRecords, deletePending, invalidateCandidates, onError, records,
     refresh, targetProfileId, setBusy, setTargetProfileId, setEditorSession]);
 
-  const runRepairStore = useCallback(async () => {
-    if (busy) return;
-    invalidateCandidates();
-    setBusy(true);
-    try {
-      const report = await repairProfileStore();
-      clearError();
-      setEditorSession(null);
-      await refresh();
-      toast({ kind: "success", durationMs: 10000, title: toastMessage("operations.repairStore.done", {
-        count: report.repairedFiles.length,
-      }), description: report.backupPath
-        ? toastMessage("operations.repairStore.backup", { path: report.backupPath })
-        : undefined });
-    } catch (caught) {
-      onError(caught as CommandError);
-    } finally {
-      setBusy(false);
-    }
-  }, [busy, clearError, invalidateCandidates, onError, refresh, setBusy, setEditorSession]);
-  return { deletePending, setDeletePending, runDelete, runRepairStore };
+  return { deletePending, setDeletePending, runDelete };
 }
 
 /** Editor identity remains independent of the current list selection and refreshed records. */

@@ -1,3 +1,4 @@
+import type { RefCallback } from "react";
 import type {
   AppKind,
   ConfigFileStatus,
@@ -13,7 +14,7 @@ import type { ActiveProfileRef } from "../lib/current-provider-name";
 import { useI18n } from "../i18n";
 import { ProviderEditor } from "../components/ProviderEditor";
 import { ProviderList } from "../components/ProviderList";
-import { ProviderWorkspaceShell, type ClientRouteDirection } from "../components/ProviderWorkspaceShell";
+import { ProviderWorkspaceShell } from "../components/ProviderWorkspaceShell";
 import { UsageQueryWorkspace } from "../components/UsageQueryWorkspace";
 import type { ProviderEditorSession } from "../app/useProviders";
 
@@ -21,10 +22,7 @@ interface ProvidersPageProps {
   view: ProviderView;
   onViewChange: (view: ProviderView) => void;
   active: boolean;
-  /** Direction of the client-tab switch that mounted this workspace's list. */
-  routeDirection: ClientRouteDirection;
-  /** Consumes the entry direction once the slide has played. */
-  onRouteAnimationEnd: () => void;
+  routeContentRef: RefCallback<HTMLElement>;
   /** Keeps the list mounted for one exit cycle while a tab switch replaces it. */
   leaving: boolean;
   profiles: ProviderProfile[];
@@ -114,9 +112,8 @@ function ProviderListView({
     <ProviderWorkspaceShell
       ariaLabel={t("providers.workspace.aria")}
       app="claude"
-      routeDirection={props.routeDirection}
-      onRouteAnimationEnd={props.onRouteAnimationEnd}
       leaving={props.leaving}
+      routeContentRef={props.routeContentRef}
       onSelectApp={props.onSelectApp}
       busy={busy}
       statuses={props.statuses}

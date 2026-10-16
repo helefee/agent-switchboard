@@ -35,7 +35,7 @@ pub use contracts::{
     CodexRouteMode, CodexRouteSnapshot, CodexSubagentKey, CodexSubagentRoute,
     CodexSubagentSettings,
     CodexSubagentSettingsSnapshot, CodexUpstream, ConfigValue,
-    ConfigWriteRecord, ExplicitMaxOutputTokens, GlobalPromptDocument, KeyChange, MatchStatus,
+    ConfigWriteRecord, ExplicitMaxOutputTokens, GlobalPromptDocument, KeyChange,
     ModelOptions, ProviderDisplay, ProviderDraft, ProviderFile, ProviderProfile, ProviderRecord,
     RouteMode, RouteState, SettingValue, SettingsValues, SwitchPlan,
     SwitchPreview, UpstreamProtocol, WriteOperation, CODEX_PROVIDER_SCHEMA_VERSION,
